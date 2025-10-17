@@ -5,30 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.2] - 2025-10-17
+## [0.1.3] - 2025-10-17
 
 ### Fixed
+
 - CLI execution error with "require is not defined in ES module scope" by using `.cjs` extension for CommonJS compatibility
 - JSDoc comments now properly escape `@` symbols with backticks for correct LSP/IDE hints
 
 ### Changed
+
 - **Breaking**: Renamed `filePath` parameter to `input` across all APIs for consistency
   - Runtime API: `extractTheme({ input: './theme.css' })`
   - Vite plugin: Already used `input`, no change needed
   - CLI: Already used `--input`, no change needed
 - Updated all documentation and examples to reflect consistent `input` naming
 
-## [0.1.1] - 2025-10-17
+## [0.1.2] - 2025-10-17
 
 ### Fixed
+
 - Reduced NPM package size from 659 kB to 137 kB (79% reduction) by excluding source maps from published package
 
+## [0.1.1] - 2025-10-17
+
 ### Changed
+
 - Updated `package.json` files array to explicitly exclude `*.map` files
 
 ## [0.1.0] - 2025-10-16
 
 ### Added
+
 - GitHub Actions workflows for CI, automated linting/formatting (autofix.ci), and NPM publishing
 - Comprehensive issue templates (bug reports, feature requests)
 - Pull request template with quality checklist
@@ -37,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Installation commands for all package managers (Bun, pnpm, Yarn, npm)
 
 ### Changed
+
 - Regenerated lockfile for consistency
 
 ## [0.1.0-beta.1] - 2025-10-16
