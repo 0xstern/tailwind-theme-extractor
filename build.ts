@@ -113,7 +113,8 @@ async function buildModule(
   entry: { name: string; path: string; outputName: string },
   format: 'esm' | 'cjs',
 ): Promise<void> {
-  const extension = format === 'esm' ? '.mjs' : '.js';
+  const isCLI = entry.outputName.includes('cli');
+  const extension = format === 'esm' ? '.mjs' : isCLI ? '.cjs' : '.js';
 
   // Create nested directory if needed
   await ensureOutputDir(entry.outputName);
@@ -139,7 +140,7 @@ async function buildModule(
     throw new Error(`Build failed for ${entry.outputName}`);
   }
 
-  // Rename .js to .mjs for ESM builds
+  // Rename .js to .mjs for ESM builds or .cjs for CLI
   if (format === 'esm') {
     await fs.rename(
       path.join(outDir, `${entry.outputName}.js`),
@@ -148,6 +149,15 @@ async function buildModule(
     await fs.rename(
       path.join(outDir, `${entry.outputName}.js.map`),
       path.join(outDir, `${entry.outputName}.mjs.map`),
+    );
+  } else if (isCLI) {
+    await fs.rename(
+      path.join(outDir, `${entry.outputName}.js`),
+      path.join(outDir, `${entry.outputName}.cjs`),
+    );
+    await fs.rename(
+      path.join(outDir, `${entry.outputName}.js.map`),
+      path.join(outDir, `${entry.outputName}.cjs.map`),
     );
   }
 
@@ -262,12 +272,14 @@ async function listBuildArtifacts(
 }
 
 async function addShebangToCLI(): Promise<void> {
-  const cliPath = path.join(outDir, 'v4', 'cli.js');
+  const cliPath = path.join(outDir, 'v4', 'cli.cjs');
   const content = await fs.readFile(cliPath, 'utf-8');
 
-  // Add shebang if not present
+  // Add shebang if not present (use node since it's more compatible)
   if (!content.startsWith('#!')) {
-    await fs.writeFile(cliPath, `#!/usr/bin/env node\n${content}`, 'utf-8');
+    const wrappedContent = `#!/usr/bin/env node
+${content}`;
+    await fs.writeFile(cliPath, wrappedContent, 'utf-8');
   }
 
   // Make executable (0o755 = rwxr-xr-x)

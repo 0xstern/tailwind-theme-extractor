@@ -31,7 +31,7 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "bin": {
-    "tailwind-theme-extractor": "./dist/v4/cli.js"
+    "tailwind-theme-extractor": "./dist/v4/cli.cjs"
   },
   "exports": {
     ".": {
