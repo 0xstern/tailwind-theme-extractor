@@ -5,7 +5,9 @@ This directory contains GitHub-specific configuration for automated workflows, i
 ## Workflows
 
 ### CI (`workflows/ci.yml`)
+
 Runs on all pull requests and pushes to main:
+
 - Lints code with ESLint
 - Checks formatting with Prettier
 - Runs test suite
@@ -14,13 +16,17 @@ Runs on all pull requests and pushes to main:
 - Reports bundle sizes
 
 ### Autofix (`workflows/autofix.yml`)
+
 Automatically fixes formatting and linting issues:
+
 - Runs Prettier formatting
 - Applies ESLint auto-fixes
 - Commits changes via autofix.ci
 
 ### Release (`workflows/release.yml`)
+
 Handles NPM publishing:
+
 - Runs full test suite
 - Builds production artifacts
 - Publishes to NPM with provenance
@@ -29,7 +35,9 @@ Handles NPM publishing:
 ## Issue Templates
 
 ### Bug Report (`ISSUE_TEMPLATE/bug_report.yml`)
+
 Structured template for bug reports with required fields:
+
 - Bug description
 - Minimal reproduction
 - Steps to reproduce
@@ -38,13 +46,16 @@ Structured template for bug reports with required fields:
 - Usage method (Vite/CLI/Runtime)
 
 ### Feature Request (`ISSUE_TEMPLATE/feature_request.yml`)
+
 Template for feature suggestions:
+
 - Problem description
 - Proposed solution
 - Alternatives considered
 - Additional context
 
 ### Configuration (`ISSUE_TEMPLATE/config.yml`)
+
 - Disables blank issues
 - Links to Discussions for questions
 - Links to documentation
@@ -52,7 +63,9 @@ Template for feature suggestions:
 ## Other Files
 
 ### Pull Request Template (`pull_request_template.md`)
+
 Standard PR template with:
+
 - Change description
 - Type of change checklist
 - Testing checklist
@@ -60,14 +73,17 @@ Standard PR template with:
 - Related issues
 
 ### Funding (`FUNDING.yml`)
+
 GitHub Sponsors and custom funding links
 
 ### Security Policy (`SECURITY.md`)
+
 Security vulnerability reporting guidelines
 
 ## Setup Requirements
 
 ### Secrets
+
 Configure these in GitHub repository settings:
 
 1. **NPM_TOKEN** (required for releases)
@@ -77,6 +93,7 @@ Configure these in GitHub repository settings:
 ### Branch Protection (Recommended)
 
 For the `main` branch:
+
 - Require pull request reviews
 - Require status checks to pass:
   - Test & Lint
