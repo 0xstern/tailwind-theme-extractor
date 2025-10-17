@@ -13,7 +13,7 @@ async function main(): Promise<void> {
   try {
     // Extract theme from the example CSS file
     const result = await extractTheme({
-      filePath: './examples/v4/basic-theme.css',
+      input: './examples/v4/basic-theme.css',
       resolveImports: true,
     });
 

@@ -11,7 +11,7 @@
  *
  * // Parse from file
  * const result = await extractTheme({
- *   filePath: './src/theme.css'
+ *   input: './src/theme.css'
  * });
  *
  * // Use the theme
@@ -32,33 +32,33 @@ import { loadTailwindDefaults, mergeThemes } from './parser/tailwind-defaults';
  *
  * Error Handling:
  * - File not found: Throws error if the specified filePath doesn't exist
- * - Missing @import files: Silently skipped, continues processing remaining CSS
+ * - Missing `@import` files: Silently skipped, continues processing remaining CSS
  * - Invalid CSS: PostCSS parsing errors will throw
  * - Tailwind not installed: Falls back to user theme only (no error thrown)
  * - Enable `debug: true` in options to log warnings for import resolution failures
  *
  * @param options - Options for theme extraction
  * @returns Promise resolving to the parse result with theme, variables, and processed files
- * @throws Error if neither filePath nor css is provided in options
- * @throws Error if filePath is provided but file cannot be read
+ * @throws Error if neither input nor css is provided in options
+ * @throws Error if input is provided but file cannot be read
  * @throws Error if CSS syntax is invalid
  *
  * @example
  * ```typescript
  * // Standard usage
  * const result = await extractTheme({
- *   filePath: './src/theme.css'
+ *   input: './src/theme.css'
  * });
  *
  * // With debug mode for troubleshooting
  * const result = await extractTheme({
- *   filePath: './src/theme.css',
+ *   input: './src/theme.css',
  *   debug: true
  * });
  *
  * // Without Tailwind defaults
  * const result = await extractTheme({
- *   filePath: './src/theme.css',
+ *   input: './src/theme.css',
  *   includeTailwindDefaults: false
  * });
  * ```

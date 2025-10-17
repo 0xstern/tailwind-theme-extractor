@@ -50,7 +50,7 @@ export interface VitePluginOptions {
   outputDir?: string;
 
   /**
-   * Whether to resolve @import statements
+   * Whether to resolve `@import` statements
    * @default true
    */
   resolveImports?: boolean;
@@ -170,7 +170,7 @@ export function tailwindThemeExtractor(
  *
  * Error Handling:
  * - Input file not found: Throws error and logs to console
- * - Missing @import files: Silently skipped (see extractTheme)
+ * - Missing `@import` files: Silently skipped (see extractTheme)
  * - Invalid CSS syntax: Throws error with parse details
  * - File system errors: Throws if output directory cannot be created or files cannot be written
  * - Enable `debug` parameter to log warnings for import resolution failures
@@ -187,7 +187,7 @@ export function tailwindThemeExtractor(
  *
  * @param inputPath - Absolute path to the CSS input file
  * @param outputDir - Absolute path to the output directory
- * @param resolveImports - Whether to resolve @import statements recursively
+ * @param resolveImports - Whether to resolve `@import` statements recursively
  * @param generateRuntime - Whether to generate runtime theme object (not just types)
  * @param interfaceName - Name of the generated TypeScript interface
  * @param debug - Enable debug logging for troubleshooting
@@ -205,7 +205,7 @@ export async function generateThemeFiles(
 ): Promise<{ files: Array<string> }> {
   try {
     const result = await extractTheme({
-      filePath: inputPath,
+      input: inputPath,
       resolveImports,
       debug,
     });

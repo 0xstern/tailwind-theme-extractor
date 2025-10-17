@@ -1,6 +1,6 @@
 /**
  * CSS variable extraction and parsing utilities
- * Extracts variables from @theme, :root, and variant selectors
+ * Extracts variables from `@theme`, :root, and variant selectors
  */
 
 import type { AtRule, Root } from 'postcss';
@@ -38,7 +38,7 @@ const MULTI_WORD_NAMESPACES = [
  * - [data-theme="blue"] → 'blue'
  * - .midnight → 'midnight'
  * - .dark → 'dark'
- * - @media (prefers-color-scheme: dark) → 'dark'
+ * - `@media` (prefers-color-scheme: dark) → 'dark'
  *
  * @param selector - The CSS selector to extract variant name from
  * @returns The variant name or null if not a recognized pattern
@@ -64,7 +64,7 @@ export function extractVariantName(selector: string): string | null {
     return classMatch[1];
   }
 
-  // Match @media (prefers-color-scheme: dark)
+  // Match `@media` (prefers-color-scheme: dark)
   const mediaMatch = selector.match(/prefers-color-scheme:\s*(\w+)/);
   if (mediaMatch?.[1] !== undefined) {
     return mediaMatch[1];
@@ -74,12 +74,12 @@ export function extractVariantName(selector: string): string | null {
 }
 
 /**
- * Extracts CSS variables and keyframes from @theme, :root, and variant blocks in a PostCSS AST
+ * Extracts CSS variables and keyframes from `@theme,` :root, and variant blocks in a PostCSS AST
  *
  * Supports:
- * - Base theme: @theme and :root
+ * - Base theme: `@theme` and :root
  * - Variants: any selector with CSS variables (e.g., [data-theme='dark'], .midnight)
- * - Keyframes: @keyframes rules
+ * - Keyframes: `@keyframes` rules
  *
  * @param root - The PostCSS root node to extract variables from
  * @returns Object with extracted CSS variables and keyframes
@@ -91,7 +91,7 @@ export function extractVariables(root: Root): {
   const variables: Array<CSSVariable> = [];
   const keyframes = new Map<string, string>();
 
-  // Extract variables from @theme blocks
+  // Extract variables from `@theme` blocks
   root.walkAtRules('theme', (atRule: AtRule) => {
     atRule.walkDecls((decl) => {
       if (decl.prop.startsWith('--')) {
@@ -173,7 +173,7 @@ export function extractVariables(root: Root): {
     }
   });
 
-  // Extract @keyframes rules
+  // Extract `@keyframes` rules
   root.walkAtRules('keyframes', (atRule) => {
     const name = atRule.params;
     if (name !== '') {

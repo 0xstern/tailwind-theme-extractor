@@ -154,7 +154,7 @@ export interface ThemeDefaults {
 }
 
 /**
- * Represents extracted @keyframes rules
+ * Represents extracted `@keyframes` rules
  */
 export interface ThemeKeyframes {
   [key: string]: string;
@@ -196,7 +196,7 @@ export interface CSSVariable {
   source: 'theme' | 'root' | 'variant';
   /**
    * For variant source: the CSS selector that activates this variant
-   * Examples: '[data-theme="dark"]', '.midnight', '@media (prefers-color-scheme: dark)'
+   * Examples: '[data-theme="dark"]', '.midnight', '`@media` (prefers-color-scheme: dark)'
    */
   selector?: string;
   /**
@@ -212,18 +212,24 @@ export interface CSSVariable {
 export interface ParseOptions {
   /**
    * Path to the CSS file to parse
+   * Use this for file-based parsing (most common)
    */
-  filePath?: string;
+  input?: string;
   /**
    * Raw CSS content to parse
+   * Use this for string-based parsing (when you already have CSS in memory)
+   * Requires basePath if you need `@import` resolution
    */
   css?: string;
   /**
-   * Base path for resolving @import statements
+   * Base path for resolving `@import` statements
+   * Only needed when using css parameter with `@import` statements
+   * @default process.cwd()
    */
   basePath?: string;
   /**
-   * Whether to resolve @import statements recursively
+   * Whether to resolve `@import` statements recursively
+   * @default true
    */
   resolveImports?: boolean;
   /**
@@ -246,7 +252,7 @@ export interface ParseOptions {
 export interface ThemeVariant {
   /**
    * The CSS selector that activates this variant
-   * Examples: '[data-theme="dark"]', '.midnight', '@media (prefers-color-scheme: dark)'
+   * Examples: '[data-theme="dark"]', '.midnight', '`@media` (prefers-color-scheme: dark)'
    */
   selector: string;
   /**
@@ -278,7 +284,7 @@ export interface DeprecationWarning {
  */
 export interface ParseResult {
   /**
-   * Base theme from @theme and :root blocks
+   * Base theme from `@theme` and :root blocks
    */
   theme: Theme;
   /**

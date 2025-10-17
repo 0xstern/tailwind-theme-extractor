@@ -1,6 +1,6 @@
 /**
- * CSS @import resolver for Tailwind theme files
- * Recursively resolves and inlines @import statements
+ * CSS `@import` resolver for Tailwind theme files
+ * Recursively resolves and inlines `@import` statements
  */
 
 import type { AtRule, Root } from 'postcss';
@@ -11,15 +11,15 @@ import { dirname, resolve } from 'node:path';
 import postcss from 'postcss';
 
 /**
- * Resolves all @import statements in a PostCSS AST recursively
+ * Resolves all `@import` statements in a PostCSS AST recursively
  *
  * This function performs graceful error handling by design:
- * - Missing files: @import statements referencing non-existent files are silently removed
- * - Invalid CSS: Malformed CSS in imported files causes the @import to be removed
+ * - Missing files: `@import` statements referencing non-existent files are silently removed
+ * - Invalid CSS: Malformed CSS in imported files causes the `@import` to be removed
  * - Permission errors: Files that can't be read due to permissions are skipped
  * - Circular imports: Already-processed files are skipped to prevent infinite loops
  *
- * When errors occur, the @import rule is removed from the AST, allowing the rest of the
+ * When errors occur, the `@import` rule is removed from the AST, allowing the rest of the
  * CSS to be parsed successfully. Enable `debug` mode to log warnings for troubleshooting.
  *
  * @param root - The PostCSS root node to process
@@ -40,7 +40,7 @@ export async function resolveImports(
     importPath: string;
   }> = [];
 
-  // Collect all @import rules
+  // Collect all `@import` rules
   root.walkAtRules('import', (atRule: AtRule) => {
     const importPath = parseImportPath(atRule.params);
 
@@ -77,10 +77,10 @@ export async function resolveImports(
       );
       importedFiles.push(resolvedPath, ...nestedFiles);
 
-      // Replace the @import rule with the actual content
+      // Replace the `@import` rule with the actual content
       atRule.replaceWith(importedRoot.nodes);
     } catch (error: unknown) {
-      // If file can't be read, remove the @import rule
+      // If file can't be read, remove the `@import` rule
       // This allows graceful handling of missing files or invalid CSS
       if (debug) {
         const errorMessage =
@@ -99,15 +99,15 @@ export async function resolveImports(
 }
 
 /**
- * Parses an @import rule parameter to extract the file path
+ * Parses an `@import` rule parameter to extract the file path
  *
  * Handles various formats:
- * - @import "file.css"
- * - @import 'file.css'
- * - @import url("file.css")
- * - @import url('file.css')
+ * - `@import` "file.css"
+ * - `@import` 'file.css'
+ * - `@import` url("file.css")
+ * - `@import` url('file.css')
  *
- * @param params - The raw params string from the @import at-rule
+ * @param params - The raw params string from the `@import` at-rule
  * @returns The extracted file path, or null if parsing fails
  */
 function parseImportPath(params: string): string | null {

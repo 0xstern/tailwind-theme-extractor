@@ -1,5 +1,5 @@
 /**
- * Demo script showing @import resolution
+ * Demo script showing `@import` resolution
  */
 
 import { extractTheme } from '../../src/v4/index';
@@ -10,7 +10,7 @@ async function main(): Promise<void> {
   try {
     // Extract theme from file with imports
     const result = await extractTheme({
-      filePath: './examples/v4/main-theme.css',
+      input: './examples/v4/main-theme.css',
       resolveImports: true,
     });
 

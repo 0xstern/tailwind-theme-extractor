@@ -18,7 +18,7 @@ const LONG_VALUE_MIN_LENGTH = 100;
 beforeAll(async () => {
   // Parse once before all tests
   result = await extractTheme({
-    filePath: './__tests__/v4/fixtures/main.css',
+    input: './__tests__/v4/fixtures/main.css',
     resolveImports: true,
   });
 });

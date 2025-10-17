@@ -90,7 +90,7 @@ npx tailwind-theme-extractor -i src/styles.css
 import { extractTheme } from 'tailwind-theme-extractor';
 
 const { theme, variants } = await extractTheme({
-  filePath: './src/styles.css',
+  input: './src/styles.css',
 });
 
 console.log(theme.colors.primary[500]);
@@ -116,9 +116,9 @@ interface VitePluginOptions {
 
 ```typescript
 interface ParseOptions {
-  filePath?: string; // CSS file path
-  css?: string; // Raw CSS content
-  basePath?: string; // Base path for @import resolution
+  input?: string; // CSS file path
+  css?: string; // Raw CSS content (alternative to input)
+  basePath?: string; // Base path for @import resolution (when using css)
   resolveImports?: boolean; // Resolve @import statements (default: true)
   includeTailwindDefaults?: boolean; // Include Tailwind defaults (default: true)
   debug?: boolean; // Debug logging (default: false)
@@ -219,7 +219,7 @@ bunx tailwind-theme-extractor -i src/styles.css --debug
 **Runtime:**
 
 ```typescript
-extractTheme({ filePath: './theme.css', debug: true });
+extractTheme({ input: './theme.css', debug: true });
 ```
 
 **Output:**

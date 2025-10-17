@@ -37,15 +37,15 @@ describe('Basic Theme Extraction', () => {
     expect(result.theme.fonts.sans).toBe("'Inter', sans-serif");
   });
 
-  test('throws error when neither filePath nor css provided', async () => {
+  test('throws error when neither input nor css provided', async () => {
     expect(extractTheme({})).rejects.toThrow(
-      'Either filePath or css must be provided',
+      'Either input or css must be provided',
     );
   });
 
   test('extracts from file path', async () => {
     const result = await extractTheme({
-      filePath: './examples/v4/basic-theme.css',
+      input: './examples/v4/basic-theme.css',
     });
 
     expect(result.theme.colors).toBeDefined();
@@ -234,7 +234,7 @@ describe('Font Size Extraction', () => {
 describe('Import Resolution', () => {
   test('resolves @import statements', async () => {
     const result = await extractTheme({
-      filePath: './examples/v4/main-theme.css',
+      input: './examples/v4/main-theme.css',
       resolveImports: true,
     });
 
@@ -245,7 +245,7 @@ describe('Import Resolution', () => {
 
   test('skips import resolution when disabled', async () => {
     const result = await extractTheme({
-      filePath: './examples/v4/main-theme.css',
+      input: './examples/v4/main-theme.css',
       resolveImports: false,
     });
 
