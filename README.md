@@ -5,6 +5,16 @@ Extract Tailwind CSS v4 theme variables into TypeScript types and runtime object
 ## Installation
 
 ```bash
+# Bun
+bun add -D tailwind-theme-extractor
+
+# pnpm
+pnpm add -D tailwind-theme-extractor
+
+# Yarn
+yarn add -D tailwind-theme-extractor
+
+# npm
 npm install -D tailwind-theme-extractor
 ```
 
@@ -14,6 +24,7 @@ npm install -D tailwind-theme-extractor
 
 ```typescript
 // vite.config.ts
+
 import { tailwindThemeExtractor } from 'tailwind-theme-extractor/vite';
 import { defineConfig } from 'vite';
 
@@ -27,6 +38,7 @@ export default defineConfig({
 ```
 
 Generates in `src/generated/tailwindcss/`:
+
 - `themes.d.ts` - TypeScript declarations
 - `themes.ts` - Runtime theme objects
 - `index.ts` - Re-exports
@@ -38,9 +50,11 @@ import { base, dark, selectors } from './generated/tailwindcss';
 
 const chart = new Chart(ctx, {
   data: {
-    datasets: [{
-      backgroundColor: [base.colors.primary[500], base.colors.secondary[500]],
-    }],
+    datasets: [
+      {
+        backgroundColor: [base.colors.primary[500], base.colors.secondary[500]],
+      },
+    ],
   },
 });
 ```
@@ -48,10 +62,21 @@ const chart = new Chart(ctx, {
 ### CLI
 
 ```bash
+# Bun
+bunx tailwind-theme-extractor -i src/styles.css
+
+# pnpm
+pnpm exec tailwind-theme-extractor -i src/styles.css
+
+# Yarn
+yarn tailwind-theme-extractor -i src/styles.css
+
+# npm
 npx tailwind-theme-extractor -i src/styles.css
 ```
 
 **Options:**
+
 - `-i, --input <path>` - CSS input file (required)
 - `-o, --output <path>` - Output directory (default: auto-detected)
 - `-r, --runtime` - Generate runtime objects (default: true)
@@ -78,12 +103,12 @@ console.log(variants.dark.theme.colors.background);
 
 ```typescript
 interface VitePluginOptions {
-  input: string;                    // CSS input file (required)
-  outputDir?: string;               // Output directory
-  resolveImports?: boolean;         // Resolve @import statements (default: true)
-  generateRuntime?: boolean;        // Generate runtime objects (default: true)
-  interfaceName?: string;           // Interface name (default: 'GeneratedTheme')
-  debug?: boolean;                  // Debug logging (default: false)
+  input: string; // CSS input file (required)
+  outputDir?: string; // Output directory
+  resolveImports?: boolean; // Resolve @import statements (default: true)
+  generateRuntime?: boolean; // Generate runtime objects (default: true)
+  interfaceName?: string; // Interface name (default: 'GeneratedTheme')
+  debug?: boolean; // Debug logging (default: false)
 }
 ```
 
@@ -91,12 +116,12 @@ interface VitePluginOptions {
 
 ```typescript
 interface ParseOptions {
-  filePath?: string;                // CSS file path
-  css?: string;                     // Raw CSS content
-  basePath?: string;                // Base path for @import resolution
-  resolveImports?: boolean;         // Resolve @import statements (default: true)
-  includeTailwindDefaults?: boolean;// Include Tailwind defaults (default: true)
-  debug?: boolean;                  // Debug logging (default: false)
+  filePath?: string; // CSS file path
+  css?: string; // Raw CSS content
+  basePath?: string; // Base path for @import resolution
+  resolveImports?: boolean; // Resolve @import statements (default: true)
+  includeTailwindDefaults?: boolean; // Include Tailwind defaults (default: true)
+  debug?: boolean; // Debug logging (default: false)
 }
 ```
 
@@ -104,11 +129,11 @@ interface ParseOptions {
 
 ```typescript
 interface ParseResult {
-  theme: Theme;                                      // Base theme
-  variants: Record<string, ThemeVariant>;            // Theme variants (dark, etc.)
-  variables: Array<CSSVariable>;                     // Raw CSS variables
-  deprecationWarnings: Array<DeprecationWarning>;    // Warnings
-  files: Array<string>;                              // Processed files
+  theme: Theme; // Base theme
+  variants: Record<string, ThemeVariant>; // Theme variants (dark, etc.)
+  variables: Array<CSSVariable>; // Raw CSS variables
+  deprecationWarnings: Array<DeprecationWarning>; // Warnings
+  files: Array<string>; // Processed files
 }
 ```
 
@@ -157,9 +182,9 @@ interface ParseResult {
 ```typescript
 import { base, dark, selectors } from './generated/tailwindcss';
 
-console.log(base.colors.background);  // '#ffffff'
-console.log(dark.colors.background);  // '#1f2937'
-console.log(selectors.dark);          // "[data-theme='dark']"
+console.log(base.colors.background); // '#ffffff'
+console.log(dark.colors.background); // '#1f2937'
+console.log(selectors.dark); // "[data-theme='dark']"
 ```
 
 ## Type Safety
@@ -179,21 +204,26 @@ Autocomplete works automatically when the output directory is in `tsconfig.json`
 Enable debug mode to see warnings for failed imports:
 
 **Vite:**
+
 ```typescript
-tailwindThemeExtractor({ input: 'src/styles.css', debug: true })
+tailwindThemeExtractor({ input: 'src/styles.css', debug: true });
 ```
 
 **CLI:**
+
 ```bash
-npx tailwind-theme-extractor -i src/styles.css --debug
+bunx tailwind-theme-extractor -i src/styles.css --debug
+# or: pnpm exec / yarn / npx
 ```
 
 **Runtime:**
+
 ```typescript
-extractTheme({ filePath: './theme.css', debug: true })
+extractTheme({ filePath: './theme.css', debug: true });
 ```
 
 **Output:**
+
 ```
 [Tailwind Theme Extractor] Failed to resolve import: ./components/theme.css
   Resolved path: /Users/you/project/src/components/theme.css
@@ -211,9 +241,11 @@ import { base } from './generated/tailwindcss';
 
 new Chart(ctx, {
   data: {
-    datasets: [{
-      backgroundColor: [base.colors.primary[500], base.colors.secondary[500]],
-    }],
+    datasets: [
+      {
+        backgroundColor: [base.colors.primary[500], base.colors.secondary[500]],
+      },
+    ],
   },
 });
 ```
@@ -266,4 +298,4 @@ Issues and pull requests welcome on [GitHub](https://github.com/0xstern/tailwind
 
 ## Support
 
-If you find this helpful, follow me on X [@mrstern_](https://x.com/mrstern_)
+If you find this helpful, follow me on X [@mrstern\_](https://x.com/mrstern_)

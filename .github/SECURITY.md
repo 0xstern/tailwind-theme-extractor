@@ -19,6 +19,7 @@ If you discover a security vulnerability, please report it privately:
    - Suggested fix (if any)
 
 You can expect:
+
 - Initial response within 48 hours
 - Regular updates on progress
 - Credit in the security advisory (if desired)
