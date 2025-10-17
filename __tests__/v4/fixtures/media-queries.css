@@ -1,0 +1,50 @@
+/**
+ * Media query based variants
+ * Tests @media rule variant extraction
+ */
+
+/* System dark mode preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: oklch(0.7 0.18 250);
+    --color-background: #1f2937;
+    --color-brand-main: #60a5fa;
+  }
+}
+
+/* System light mode preference */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-primary: oklch(0.55 0.2 250);
+    --color-background: #ffffff;
+    --color-brand-main: #3b82f6;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --animate-spin: none;
+    --animate-ping: none;
+    --animate-pulse: none;
+    --ease-in-out: linear;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  :root {
+    --color-white: #000000;
+    --color-black: #ffffff;
+    --color-red-500: #ff0000;
+  }
+}
+
+/* Print media */
+@media print {
+  :root {
+    --color-background: #ffffff;
+    --color-primary: #000000;
+    --shadow-md: none;
+  }
+}

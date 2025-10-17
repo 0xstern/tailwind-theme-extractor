@@ -1,0 +1,110 @@
+{
+  "name": "tailwind-theme-extractor",
+  "version": "0.1.0-beta.1",
+  "description": "Extract Tailwind theme variables into JavaScript objects. Supports Tailwind v4 with future-proof versioning.",
+  "keywords": [
+    "tailwind",
+    "tailwindcss",
+    "tailwind-v4",
+    "tailwind-v5",
+    "theme",
+    "css-variables",
+    "postcss",
+    "parser",
+    "extractor",
+    "chart",
+    "canvas",
+    "typescript",
+    "theme-extraction"
+  ],
+  "author": "0xstern <mrsirstern@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0xstern/tailwind-theme-extractor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/0xstern/tailwind-theme-extractor/issues"
+  },
+  "homepage": "https://github.com/0xstern/tailwind-theme-extractor#readme",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "tailwind-theme-extractor": "./dist/v4/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./v4": {
+      "types": "./dist/v4/index.d.ts",
+      "import": "./dist/v4/index.mjs",
+      "require": "./dist/v4/index.js"
+    },
+    "./v4/vite": {
+      "types": "./dist/v4/vite-plugin.d.ts",
+      "import": "./dist/v4/vite-plugin.mjs",
+      "require": "./dist/v4/vite-plugin.js"
+    },
+    "./vite": {
+      "types": "./dist/v4/vite-plugin.d.ts",
+      "import": "./dist/v4/vite-plugin.mjs",
+      "require": "./dist/v4/vite-plugin.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@ianvs/prettier-plugin-sort-imports": "^4.5.1",
+    "@types/bun": "latest",
+    "@types/node": "^24.8.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsdoc": "^61.1.4",
+    "eslint-plugin-n": "^17.23.1",
+    "globals": "^16.4.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.45.0",
+    "vite": "^7.1.10"
+  },
+  "peerDependencies": {
+    "typescript": "^5",
+    "vite": ">=7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "bun run build.ts",
+    "test": "bun test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepublishOnly": "bun run lint && bun run test && bun run build"
+  },
+  "engines": {
+    "node": "^21.2.0"
+  },
+  "dependencies": {
+    "postcss": "^8.5.6",
+    "postcss-import": "^16.1.1",
+    "postcss-value-parser": "^4.2.0"
+  }
+}

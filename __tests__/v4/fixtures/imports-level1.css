@@ -1,0 +1,18 @@
+/**
+ * First level of nested imports
+ * Tests multi-level import chains
+ */
+
+@import './imports-level2.css';
+
+@theme {
+  /* Level 1 theme additions */
+  --color-level-1: #111111;
+  --spacing-level-1: 1rem;
+  --font-level-1: 'Level1Font', sans-serif;
+}
+
+/* Level 1 variant */
+[data-theme='level-1'] {
+  --color-primary-level-1: #aaaaaa;
+}

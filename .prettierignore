@@ -1,0 +1,43 @@
+# Ignore all build output directories
+/dist
+/build
+/out
+/.next
+/.nuxt
+/.svelte-kit
+
+# Ignore all dependencies
+/node_modules
+/bower_components
+
+# Ignore log files
+/logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore code coverage reports
+/coverage
+/.nyc_output
+
+# Ignore environment variable files
+.env
+.env.*
+!.env.example
+
+# Ignore package manager lockfiles, as they are auto-generated
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lock
+
+# Ignore editor and IDE specific files
+/.vscode
+/.idea
+
+# Ignore operating system files
+.DS_Store
+Thumbs.db
+
+

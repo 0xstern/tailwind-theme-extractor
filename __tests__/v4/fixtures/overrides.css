@@ -1,0 +1,91 @@
+/**
+ * Variable overrides and edge cases
+ * Tests handling of duplicate variables, :root overrides, and cascading
+ */
+
+/* First :root block */
+:root {
+  --color-override-test-1: #ff0000;
+  --color-override-test: #111111;
+}
+
+/* Second :root block - should merge/override */
+:root {
+  --color-override-test-2: #00ff00;
+  --color-another-override: #222222;
+}
+
+/* Third :root block - final override */
+:root {
+  --color-override-test-3: #0000ff;
+}
+
+/* Multiple dark mode definitions with same variant name - should merge */
+[data-theme='dark-merge'] {
+  --color-merge-test-1: #aaaaaa;
+  --color-merge-background: #000000;
+}
+
+[data-theme='dark-merge'] {
+  --color-merge-test-2: #bbbbbb;
+  --color-merge-foreground: #ffffff;
+}
+
+/* Same variant via different selectors but same name */
+.dark {
+  --color-dark-specific: #333333;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-media-dark: #444444;
+  }
+}
+
+/* Edge case: Empty :root block (should be ignored) */
+:root {
+  /* No variables here */
+}
+
+/* Edge case: Non-variable declarations mixed in */
+[data-theme='mixed'] {
+  /* Regular CSS properties should be ignored */
+  background: white;
+  color: black;
+
+  /* But CSS variables should be extracted */
+  --color-mixed-valid: #555555;
+  --spacing-mixed: 2rem;
+}
+
+/* Edge case: Nested selectors (PostCSS should handle) */
+[data-theme='nested'] {
+  --color-outer: #666666;
+}
+
+/* Edge case: Very long variable values */
+[data-theme='long-values'] {
+  --shadow-complex:
+    0 0 0 1px rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.1),
+    0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 4px 8px 0 rgba(0, 0, 0, 0.1),
+    0 8px 16px 0 rgba(0, 0, 0, 0.1);
+  --font-stack:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Edge case: Special characters in values */
+[data-theme='special-chars'] {
+  --content-quote: 'Hello "World"';
+  --content-apostrophe: "It's working";
+  --url-value: url('https://example.com/image.png');
+  --calc-value: calc(100% - 2rem);
+}
+
+/* Edge case: Variables with uncommon namespaces (should be ignored) */
+:root {
+  --custom-namespace: 123;
+  --unknown-prefix: #999999;
+  --z-index-modal: 1000;
+}

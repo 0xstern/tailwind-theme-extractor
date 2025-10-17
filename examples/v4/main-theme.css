@@ -1,0 +1,30 @@
+/**
+ * Main theme file that imports other theme files
+ */
+
+@import './base-colors.css';
+
+@theme {
+  /* Additional colors */
+  --color-success: oklch(0.68 0.17 145);
+  --color-warning: oklch(0.75 0.18 85);
+  --color-danger: oklch(0.62 0.22 25);
+
+  /* Typography */
+  --font-heading: 'Montserrat', sans-serif;
+  --font-mono: 'Fira Code', monospace;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+
+  /* Spacing scale */
+  --spacing: 0.25rem;
+
+  /* Custom shadows */
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.12);
+}

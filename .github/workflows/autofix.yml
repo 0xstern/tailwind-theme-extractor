@@ -1,0 +1,43 @@
+name: Autofix
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  autofix:
+    name: Format & Fix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Fix formatting
+        run: bun run format
+
+      - name: Fix linting issues
+        run: bun run lint:fix
+        continue-on-error: true
+
+      - name: Apply fixes
+        uses: autofix-ci/action@ea32e3a12414e6d3183163c3424a7d7a8631ad84
+        with:
+          commit-message: 'ci: apply automated fixes'

@@ -1,0 +1,109 @@
+name: '🐛 Bug Report'
+description: Report a reproducible bug or regression
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue.
+
+        Before submitting, please check if a similar issue already exists:
+        - [Open Issues](https://github.com/0xstern/tailwind-theme-extractor/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)
+        - [Closed Issues](https://github.com/0xstern/tailwind-theme-extractor/issues?q=is%3Aissue+is%3Aclosed+sort%3Aupdated-desc)
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear description of the issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: |
+        Provide a minimal code example or repository that reproduces the issue.
+        - Use CodeSandbox, StackBlitz, or a GitHub repository
+        - Include only necessary code to demonstrate the problem
+      placeholder: |
+        Link to reproduction (CodeSandbox, GitHub repo, etc.)
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Clear steps to reproduce the behavior.
+      placeholder: |
+        1. Install package
+        2. Configure plugin with '...'
+        3. Run command '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened. Include error messages if applicable.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does this occur?
+      options:
+        - Every time
+        - Often
+        - Sometimes
+        - Only once
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Provide environment details where the issue occurred.
+      placeholder: |
+        - OS: [e.g. macOS 14.0, Windows 11, Ubuntu 22.04]
+        - Node.js: [e.g. v20.10.0]
+        - Bun: [e.g. v1.0.0]
+        - Package version: [e.g. v0.1.0]
+        - TypeScript: [e.g. v5.3.0]
+        - Vite: [e.g. v7.0.0] (if using Vite plugin)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: usage
+    attributes:
+      label: Usage method
+      description: How are you using the library?
+      options:
+        - Vite Plugin
+        - CLI
+        - Runtime API
+        - Multiple methods
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Any other relevant information, screenshots, or error logs.

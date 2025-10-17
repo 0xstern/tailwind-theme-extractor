@@ -1,0 +1,137 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0-beta.1] - 2025-10-16
+
+### Added
+
+#### Package Refactoring
+
+- Renamed package from `tailwind-v4-theme-extractor` to `tailwind-theme-extractor`
+- Implemented version-specific directory structure (`src/v4/`, `__tests__/v4/`, `examples/v4/`)
+- Added versioned exports in package.json (`.`, `./v4`, `./v4/vite`, `./vite`)
+- Future-proof architecture ready for Tailwind v5 support
+
+#### Meta Variables Support
+
+- Extract `--default-*` meta variables (e.g., `--default-transition-duration`)
+- Store meta variables in `theme.defaults` namespace
+- Full support for all Tailwind v4 default meta variables
+
+#### Keyframes Extraction
+
+- Extract `@keyframes` animations from CSS files
+- Store keyframes in `theme.keyframes` namespace
+- Preserve complete keyframe definitions for runtime use
+
+#### Deprecation Warnings
+
+- Detect deprecated singular variables (`--spacing`, `--blur`, etc.)
+- Provide helpful migration suggestions in `deprecationWarnings` array
+- Still extract deprecated variables with sensible default keys (`base`, `default`)
+
+#### Vite Plugin Enhancements
+
+- Auto-generated files now include strong "DO NOT EDIT" warnings
+- Added source file tracking and timestamp in generated files
+- Added ESLint and TypeScript disable directives (`@generated`, `@ts-nocheck`)
+- Improved generated file headers following industry best practices
+
+#### Code Quality
+
+- Added test constants for magic numbers in compliance with ESLint rules
+- Removed unnecessary type conditionals
+- Zero ESLint warnings across entire codebase
+- 106 passing tests with 100% feature coverage
+
+### Changed
+
+- **Breaking**: Package name changed to `tailwind-theme-extractor`
+- **Breaking**: Repository URLs updated to match new package name
+- Default import now points to v4 (will point to latest version when v5 releases)
+- Examples moved to `examples/v4/` directory
+- Tests moved to `__tests__/v4/` directory
+- All documentation updated to reflect new structure
+
+### Migration Guide
+
+For existing users of `tailwind-v4-theme-extractor`:
+
+```bash
+# Update package name
+npm uninstall tailwind-v4-theme-extractor
+npm install tailwind-theme-extractor
+
+# Update imports (default import remains the same)
+import { extractTheme } from 'tailwind-theme-extractor';
+
+# Or use explicit v4 import to lock to v4
+import { extractTheme } from 'tailwind-theme-extractor/v4';
+
+# Vite plugin imports
+import tailwindTheme from 'tailwind-theme-extractor/vite';
+// or
+import tailwindTheme from 'tailwind-theme-extractor/v4/vite';
+```
+
+### Features
+
+#### Core Functionality
+
+- Parse theme variables from `@theme` blocks
+- Parse theme variables from `:root` selectors
+- Extract theme variants from selector-based rules
+- Extract `@keyframes` animations
+- Extract `--default-*` meta variables
+- Resolve `@import` statements recursively
+- Build structured theme objects matching Tailwind v4 namespaces
+- Detect and warn about deprecated variable patterns
+- Optional Tailwind default theme inclusion
+
+#### Supported Namespaces
+
+- Colors with scale support (50-900) and custom variants
+- Spacing values
+- Font families
+- Font sizes with optional line heights
+- Font weights
+- Letter spacing (tracking)
+- Line heights (leading)
+- Breakpoints
+- Container sizes
+- Border radius
+- Box shadows
+- Inset shadows
+- Drop shadows
+- Text shadows
+- Blur filters
+- Perspective values
+- Aspect ratios
+- Easing functions
+- Animations
+- Default meta variables
+- Keyframes animations
+
+#### Variant Support
+
+- Data attribute variants (`[data-theme='dark']`)
+- Class-based variants (`.midnight`)
+- Media query variants (`@media (prefers-color-scheme: dark)`)
+- Multiple variant merging
+
+#### Developer Experience
+
+- Full TypeScript support with comprehensive type definitions
+- Zero runtime dependencies (only PostCSS required for parsing)
+- Smart color naming with camelCase conversion
+- Vite plugin for automatic type generation
+- Auto-generated files with clear warnings
+- CommonJS and ES Module bundle formats
+- Comprehensive test suite with 106 tests
+- Complete API documentation and usage examples
+
+[0.1.0-beta.1]: https://github.com/0xstern/tailwind-theme-extractor/releases/tag/v0.1.0-beta.1

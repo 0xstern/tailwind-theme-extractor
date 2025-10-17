@@ -1,0 +1,59 @@
+/**
+ * Example Tailwind v4 theme file
+ * This demonstrates the basic structure of a theme.css file
+ */
+
+@theme {
+  /* Custom color palette */
+  --color-primary-50: oklch(0.98 0.02 250);
+  --color-primary-100: oklch(0.95 0.04 250);
+  --color-primary-200: oklch(0.9 0.08 250);
+  --color-primary-300: oklch(0.85 0.12 250);
+  --color-primary-400: oklch(0.75 0.16 250);
+  --color-primary-500: oklch(0.65 0.2 250);
+  --color-primary-600: oklch(0.55 0.18 250);
+  --color-primary-700: oklch(0.45 0.16 250);
+  --color-primary-800: oklch(0.35 0.12 250);
+  --color-primary-900: oklch(0.25 0.08 250);
+
+  --color-secondary-500: oklch(0.7 0.15 180);
+  --color-accent: #ff6b6b;
+
+  /* Custom fonts */
+  --font-display: 'Poppins', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* Custom spacing */
+  --spacing: 0.25rem;
+
+  /* Custom breakpoints */
+  --breakpoint-mobile: 20rem;
+  --breakpoint-tablet: 48rem;
+  --breakpoint-desktop: 80rem;
+
+  /* Custom shadows */
+  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.5);
+
+  /* Custom radius */
+  --radius-button: 0.5rem;
+
+  /* Custom animations */
+  --animate-slide-in: slide-in 0.3s ease-out;
+
+  @keyframes slide-in {
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+}
+
+:root {
+  /* Additional custom properties that don't need utility classes */
+  --app-header-height: 4rem;
+  --app-sidebar-width: 16rem;
+}

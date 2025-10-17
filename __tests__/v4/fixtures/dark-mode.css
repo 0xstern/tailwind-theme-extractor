@@ -1,0 +1,39 @@
+/**
+ * Dark mode variant - comprehensive overrides
+ * Tests data attribute selector variant extraction
+ */
+
+[data-theme='dark'] {
+  /* Override simple colors */
+  --color-white: #1f2937;
+  --color-black: #f9fafb;
+
+  /* Override color scales */
+  --color-red-50: oklch(0.35 0.18 25);
+  --color-red-500: oklch(0.65 0.2 25);
+  --color-red-900: oklch(0.95 0.08 25);
+
+  /* Override multi-word colors */
+  --color-tooltip-outline-50: oklch(0.3 0.15 280);
+  --color-tooltip-outline-500: oklch(0.7 0.18 280);
+
+  /* Override interactive colors */
+  --color-interactive-500-hover: oklch(0.75 0.22 250);
+  --color-interactive-500-active: oklch(0.8 0.2 250);
+
+  /* Override brand colors */
+  --color-brand-main: #a78bfa;
+  --color-error-primary: #f87171;
+
+  /* New dark-mode only colors */
+  --color-dark-surface: #111827;
+  --color-dark-elevated: #1f2937;
+
+  /* Override shadows for dark mode */
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+  --shadow-elevation-1:
+    0px 1px 2px 0px rgb(0 0 0 / 60%), 0px 1px 3px 1px rgb(0 0 0 / 40%);
+
+  /* Override radius for dark mode design system */
+  --radius-custom-button: 8px;
+}

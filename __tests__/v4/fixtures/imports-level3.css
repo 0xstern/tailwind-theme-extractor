@@ -1,0 +1,17 @@
+/**
+ * Third level of nested imports
+ * Deep import chain testing
+ */
+
+@theme {
+  /* Level 3 theme additions */
+  --color-level-3: #333333;
+  --spacing-level-3: 3rem;
+  --font-level-3: 'Level3Font', sans-serif;
+}
+
+/* Level 3 variant */
+[data-theme='level-3'] {
+  --color-deep-nested: #abcdef;
+  --color-primary: #fedcba;
+}

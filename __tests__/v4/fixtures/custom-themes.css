@@ -1,0 +1,85 @@
+/**
+ * Multiple custom theme variants
+ * Tests various selector patterns and variant extraction
+ */
+
+/* Ocean theme - data attribute pattern */
+[data-theme='ocean'] {
+  --color-primary: oklch(0.55 0.15 230);
+  --color-background: oklch(0.95 0.02 230);
+  --color-brand-main: #0ea5e9;
+  --color-interactive-500-hover: oklch(0.6 0.18 230);
+}
+
+/* Sunset theme - data attribute pattern */
+[data-theme='sunset'] {
+  --color-primary: oklch(0.65 0.2 50);
+  --color-background: oklch(0.98 0.02 50);
+  --color-brand-main: #f97316;
+}
+
+/* Forest theme - data attribute pattern */
+[data-theme='forest'] {
+  --color-primary: oklch(0.55 0.15 150);
+  --color-background: oklch(0.96 0.02 150);
+  --color-brand-main: #10b981;
+}
+
+/* Midnight theme - class selector pattern */
+.midnight {
+  --color-primary: oklch(0.4 0.15 280);
+  --color-background: #0f172a;
+  --color-brand-main: #818cf8;
+  --color-tooltip-outline-500: oklch(0.7 0.18 280);
+}
+
+/* High contrast theme - class selector pattern */
+.high-contrast {
+  --color-white: #000000;
+  --color-black: #ffffff;
+  --color-red-500: #ff0000;
+  --color-brand-main: #ffff00;
+}
+
+/* Blue theme with data-mode attribute */
+[data-mode='blue'] {
+  --color-primary: oklch(0.6 0.18 250);
+  --color-background: #dbeafe;
+  --color-brand-main: #3b82f6;
+}
+
+/* Purple theme with data-color-scheme */
+[data-color-scheme='purple'] {
+  --color-primary: oklch(0.6 0.2 300);
+  --color-background: #faf5ff;
+  --color-brand-main: #a855f7;
+}
+
+/* Neon theme - combining multiple overrides */
+.neon {
+  --color-primary: oklch(0.7 0.3 150);
+  --color-brand-main: #00ff00;
+  --color-error-primary: #ff00ff;
+  --color-warning-subtle: #ffff00;
+
+  /* Neon-specific variables */
+  --color-neon-green: #00ff00;
+  --color-neon-pink: #ff00ff;
+  --color-neon-cyan: #00ffff;
+}
+
+/* Corporate theme - professional color palette */
+[data-theme='corporate'] {
+  --color-primary: oklch(0.45 0.1 240);
+  --color-background: #f5f5f5;
+  --color-brand-main: #1e40af;
+  --color-error-primary: #dc2626;
+  --color-success-default: #059669;
+
+  /* Override spacing for corporate design system */
+  --spacing-4: 1.25rem;
+  --spacing-6: 2rem;
+
+  /* Corporate-specific shadows */
+  --shadow-elevation-1: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
