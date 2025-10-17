@@ -1,0 +1,31 @@
+# Source maps - not needed in published package
+*.map
+
+# Development files
+*.test.ts
+*.spec.ts
+__tests__/
+test/
+tests/
+coverage/
+
+# Build artifacts
+*.tsbuildinfo
+.DS_Store
+
+# Config files
+.eslintrc*
+.prettierrc*
+tsconfig*.json
+bun.lockb
+
+# GitHub
+.github/
+
+# Documentation
+CONTRIBUTING.md
+CLAUDE.md
+ARCHITECTURE.md
+
+# Reference materials
+tanstack-query-gh-workflow-reference/
