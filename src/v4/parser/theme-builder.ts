@@ -92,9 +92,10 @@ function resolveCSSFunctionVars(
 ): string {
   const MAX_ITERATIONS = 100;
   let result = value;
+  let iterations = 0;
 
   // Keep replacing until no more var() references or we hit iteration limit
-  while (visited.size < MAX_ITERATIONS) {
+  while (iterations++ < MAX_ITERATIONS) {
     const varMatch = result.match(/var\((--[\w-]+)\)/);
     if (varMatch === null) {
       break;

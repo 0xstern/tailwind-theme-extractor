@@ -354,7 +354,15 @@ export function parseVariableName(variableName: string): {
 }
 
 /**
- * Converts kebab-case to camelCase
+ * Cache for kebabToCamelCase conversion to avoid redundant regex operations
+ */
+const camelCaseCache = new Map<string, string>();
+
+/**
+ * Converts kebab-case to camelCase with memoization for performance
+ *
+ * This function is called frequently during theme building (for every color key,
+ * font size, etc.), so results are cached to avoid redundant regex operations.
  *
  * @param str - The kebab-case string to convert
  * @returns The camelCase version
@@ -364,7 +372,16 @@ export function parseVariableName(variableName: string): {
  * kebabToCamelCase('my-custom-color') // 'myCustomColor'
  */
 export function kebabToCamelCase(str: string): string {
-  return str.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+  const cached = camelCaseCache.get(str);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const result = str.replace(/-([a-z])/g, (_, letter: string) =>
+    letter.toUpperCase(),
+  );
+  camelCaseCache.set(str, result);
+  return result;
 }
 
 /**

@@ -308,7 +308,7 @@ export async function generateThemeFiles(
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     console.error(
-      `  ✖  Failed to generate Tailwind theme types: ${errorMessage}`,
+      `  ✖  Failed to generate Tailwind theme types from ${inputPath}: ${errorMessage}`,
     );
     throw error;
   }

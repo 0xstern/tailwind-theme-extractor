@@ -11,6 +11,11 @@ import { dirname, resolve } from 'node:path';
 import postcss from 'postcss';
 
 /**
+ * Maximum import depth to prevent stack overflow from deeply nested imports
+ */
+const MAX_IMPORT_DEPTH = 50;
+
+/**
  * Resolves all `@import` statements in a PostCSS AST recursively
  *
  * This function performs graceful error handling by design:
@@ -18,6 +23,7 @@ import postcss from 'postcss';
  * - Invalid CSS: Malformed CSS in imported files causes the `@import` to be removed
  * - Permission errors: Files that can't be read due to permissions are skipped
  * - Circular imports: Already-processed files are skipped to prevent infinite loops
+ * - Deep nesting: Import depth is limited to 50 levels to prevent stack overflow
  *
  * When errors occur, the `@import` rule is removed from the AST, allowing the rest of the
  * CSS to be parsed successfully. Enable `debug` mode to log warnings for troubleshooting.
@@ -26,14 +32,23 @@ import postcss from 'postcss';
  * @param basePath - Base directory path for resolving relative imports
  * @param processedFiles - Set of already processed file paths to prevent circular imports
  * @param debug - Enable debug logging for troubleshooting failed imports
+ * @param depth - Current import depth (internal use for recursion tracking)
  * @returns Array of file paths that were processed
+ * @throws Error if import depth exceeds MAX_IMPORT_DEPTH
  */
 export async function resolveImports(
   root: Root,
   basePath: string,
   processedFiles: Set<string> = new Set(),
   debug: boolean = false,
+  depth: number = 0,
 ): Promise<Array<string>> {
+  // Prevent stack overflow from deeply nested imports
+  if (depth > MAX_IMPORT_DEPTH) {
+    throw new Error(
+      `Import depth exceeded maximum of ${MAX_IMPORT_DEPTH} levels. This may indicate circular imports or excessively nested file structure.`,
+    );
+  }
   const importedFiles: Array<string> = [];
   const importsToProcess: Array<{
     atRule: AtRule;
@@ -50,48 +65,73 @@ export async function resolveImports(
     }
   });
 
-  // Process each import
-  for (const { atRule, importPath } of importsToProcess) {
-    const resolvedPath = resolve(basePath, importPath);
+  // Process imports in parallel for better performance
+  const results = await Promise.allSettled(
+    importsToProcess.map(async ({ atRule, importPath }) => {
+      const resolvedPath = resolve(basePath, importPath);
 
-    // Skip if already processed (circular import prevention)
-    if (processedFiles.has(resolvedPath)) {
-      atRule.remove();
+      // Skip if already processed (circular import prevention)
+      if (processedFiles.has(resolvedPath)) {
+        return { atRule, action: 'skip' as const };
+      }
+
+      try {
+        // Read the imported file
+        const importedCss = await readFile(resolvedPath, 'utf-8');
+
+        // Parse the imported CSS
+        const importedRoot = postcss.parse(importedCss);
+
+        // Mark as processed before recursing to prevent circular imports
+        processedFiles.add(resolvedPath);
+
+        // Recursively resolve imports in the imported file
+        const nestedFiles = await resolveImports(
+          importedRoot,
+          dirname(resolvedPath),
+          processedFiles,
+          debug,
+          depth + 1,
+        );
+
+        return {
+          atRule,
+          action: 'replace' as const,
+          importedRoot,
+          resolvedPath,
+          nestedFiles,
+        };
+      } catch (error: unknown) {
+        // If file can't be read, we'll remove the `@import` rule
+        if (debug) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          console.warn(
+            `[Tailwind Theme Resolver] Failed to resolve import: ${importPath}`,
+          );
+          console.warn(`  Resolved path: ${resolvedPath}`);
+          console.warn(`  Error: ${errorMessage}`);
+        }
+        return { atRule, action: 'error' as const };
+      }
+    }),
+  );
+
+  // Apply the results to the AST
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      // This should not happen since we catch errors above, but handle defensively
       continue;
     }
 
-    try {
-      // Read the imported file
-      const importedCss = await readFile(resolvedPath, 'utf-8');
+    const { value } = result;
 
-      // Parse the imported CSS
-      const importedRoot = postcss.parse(importedCss);
-
-      // Recursively resolve imports in the imported file
-      processedFiles.add(resolvedPath);
-      const nestedFiles = await resolveImports(
-        importedRoot,
-        dirname(resolvedPath),
-        processedFiles,
-        debug,
-      );
-      importedFiles.push(resolvedPath, ...nestedFiles);
-
-      // Replace the `@import` rule with the actual content
-      atRule.replaceWith(importedRoot.nodes);
-    } catch (error: unknown) {
-      // If file can't be read, remove the `@import` rule
-      // This allows graceful handling of missing files or invalid CSS
-      if (debug) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        console.warn(
-          `[Tailwind Theme Resolver] Failed to resolve import: ${importPath}`,
-        );
-        console.warn(`  Resolved path: ${resolvedPath}`);
-        console.warn(`  Error: ${errorMessage}`);
-      }
-      atRule.remove();
+    if (value.action === 'skip' || value.action === 'error') {
+      value.atRule.remove();
+    } else {
+      // value.action === 'replace'
+      importedFiles.push(value.resolvedPath, ...value.nestedFiles);
+      value.atRule.replaceWith(value.importedRoot.nodes);
     }
   }
 
