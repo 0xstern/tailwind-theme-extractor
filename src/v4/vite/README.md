@@ -110,13 +110,13 @@ export default base;
 ```typescript
 interface VitePluginOptions {
   /**
-   * Path to your CSS input file (relative to project root)
+   * Path to your CSS input file (relative to Vite project root)
    * @required
    */
   input: string;
 
   /**
-   * Output directory for generated files (relative to project root)
+   * Output directory for generated files (relative to Vite project root)
    * Auto-detects: 'src/generated/tailwindcss' if src/ exists, otherwise 'generated/tailwindcss'
    */
   outputDir?: string;
@@ -134,10 +134,16 @@ interface VitePluginOptions {
   generateRuntime?: boolean;
 
   /**
-   * Name of the generated TypeScript interface
-   * @default 'GeneratedTheme'
+   * Include Tailwind CSS defaults from node_modules
+   * @default true
    */
-  interfaceName?: string;
+  includeTailwindDefaults?: boolean;
+
+  /**
+   * Enable debug logging for troubleshooting
+   * @default false
+   */
+  debug?: boolean;
 }
 ```
 
@@ -372,33 +378,21 @@ const color = base.colors.primary[500]; // Exact literal type
 
 ## Advanced Configuration
 
-### Custom Interface Name
-
-```typescript
-tailwindResolver({
-  input: 'src/styles.css',
-  interfaceName: 'MyAppTheme',
-});
-```
-
-Generates:
-
-```typescript
-export interface MyAppTheme {
-  // Your theme
-}
-
-declare module 'tailwind-resolver' {
-  interface Theme extends MyAppTheme {}
-}
-```
-
 ### Disable Import Resolution
 
 ```typescript
 tailwindResolver({
   input: 'src/styles.css',
   resolveImports: false, // Don't process @import statements
+});
+```
+
+### Disable Tailwind Defaults
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  includeTailwindDefaults: false, // Don't include Tailwind CSS defaults
 });
 ```
 

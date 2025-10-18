@@ -33,10 +33,10 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     tailwindResolver({
-      // Required: Path to your CSS input file
+      // Required: Path to your CSS input file (relative to Vite project root)
       input: 'src/styles.css',
 
-      // Optional: Output directory for generated files
+      // Optional: Output directory for generated files (relative to Vite project root)
       // Default: 'src/generated/tailwindcss' if src/ exists, otherwise 'generated/tailwindcss'
       outputDir: 'src/generated/tailwindcss',
 
@@ -48,9 +48,9 @@ export default defineConfig({
       // Default: true
       generateRuntime: true,
 
-      // Optional: Name of the generated TypeScript interface
-      // Default: 'DefaultTheme'
-      interfaceName: 'DefaultTheme',
+      // Optional: Include Tailwind CSS defaults from node_modules
+      // Default: true
+      includeTailwindDefaults: true,
 
       // Optional: Enable debug logging for troubleshooting
       // Default: false
@@ -98,7 +98,7 @@ const darkBg = dark.colors.background;
 import { resolveTheme } from 'tailwind-resolver';
 
 const result = await resolveTheme({
-  // Option 1: CSS file path
+  // Option 1: CSS file path (relative to cwd or absolute)
   input: './src/styles.css',
 
   // Option 2: Raw CSS content (alternative to input)
@@ -132,14 +132,16 @@ import type { Tailwind } from './generated/tailwindcss';
 const result = await resolveTheme({ input: './styles.css' });
 console.log(result.variants.default.colors.primary);
 
-const result = await resolveTheme<Tailwind>({ input: './styles.css' });
+const { variants, selectors, files, variables } = await resolveTheme<Tailwind>({
+  input: './styles.css',
+});
 
 // Fully typed with autocomplete - same structure as generated constant
-console.log(result.variants.default.colors.primary[500]);
-console.log(result.variants.dark.colors.background);
-console.log(result.selectors.dark); // '[data-theme="dark"]'
-console.log(result.files); // Array<string>
-console.log(result.variables); // Array<CSSVariable>
+console.log(variants.default.colors.primary[500]);
+console.log(variants.dark.colors.background);
+console.log(selectors.dark); // '[data-theme="dark"]'
+console.log(files); // Array<string>
+console.log(variables); // Array<CSSVariable>
 ```
 
 ### CLI

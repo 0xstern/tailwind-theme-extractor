@@ -7,7 +7,6 @@ import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import {
-  DEFAULT_INTERFACE_NAME,
   DEFAULT_OUTPUT_DIRS,
   generateThemeFiles,
   OUTPUT_FILES,
@@ -141,7 +140,7 @@ async function main(): Promise<void> {
       absoluteOutputDir,
       true, // resolveImports
       options.runtime as boolean,
-      DEFAULT_INTERFACE_NAME,
+      true, // includeTailwindDefaults
       options.debug as boolean,
       basePath,
     );

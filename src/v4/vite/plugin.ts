@@ -39,12 +39,12 @@ export const DEFAULT_INTERFACE_NAME = 'DefaultTheme';
 
 export interface VitePluginOptions {
   /**
-   * Path to your CSS input file (relative to project root)
+   * Path to your CSS input file (relative to Vite project root)
    */
   input: string;
 
   /**
-   * Output directory for generated files (relative to project root)
+   * Output directory for generated files (relative to Vite project root)
    * @default 'src/generated/tailwindcss' if src/ exists, otherwise 'generated/tailwindcss'
    */
   outputDir?: string;
@@ -62,10 +62,10 @@ export interface VitePluginOptions {
   generateRuntime?: boolean;
 
   /**
-   * Name of the generated interface
-   * @default 'DefaultTheme'
+   * Whether to include Tailwind CSS defaults from node_modules
+   * @default true
    */
-  interfaceName?: string;
+  includeTailwindDefaults?: boolean;
 
   /**
    * Enable debug logging for troubleshooting
@@ -79,7 +79,7 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
     input,
     resolveImports = true,
     generateRuntime = true,
-    interfaceName = DEFAULT_INTERFACE_NAME,
+    includeTailwindDefaults = true,
     debug = false,
   } = options;
 
@@ -106,7 +106,7 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
       fullOutputDir,
       resolveImports,
       generateRuntime,
-      interfaceName,
+      includeTailwindDefaults,
       debug,
       basePath,
     );
@@ -176,20 +176,19 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
  * - Enable `debug` parameter to log warnings for import resolution failures
  *
  * Generated Files:
- * - Always: types.ts (TypeScript interface with concrete theme type)
+ * - Always: types.ts (TypeScript interfaces including Tailwind and DefaultTheme)
  * - Conditional: theme.ts (runtime theme objects, if generateRuntime is true)
  * - Conditional: index.ts (re-exports from types.ts and theme.ts, if generateRuntime is true)
  *
  * Type Safety:
- * The types.ts file generates a concrete theme interface (e.g., DefaultTheme) that
- * users pass as a generic parameter to resolveTheme<DefaultTheme>() for full type safety.
- * This provides complete autocomplete and type checking for all theme properties.
+ * The types.ts file generates a Tailwind interface that users pass as a generic parameter
+ * to resolveTheme<Tailwind>() for full type safety with autocomplete for all theme properties.
  *
  * @param inputPath - Absolute path to the CSS input file
  * @param outputDir - Absolute path to the output directory
  * @param resolveImports - Whether to resolve `@import` statements recursively
  * @param generateRuntime - Whether to generate runtime theme object (not just types)
- * @param interfaceName - Name of the generated TypeScript interface
+ * @param includeTailwindDefaults - Whether to include Tailwind CSS defaults from node_modules
  * @param debug - Enable debug logging for troubleshooting
  * @param basePath - Base path for resolving node_modules (defaults to input file's directory)
  * @returns Promise resolving to object containing list of processed files
@@ -201,7 +200,7 @@ export async function generateThemeFiles(
   outputDir: string,
   resolveImports: boolean,
   generateRuntime: boolean,
-  interfaceName: string,
+  includeTailwindDefaults: boolean,
   debug: boolean = false,
   basePath?: string,
 ): Promise<{ files: Array<string> }> {
@@ -209,6 +208,7 @@ export async function generateThemeFiles(
     const result = await resolveTheme({
       input: inputPath,
       resolveImports,
+      includeTailwindDefaults,
       debug,
       basePath,
     });
@@ -222,7 +222,7 @@ export async function generateThemeFiles(
     // Always generate type declarations (types.ts)
     const typeDeclarations = generateTypeDeclarations(
       result,
-      interfaceName,
+      DEFAULT_INTERFACE_NAME,
       relativeSourcePath,
     );
 
@@ -233,7 +233,7 @@ export async function generateThemeFiles(
 
     // Conditionally generate runtime file (theme.ts) and index
     if (generateRuntime) {
-      const runtimeFile = generateRuntimeFile(result, interfaceName);
+      const runtimeFile = generateRuntimeFile(result, DEFAULT_INTERFACE_NAME);
       const themePath = path.join(outputDir, OUTPUT_FILES.THEME);
 
       // Create an index.ts that re-exports everything for clean imports

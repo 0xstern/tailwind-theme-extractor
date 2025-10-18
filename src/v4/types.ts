@@ -211,7 +211,7 @@ export interface CSSVariable {
  */
 export interface ParseOptions {
   /**
-   * Path to the CSS file to parse
+   * Path to the CSS file to parse (relative to current working directory, or absolute)
    * Use this for file-based parsing (most common)
    */
   input?: string;

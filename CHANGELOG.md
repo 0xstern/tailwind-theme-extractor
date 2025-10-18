@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking**: Removed `interfaceName` option - generated interface is always named `DefaultTheme` and `Tailwind`
+  - Use TypeScript import aliasing if you need custom names: `import type { Tailwind as AppTheme } from './generated'`
+  - Simplifies configuration and ensures consistency across projects
 - **Breaking**: Renamed Vite plugin function from `tailwindThemeResolver` to `tailwindResolver` for consistency
 - **Breaking**: API structure changed - `resolveTheme()` now returns `TailwindResult` with consistent structure:
   - `result.theme` → `result.variants.default` (base theme is now a variant)
@@ -29,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Individual variant interfaces generated for each theme (e.g., `Dark`, `Midnight`)
 - Full type consistency between generated code and runtime API
 - Comprehensive type safety for all variants with autocomplete support
+- Added `includeTailwindDefaults` option to Vite plugin for consistency with runtime API
+  - Default: `true` (matches runtime behavior)
+  - Set to `false` to exclude Tailwind CSS defaults from generated types
 
 ### Fixed
 
