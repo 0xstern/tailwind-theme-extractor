@@ -36,10 +36,18 @@ describe('Complex CSS Functions and Variables', () => {
       });
 
       // Font sizes are stored as objects with resolved calc() expressions
-      expect(result.theme.fontSize.sm?.size).toBe('calc(1rem * 0.875)');
-      expect(result.theme.fontSize.lg?.size).toBe('calc(1rem * 1.125)');
-      expect(result.theme.fontSize.xl?.size).toBe('calc(1rem * 1.25)');
-      expect(result.theme.fontSize['2xl']?.size).toBe('calc(1rem * 1.5)');
+      expect(result.variants.default.fontSize.sm?.size).toBe(
+        'calc(1rem * 0.875)',
+      );
+      expect(result.variants.default.fontSize.lg?.size).toBe(
+        'calc(1rem * 1.125)',
+      );
+      expect(result.variants.default.fontSize.xl?.size).toBe(
+        'calc(1rem * 1.25)',
+      );
+      expect(result.variants.default.fontSize['2xl']?.size).toBe(
+        'calc(1rem * 1.5)',
+      );
     });
 
     test('resolves radius with calc() and resolved variable references', async () => {
@@ -49,9 +57,11 @@ describe('Complex CSS Functions and Variables', () => {
       });
 
       // Variables are resolved before being stored
-      expect(result.theme.radius.sm).toBe('calc(0.5rem - 0.25rem)');
-      expect(result.theme.radius.lg).toBe('calc(0.5rem + 0.5rem)');
-      expect(result.theme.radius.dynamic).toBe('calc(0.5rem * 1.5 + 0.25rem)');
+      expect(result.variants.default.radius.sm).toBe('calc(0.5rem - 0.25rem)');
+      expect(result.variants.default.radius.lg).toBe('calc(0.5rem + 0.5rem)');
+      expect(result.variants.default.radius.dynamic).toBe(
+        'calc(0.5rem * 1.5 + 0.25rem)',
+      );
     });
 
     test('resolves complex spacing calculations', async () => {
@@ -61,9 +71,9 @@ describe('Complex CSS Functions and Variables', () => {
       });
 
       // calc() is preserved but variables are resolved
-      expect(result.theme.spacing.complex).toContain('calc(');
-      expect(result.theme.spacing.complex).toContain('0.25rem');
-      expect(result.theme.spacing.complex).toContain('0.5rem');
+      expect(result.variants.default.spacing.complex).toContain('calc(');
+      expect(result.variants.default.spacing.complex).toContain('0.25rem');
+      expect(result.variants.default.spacing.complex).toContain('0.5rem');
     });
 
     test('resolves unnamespaced variables with resolved values', async () => {
@@ -92,7 +102,9 @@ describe('Complex CSS Functions and Variables', () => {
       });
 
       // Container namespace maps to "containers" theme property
-      expect(result.theme.containers.fluid).toBe('min(100% - 2rem, 80rem)');
+      expect(result.variants.default.containers.fluid).toBe(
+        'min(100% - 2rem, 80rem)',
+      );
     });
 
     test('resolves max() with viewport units', async () => {
@@ -101,7 +113,9 @@ describe('Complex CSS Functions and Variables', () => {
         includeTailwindDefaults: false,
       });
 
-      expect(result.theme.containers.responsive).toBe('max(20rem, 50vw)');
+      expect(result.variants.default.containers.responsive).toBe(
+        'max(20rem, 50vw)',
+      );
     });
 
     test('resolves nested min/max combinations as raw variables', async () => {
@@ -134,9 +148,9 @@ describe('Complex CSS Functions and Variables', () => {
 
       // Font size with clamp() may resolve to minimum value during resolution
       // The system resolves all var() references, producing the final value
-      expect(result.theme.fontSize.fluid?.size).toBeDefined();
+      expect(result.variants.default.fontSize.fluid?.size).toBeDefined();
       // Verify it contains the resolved value (may be 1rem or the full clamp)
-      const fluidSize = result.theme.fontSize.fluid?.size;
+      const fluidSize = result.variants.default.fontSize.fluid?.size;
       expect(fluidSize).toMatch(/^(1rem|clamp\(1rem, 2\.5vw, 2rem\))$/);
     });
 
@@ -597,7 +611,10 @@ describe('Complex CSS Functions and Variables', () => {
 
       // Check if we have a variant that combines both selectors
       const nestedVars = result.variables.filter(
-        (v) => v.selector?.includes('compact') && v.selector.includes('dark'),
+        (v) =>
+          v.variantName !== undefined &&
+          v.variantName.includes('compact') &&
+          v.variantName.includes('dark'),
       );
 
       expect(nestedVars.length).toBeGreaterThan(0);
@@ -641,7 +658,7 @@ describe('Complex CSS Functions and Variables', () => {
       );
 
       // Verify theme has multiple namespaces
-      const themeKeys = Object.keys(result.theme);
+      const themeKeys = Object.keys(result.variants.default);
       expect(themeKeys).toContain('spacing');
       expect(themeKeys).toContain('fontSize');
       expect(themeKeys).toContain('colors');

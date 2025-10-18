@@ -10,18 +10,18 @@ describe('Tailwind Default Theme', () => {
     });
 
     // Should have user's custom color
-    expect(result.theme.colors.primary).toBeDefined();
-    if (typeof result.theme.colors.primary === 'object') {
-      expect(result.theme.colors.primary[500]).toBe('#custom');
+    expect(result.variants.default.colors.primary).toBeDefined();
+    if (typeof result.variants.default.colors.primary === 'object') {
+      expect(result.variants.default.colors.primary[500]).toBe('#custom');
     }
 
     // Should also have Tailwind's default colors (if Tailwind is installed)
     // If Tailwind is not installed, this is fine - we just get user theme
-    if (result.theme.colors.red !== undefined) {
-      expect(result.theme.colors.red).toBeDefined();
+    if (result.variants.default.colors.red !== undefined) {
+      expect(result.variants.default.colors.red).toBeDefined();
       // Tailwind has red-500 by default
-      if (typeof result.theme.colors.red === 'object') {
-        expect(result.theme.colors.red[500]).toBeDefined();
+      if (typeof result.variants.default.colors.red === 'object') {
+        expect(result.variants.default.colors.red[500]).toBeDefined();
       }
     }
   });
@@ -33,10 +33,10 @@ describe('Tailwind Default Theme', () => {
     });
 
     // Should have user's custom color
-    expect(result.theme.colors.primary).toBeDefined();
+    expect(result.variants.default.colors.primary).toBeDefined();
 
     // Should NOT have other colors (only what user defined)
-    const colorKeys = Object.keys(result.theme.colors);
+    const colorKeys = Object.keys(result.variants.default.colors);
     expect(colorKeys).toEqual(['primary']);
   });
 
@@ -47,8 +47,8 @@ describe('Tailwind Default Theme', () => {
     });
 
     // Should have user's override
-    if (typeof result.theme.colors.red === 'object') {
-      expect(result.theme.colors.red[500]).toBe('#custom-red');
+    if (typeof result.variants.default.colors.red === 'object') {
+      expect(result.variants.default.colors.red[500]).toBe('#custom-red');
     }
   });
 
@@ -63,15 +63,15 @@ describe('Tailwind Default Theme', () => {
       includeTailwindDefaults: true,
     });
 
-    if (typeof result.theme.colors.red === 'object') {
+    if (typeof result.variants.default.colors.red === 'object') {
       // User overrides
-      expect(result.theme.colors.red[500]).toBe('#custom-red');
-      expect(result.theme.colors.red[600]).toBe('#custom-red-dark');
+      expect(result.variants.default.colors.red[500]).toBe('#custom-red');
+      expect(result.variants.default.colors.red[600]).toBe('#custom-red-dark');
 
       // Tailwind defaults (if installed) should still exist
-      if (result.theme.colors.red[50] !== undefined) {
-        expect(result.theme.colors.red[50]).toBeDefined();
-        expect(result.theme.colors.red[100]).toBeDefined();
+      if (result.variants.default.colors.red[50] !== undefined) {
+        expect(result.variants.default.colors.red[50]).toBeDefined();
+        expect(result.variants.default.colors.red[100]).toBeDefined();
       }
     }
   });
@@ -84,10 +84,10 @@ describe('Tailwind Default Theme', () => {
     });
 
     // Should always have user theme
-    expect(result.theme.colors.primary).toBeDefined();
+    expect(result.variants.default.colors.primary).toBeDefined();
 
     // May or may not have Tailwind defaults depending on installation
     // Both outcomes are valid
-    expect(result.theme).toBeDefined();
+    expect(result.variants.default).toBeDefined();
   });
 });

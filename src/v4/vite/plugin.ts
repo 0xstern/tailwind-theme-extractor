@@ -19,9 +19,9 @@ import {
  * Output file names used by the plugin
  */
 export const OUTPUT_FILES = {
-  TYPES: 'themes.d.ts',
-  RUNTIME: 'themes.ts',
-  INDEX_TS: 'index.ts',
+  TYPES: 'types.ts',
+  THEME: 'theme.ts',
+  INDEX: 'index.ts',
 } as const;
 
 /**
@@ -35,7 +35,7 @@ export const DEFAULT_OUTPUT_DIRS = {
 /**
  * Default interface name for generated theme types
  */
-export const DEFAULT_INTERFACE_NAME = 'GeneratedTheme';
+export const DEFAULT_INTERFACE_NAME = 'DefaultTheme';
 
 export interface VitePluginOptions {
   /**
@@ -63,7 +63,7 @@ export interface VitePluginOptions {
 
   /**
    * Name of the generated interface
-   * @default 'GeneratedTheme'
+   * @default 'DefaultTheme'
    */
   interfaceName?: string;
 
@@ -74,9 +74,7 @@ export interface VitePluginOptions {
   debug?: boolean;
 }
 
-export function tailwindThemeResolver(
-  options: VitePluginOptions,
-): PluginOption {
+export function tailwindResolver(options: VitePluginOptions): PluginOption {
   const {
     input,
     resolveImports = true,
@@ -178,14 +176,14 @@ export function tailwindThemeResolver(
  * - Enable `debug` parameter to log warnings for import resolution failures
  *
  * Generated Files:
- * - Always: themes.d.ts (TypeScript type declarations with module augmentation)
- * - Conditional: themes.ts (runtime theme object, if generateRuntime is true)
- * - Conditional: index.ts (re-exports runtime, if generateRuntime is true)
+ * - Always: types.ts (TypeScript interface with concrete theme type)
+ * - Conditional: theme.ts (runtime theme objects, if generateRuntime is true)
+ * - Conditional: index.ts (re-exports from types.ts and theme.ts, if generateRuntime is true)
  *
- * Module Augmentation:
- * The themes.d.ts file uses TypeScript module augmentation to extend the library's
- * Theme interface globally. This provides automatic type hints when importing from
- * the main package, as long as the output directory is in tsconfig.json includes.
+ * Type Safety:
+ * The types.ts file generates a concrete theme interface (e.g., DefaultTheme) that
+ * users pass as a generic parameter to resolveTheme<DefaultTheme>() for full type safety.
+ * This provides complete autocomplete and type checking for all theme properties.
  *
  * @param inputPath - Absolute path to the CSS input file
  * @param outputDir - Absolute path to the output directory
@@ -221,31 +219,30 @@ export async function generateThemeFiles(
     // Ensure output directory exists
     await fs.mkdir(outputDir, { recursive: true });
 
-    // Always generate type declarations (.d.ts)
+    // Always generate type declarations (types.ts)
     const typeDeclarations = generateTypeDeclarations(
       result,
       interfaceName,
       relativeSourcePath,
     );
 
-    const dtsPath = path.join(outputDir, OUTPUT_FILES.TYPES);
+    const typesPath = path.join(outputDir, OUTPUT_FILES.TYPES);
 
     // Prepare all file writes
-    const writePromises = [fs.writeFile(dtsPath, typeDeclarations, 'utf-8')];
+    const writePromises = [fs.writeFile(typesPath, typeDeclarations, 'utf-8')];
 
-    // Conditionally generate runtime file (.ts)
+    // Conditionally generate runtime file (theme.ts) and index
     if (generateRuntime) {
       const runtimeFile = generateRuntimeFile(result, interfaceName);
-      const tsPath = path.join(outputDir, OUTPUT_FILES.RUNTIME);
+      const themePath = path.join(outputDir, OUTPUT_FILES.THEME);
 
       // Create an index.ts that re-exports everything for clean imports
-      const runtimeModuleName = path.basename(OUTPUT_FILES.RUNTIME, '.ts');
-      const indexTs = `export * from './${runtimeModuleName}';\n`;
+      const indexTs = `export type * from './types';\nexport * from './theme';\n`;
 
       writePromises.push(
-        fs.writeFile(tsPath, runtimeFile, 'utf-8'),
+        fs.writeFile(themePath, runtimeFile, 'utf-8'),
         fs.writeFile(
-          path.join(outputDir, OUTPUT_FILES.INDEX_TS),
+          path.join(outputDir, OUTPUT_FILES.INDEX),
           indexTs,
           'utf-8',
         ),

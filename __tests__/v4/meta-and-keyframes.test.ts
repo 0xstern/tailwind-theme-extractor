@@ -19,11 +19,13 @@ describe('Meta Variables (--default-*)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.defaults.transitionDuration).toBe('150ms');
-    expect(result.theme.defaults.transitionTimingFunction).toBe(
+    expect(result.variants.default.defaults.transitionDuration).toBe('150ms');
+    expect(result.variants.default.defaults.transitionTimingFunction).toBe(
       'cubic-bezier(0.4, 0, 0.2, 1)',
     );
-    expect(result.theme.defaults.fontFamily).toBe('var(--font-sans)');
+    expect(result.variants.default.defaults.fontFamily).toBe(
+      'var(--font-sans)',
+    );
   });
 
   test('converts --default-* keys to camelCase', async () => {
@@ -37,8 +39,10 @@ describe('Meta Variables (--default-*)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.defaults.fontFeatureSettings).toBe('"liga" 1');
-    expect(result.theme.defaults.lineHeightBase).toBe('1.5');
+    expect(result.variants.default.defaults.fontFeatureSettings).toBe(
+      '"liga" 1',
+    );
+    expect(result.variants.default.defaults.lineHeightBase).toBe('1.5');
   });
 
   test('works with custom meta variables', async () => {
@@ -52,8 +56,8 @@ describe('Meta Variables (--default-*)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.defaults.borderWidth).toBe('1px');
-    expect(result.theme.defaults.spacingUnit).toBe('0.25rem');
+    expect(result.variants.default.defaults.borderWidth).toBe('1px');
+    expect(result.variants.default.defaults.spacingUnit).toBe('0.25rem');
   });
 
   test('preserves --theme() function calls', async () => {
@@ -66,7 +70,7 @@ describe('Meta Variables (--default-*)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.defaults.fontFamily).toBe(
+    expect(result.variants.default.defaults.fontFamily).toBe(
       '--theme(--font-sans, sans-serif)',
     );
   });
@@ -90,11 +94,11 @@ describe('@keyframes Resolution', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.keyframes.spin).toBeDefined();
-    expect(result.theme.keyframes.spin).toContain('rotate(360deg)');
+    expect(result.variants.default.keyframes.spin).toBeDefined();
+    expect(result.variants.default.keyframes.spin).toContain('rotate(360deg)');
 
-    expect(result.theme.keyframes.ping).toBeDefined();
-    expect(result.theme.keyframes.ping).toContain('scale(2)');
+    expect(result.variants.default.keyframes.ping).toBeDefined();
+    expect(result.variants.default.keyframes.ping).toContain('scale(2)');
   });
 
   test('preserves complete keyframe definitions', async () => {
@@ -114,10 +118,14 @@ describe('@keyframes Resolution', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.keyframes.bounce).toBeDefined();
-    expect(result.theme.keyframes.bounce).toContain('@keyframes bounce');
-    expect(result.theme.keyframes.bounce).toContain('translateY(-25%)');
-    expect(result.theme.keyframes.bounce).toContain('cubic-bezier');
+    expect(result.variants.default.keyframes.bounce).toBeDefined();
+    expect(result.variants.default.keyframes.bounce).toContain(
+      '@keyframes bounce',
+    );
+    expect(result.variants.default.keyframes.bounce).toContain(
+      'translateY(-25%)',
+    );
+    expect(result.variants.default.keyframes.bounce).toContain('cubic-bezier');
   });
 
   test('resolves multiple keyframes', async () => {
@@ -130,12 +138,14 @@ describe('@keyframes Resolution', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(Object.keys(result.theme.keyframes)).toHaveLength(
+    expect(Object.keys(result.variants.default.keyframes)).toHaveLength(
       EXPECTED_KEYFRAME_COUNT_THREE,
     );
-    expect(result.theme.keyframes.fadeIn).toContain('opacity: 0');
-    expect(result.theme.keyframes.fadeOut).toContain('opacity: 1');
-    expect(result.theme.keyframes.slideUp).toContain('translateY(100%)');
+    expect(result.variants.default.keyframes.fadeIn).toContain('opacity: 0');
+    expect(result.variants.default.keyframes.fadeOut).toContain('opacity: 1');
+    expect(result.variants.default.keyframes.slideUp).toContain(
+      'translateY(100%)',
+    );
   });
 
   test('works alongside --animate-* variables', async () => {
@@ -158,14 +168,16 @@ describe('@keyframes Resolution', () => {
     });
 
     // Animation variables
-    expect(result.theme.animations.spin).toBe('spin 1s linear infinite');
-    expect(result.theme.animations.ping).toBe(
+    expect(result.variants.default.animations.spin).toBe(
+      'spin 1s linear infinite',
+    );
+    expect(result.variants.default.animations.ping).toBe(
       'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
     );
 
     // Keyframe definitions
-    expect(result.theme.keyframes.spin).toContain('rotate(360deg)');
-    expect(result.theme.keyframes.ping).toContain('scale(2)');
+    expect(result.variants.default.keyframes.spin).toContain('rotate(360deg)');
+    expect(result.variants.default.keyframes.ping).toContain('scale(2)');
   });
 });
 
@@ -186,13 +198,13 @@ describe('Meta Variables + Keyframes Combined', () => {
     });
 
     // Meta variables
-    expect(result.theme.defaults.transitionDuration).toBe('300ms');
+    expect(result.variants.default.defaults.transitionDuration).toBe('300ms');
 
     // Regular colors
-    expect(result.theme.colors.primary).toBe('#3b82f6');
+    expect(result.variants.default.colors.primary).toBe('#3b82f6');
 
     // Keyframes
-    expect(result.theme.keyframes.pulse).toContain('opacity: 0.5');
+    expect(result.variants.default.keyframes.pulse).toContain('opacity: 0.5');
   });
 
   test('handles empty defaults and keyframes gracefully', async () => {
@@ -205,9 +217,9 @@ describe('Meta Variables + Keyframes Combined', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.defaults).toEqual({});
-    expect(result.theme.keyframes).toEqual({});
-    expect(result.theme.colors.primary).toBe('#3b82f6');
+    expect(result.variants.default.defaults).toEqual({});
+    expect(result.variants.default.keyframes).toEqual({});
+    expect(result.variants.default.colors.primary).toBe('#3b82f6');
   });
 });
 
@@ -226,7 +238,7 @@ describe('Tailwind v4 Real-World Examples', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.defaults).toEqual({
+    expect(result.variants.default.defaults).toEqual({
       transitionDuration: '150ms',
       transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
       fontFamily: 'ui-sans-serif, system-ui, sans-serif',
@@ -271,12 +283,14 @@ describe('Tailwind v4 Real-World Examples', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(Object.keys(result.theme.keyframes)).toHaveLength(
+    expect(Object.keys(result.variants.default.keyframes)).toHaveLength(
       EXPECTED_KEYFRAME_COUNT_FOUR,
     );
-    expect(result.theme.keyframes.spin).toContain('rotate(360deg)');
-    expect(result.theme.keyframes.ping).toContain('scale(2)');
-    expect(result.theme.keyframes.pulse).toContain('opacity: 0.5');
-    expect(result.theme.keyframes.bounce).toContain('translateY(-25%)');
+    expect(result.variants.default.keyframes.spin).toContain('rotate(360deg)');
+    expect(result.variants.default.keyframes.ping).toContain('scale(2)');
+    expect(result.variants.default.keyframes.pulse).toContain('opacity: 0.5');
+    expect(result.variants.default.keyframes.bounce).toContain(
+      'translateY(-25%)',
+    );
   });
 });

@@ -54,10 +54,116 @@ CSS Input
                        │
                        ▼
                 ┌──────────────┐
-                │ ParseResult  │
-                │   (output)   │
+                │ParseResult   │
+                │(internal)    │
+                └──────┬───────┘
+                       │
+                       ▼
+                ┌──────────────┐
+                │TailwindResult│
+                │  (public)    │
                 └──────────────┘
 ```
+
+## Public API
+
+### Type System (`src/v4/types.ts`)
+
+The library exposes two main result types:
+
+**1. TailwindResult<TTailwind> - Public API**
+
+This is the type returned by `resolveTheme()` and matches the structure of generated code:
+
+```typescript
+export interface TailwindResult<TTailwind = UnknownTailwind> {
+  variants: TTailwind extends { variants: infer V } ? V : Record<string, Theme>;
+  selectors: TTailwind extends { selectors: infer S }
+    ? S
+    : Record<string, string>;
+  files: Array<string>;
+  variables: Array<CSSVariable>;
+  deprecationWarnings: Array<DeprecationWarning>;
+}
+```
+
+**2. ParseResult<TTheme> - Internal Format**
+
+Used internally by the parser and type generator:
+
+```typescript
+export interface ParseResult<TTheme extends Theme = Theme> {
+  theme: TTheme; // Base theme from @theme and :root
+  variants: Record<
+    string,
+    {
+      selector: string;
+      theme: Theme;
+    }
+  >;
+  files: Array<string>;
+  variables: Array<CSSVariable>;
+  deprecationWarnings: Array<DeprecationWarning>;
+}
+```
+
+**Usage Patterns:**
+
+```typescript
+// Theme (loosely typed)
+
+// With generated types (full type safety)
+
+import type { Tailwind } from './generated/tailwindcss';
+
+// Without generated types (fallback to unknown structure)
+const result = await resolveTheme({ input: './styles.css' });
+result.variants.default;
+
+const result = await resolveTheme<Tailwind>({ input: './styles.css' });
+result.variants.default.colors.primary[500]; // Fully typed!
+result.variants.dark?.colors.background; // Fully typed!
+result.selectors.dark; // string
+```
+
+**Conversion Layer:**
+
+The `resolveTheme()` function converts from internal `ParseResult` to public `TailwindResult`:
+
+```typescript
+export async function resolveTheme<TTailwind = UnknownTailwind>(
+  options: ParseOptions,
+): Promise<TailwindResult<TTailwind>> {
+  const parseResult = await parseCSS(options); // Returns ParseResult
+
+  // Convert to TailwindResult format
+  return {
+    variants: {
+      default: parseResult.theme,
+      ...Object.fromEntries(
+        Object.entries(parseResult.variants).map(([name, { theme }]) => [
+          name,
+          theme,
+        ]),
+      ),
+    },
+    selectors: {
+      default: ':root',
+      ...Object.fromEntries(
+        Object.entries(parseResult.variants).map(([name, { selector }]) => [
+          name,
+          selector,
+        ]),
+      ),
+    },
+    files: parseResult.files,
+    variables: parseResult.variables,
+    deprecationWarnings: parseResult.deprecationWarnings,
+  };
+}
+```
+
+The type generator also accepts both formats via wrapper functions that detect and convert as needed.
 
 ## Core Modules
 
@@ -293,25 +399,50 @@ Useful for:
 
 **Output:**
 
-1. **themes.d.ts** - TypeScript type declarations with module augmentation
-2. **themes.ts** - Runtime objects (if `generateRuntime: true`)
+1. **types.ts** - TypeScript type declarations (includes `DefaultTheme` and `Tailwind` interfaces)
+2. **theme.ts** - Runtime objects (if `generateRuntime: true`)
 3. **index.ts** - Clean re-exports (if `generateRuntime: true`)
 
-**Module Augmentation Pattern:**
-Uses modern TypeScript module augmentation instead of triple-slash directives:
+**Generic Type Pattern:**
+Uses TypeScript generics for type-safe theme access instead of module augmentation:
 
 ```typescript
-declare module 'tailwind-resolver' {
-  interface Theme extends GeneratedTheme {}
+// Usage
+
+import type { Tailwind } from './generated/tailwindcss';
+
+// Generated types.ts
+export interface DefaultTheme {
+  colors: { primary: { 500: 'oklch(...)' } };
+  // ... all theme properties
 }
+
+export interface Tailwind {
+  variants: {
+    default: DefaultTheme;
+    dark: Dark;
+    // ... other variants
+  };
+  selectors: {
+    default: string;
+    dark: string;
+    // ... other selectors
+  };
+  files: Array<string>;
+  variables: Array<{ name: string; value: string; source: string }>;
+}
+
+const result = await resolveTheme<Tailwind>({ input: './styles.css' });
+result.variants.default.colors.primary[500]; // Fully typed!
 ```
 
 **Benefits:**
 
-- Industry-standard TypeScript pattern
-- Automatic type hints without manual imports
-- Works when output directory is in `tsconfig.json` includes
-- No ambient declarations or global type pollution
+- Explicit type imports - no ambient declarations
+- Full IntelliSense for all variants (default, dark, custom themes)
+- Type-safe access to selectors, files, and variables
+- Works in any TypeScript project without tsconfig modifications
+- Consistent structure between generated code and runtime API
 
 **Configuration:**
 
@@ -370,37 +501,64 @@ declare module 'tailwind-resolver' {
          └─ theme.colors.background = "#1f2937"
 ```
 
-**Output (ParseResult):**
+**Output (TailwindResult):**
 
 ```typescript
 {
-  theme: {
-    colors: {
-      primary: { 500: "oklch(0.65 0.20 250)" },
-      chart: { 1: "oklch(80.9% 0.105 251.813)" }, // Resolved from Tailwind defaults
-      background: "oklch(1 0 0)", // Resolved from :root via reference map
-      // ... all Tailwind default colors (red, blue, violet, etc.)
-    },
-    fonts: {
-      sans: "ui-sans-serif, system-ui, sans-serif, ...", // From Tailwind defaults
-      // ... other fonts
-    },
-    spacing: { 4: "1rem" },
-    // ... other namespaces
-  },
   variants: {
+    default: {
+      colors: {
+        primary: { 500: "oklch(0.65 0.20 250)" },
+        chart: { 1: "oklch(80.9% 0.105 251.813)" }, // Resolved from Tailwind defaults
+        background: "oklch(1 0 0)", // Resolved from :root via reference map
+        // ... all Tailwind default colors (red, blue, violet, etc.)
+      },
+      fonts: {
+        sans: "ui-sans-serif, system-ui, sans-serif, ...", // From Tailwind defaults
+        // ... other fonts
+      },
+      spacing: { 4: "1rem" },
+      // ... other namespaces
+    },
     dark: {
-      selector: "[data-theme='dark']",
-      theme: {
-        colors: { background: "#1f2937" }
-      }
+      colors: { background: "#1f2937" }
+      // ... only properties that differ from default
     }
+  },
+  selectors: {
+    default: ":root",
+    dark: "[data-theme='dark']"
   },
   variables: [/* raw CSSVariable array */],
   files: ['/absolute/path/to/styles.css'],
   deprecationWarnings: []
 }
 ```
+
+**Internal ParseResult Format:**
+
+The parser internally uses `ParseResult` format with separate `theme` and `variants` properties:
+
+```typescript
+{
+  theme: { /* base theme */ },
+  variants: {
+    dark: {
+      selector: "[data-theme='dark']",
+      theme: { /* variant theme */ }
+    }
+  },
+  // ... other properties
+}
+```
+
+This is converted to `TailwindResult` format by `resolveTheme()` for the public API, where:
+
+- `theme` becomes `variants.default`
+- `variants[name].theme` becomes `variants[name]`
+- `variants[name].selector` becomes `selectors[name]`
+
+The type generator functions accept both formats for backward compatibility.
 
 ## Performance Characteristics
 
@@ -522,12 +680,16 @@ That's it! The pipeline will automatically handle resolution, building, and type
 - 9-file deep import chain test
 - Real Tailwind theme parsing
 - Circular import detection
+- Variant resolution and selector mapping
+- CSS variable resolution with var() references
 
 ### Test Coverage
 
-- 106 passing tests
-- 276 expect() assertions
+- 197 passing tests (99.5% pass rate)
+- 731 expect() assertions
 - All core paths covered
+- Updated to use new `TailwindResult` API structure
+- Tests verify both runtime API and generated code consistency
 
 ## Related Documentation
 

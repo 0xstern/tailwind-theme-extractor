@@ -15,12 +15,12 @@ bun add -D tailwind-resolver
 Add the plugin to your `vite.config.ts`:
 
 ```typescript
-import { tailwindThemeResolver } from 'tailwind-resolver/vite';
+import { tailwindResolver } from 'tailwind-resolver/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [
-    tailwindThemeResolver({
+    tailwindResolver({
       input: 'src/styles.css',
     }),
   ],
@@ -30,7 +30,7 @@ export default defineConfig({
 **Version-specific import** (lock to v4):
 
 ```typescript
-import { tailwindThemeResolver } from 'tailwind-resolver/v4/vite';
+import { tailwindResolver } from 'tailwind-resolver/v4/vite';
 ```
 
 ## Generated Files
@@ -375,7 +375,7 @@ const color = base.colors.primary[500]; // Exact literal type
 ### Custom Interface Name
 
 ```typescript
-tailwindThemeResolver({
+tailwindResolver({
   input: 'src/styles.css',
   interfaceName: 'MyAppTheme',
 });
@@ -396,7 +396,7 @@ declare module 'tailwind-resolver' {
 ### Disable Import Resolution
 
 ```typescript
-tailwindThemeResolver({
+tailwindResolver({
   input: 'src/styles.css',
   resolveImports: false, // Don't process @import statements
 });

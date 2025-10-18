@@ -12,7 +12,7 @@ describe('Singular Variables (Deprecated Format)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.spacing.base).toBe('0.25rem');
+    expect(result.variants.default.spacing.base).toBe('0.25rem');
   });
 
   test('handles --blur (singular) as blur.default', async () => {
@@ -21,7 +21,7 @@ describe('Singular Variables (Deprecated Format)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.blur.default).toBe('8px');
+    expect(result.variants.default.blur.default).toBe('8px');
   });
 
   test('handles --shadow (singular) as shadows.default', async () => {
@@ -30,7 +30,9 @@ describe('Singular Variables (Deprecated Format)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.shadows.default).toBe('0 1px 3px rgba(0,0,0,0.1)');
+    expect(result.variants.default.shadows.default).toBe(
+      '0 1px 3px rgba(0,0,0,0.1)',
+    );
   });
 
   test('handles --radius (singular) as radius.default', async () => {
@@ -39,7 +41,7 @@ describe('Singular Variables (Deprecated Format)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.radius.default).toBe('0.25rem');
+    expect(result.variants.default.radius.default).toBe('0.25rem');
   });
 
   test('handles multiple singular variables together', async () => {
@@ -55,10 +57,12 @@ describe('Singular Variables (Deprecated Format)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.spacing.base).toBe('0.25rem');
-    expect(result.theme.blur.default).toBe('8px');
-    expect(result.theme.shadows.default).toBe('0 1px 3px rgba(0,0,0,0.1)');
-    expect(result.theme.radius.default).toBe('0.25rem');
+    expect(result.variants.default.spacing.base).toBe('0.25rem');
+    expect(result.variants.default.blur.default).toBe('8px');
+    expect(result.variants.default.shadows.default).toBe(
+      '0 1px 3px rgba(0,0,0,0.1)',
+    );
+    expect(result.variants.default.radius.default).toBe('0.25rem');
   });
 
   test('singular variables work alongside suffixed versions', async () => {
@@ -73,9 +77,9 @@ describe('Singular Variables (Deprecated Format)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.blur.default).toBe('8px');
-    expect(result.theme.blur.sm).toBe('4px');
-    expect(result.theme.blur.lg).toBe('16px');
+    expect(result.variants.default.blur.default).toBe('8px');
+    expect(result.variants.default.blur.sm).toBe('4px');
+    expect(result.variants.default.blur.lg).toBe('16px');
   });
 
   test('unknown singular variables use "default" key', async () => {
@@ -105,11 +109,11 @@ describe('Singular Variables (Deprecated Format)', () => {
     });
 
     // Base theme
-    expect(result.theme.blur.default).toBe('4px');
+    expect(result.variants.default.blur.default).toBe('4px');
 
     // Dark variant
     expect(result.variants.dark).toBeDefined();
-    expect(result.variants.dark?.theme.blur.default).toBe('8px');
+    expect(result.variants.dark?.blur.default).toBe('8px');
   });
 
   test('preserves singular variable values exactly as defined', async () => {
@@ -123,8 +127,8 @@ describe('Singular Variables (Deprecated Format)', () => {
       includeTailwindDefaults: false,
     });
 
-    expect(result.theme.spacing.base).toBe('calc(0.25rem * 2)');
-    expect(result.theme.blur.default).toBe('var(--custom-blur)');
+    expect(result.variants.default.spacing.base).toBe('calc(0.25rem * 2)');
+    expect(result.variants.default.blur.default).toBe('var(--custom-blur)');
   });
 
   test('generates deprecation warnings for known singular variables', async () => {

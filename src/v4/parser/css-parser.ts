@@ -3,13 +3,14 @@
  * Entry point for parsing CSS files and building theme objects
  */
 
-import type { ParseOptions, ParseResult } from '../types';
+import type { ParseOptions, ParseResult, Theme } from '../types';
 
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
 import postcss from 'postcss';
 
+import { narrowParseResult } from '../types';
 import { resolveImports } from './import-resolver';
 import { loadTailwindDefaults } from './tailwind-defaults';
 import { buildThemes } from './theme-builder';
@@ -20,16 +21,17 @@ import { extractVariables } from './variable-extractor';
  *
  * This is the main entry point for CSS parsing. It handles:
  * - Reading CSS files or parsing raw CSS strings
- * - Recursively resolving `@import` statements
- * - Resolving variables from `@theme` and :root blocks
+ * - Recursively resolving @import statements
+ * - Resolving variables from @theme and :root blocks
  * - Building a structured theme object
  *
  * Error Handling:
  * - File not found: Throws error if the specified filePath doesn't exist
- * - Missing imports: Failed `@import` statements are silently skipped (see resolveImports)
+ * - Missing imports: Failed @import statements are silently skipped (see resolveImports)
  * - Invalid CSS syntax: PostCSS parsing errors will throw and should be caught by caller
  * - Enable `debug` option to log warnings for import resolution failures
  *
+ * @template TTheme - The concrete theme type (e.g., GeneratedTheme from generated types)
  * @param options - Parse options specifying the CSS source and behavior
  * @returns Promise resolving to the parse result with theme, variables, and processed files
  * @throws Error if neither input nor css is provided
@@ -46,7 +48,7 @@ import { extractVariables } from './variable-extractor';
  *
  * // Parse from string
  * const result = await parseCSS({
- *   css: '`@theme` { --color-primary: #3b82f6; }'
+ *   css: '@theme { --color-primary: #3b82f6; }'
  * });
  *
  * // Enable debug mode for troubleshooting
@@ -54,9 +56,18 @@ import { extractVariables } from './variable-extractor';
  *   input: './src/theme.css',
  *   debug: true
  * });
+ *
+ * // With type parameter for full type safety
+ * import type { GeneratedTheme } from './generated/tailwindcss';
+ *
+ * const result = await parseCSS<GeneratedTheme>({
+ *   input: './src/theme.css'
+ * });
  * ```
  */
-export async function parseCSS(options: ParseOptions): Promise<ParseResult> {
+export async function parseCSS<TTheme extends Theme = Theme>(
+  options: ParseOptions,
+): Promise<ParseResult<TTheme>> {
   const {
     input,
     css,
@@ -113,11 +124,15 @@ export async function parseCSS(options: ParseOptions): Promise<ParseResult> {
     defaultTheme,
   );
 
-  return {
+  // Assemble the result with base Theme typing
+  const baseResult: ParseResult<Theme> = {
     theme,
     variants,
     variables,
     files: processedFiles,
     deprecationWarnings,
   };
+
+  // Type-safe narrowing to TTheme (runtime structure is identical)
+  return narrowParseResult<TTheme>(baseResult);
 }

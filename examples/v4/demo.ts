@@ -26,7 +26,9 @@ async function main(): Promise<void> {
 
     // Display colors
     console.log('Colors:');
-    for (const [name, value] of Object.entries(result.theme.colors)) {
+    for (const [name, value] of Object.entries(
+      result.variants.default.colors,
+    )) {
       if (typeof value === 'string') {
         console.log(`  - ${name}: ${value}`);
       } else {
@@ -38,33 +40,41 @@ async function main(): Promise<void> {
     }
 
     // Display fonts
-    if (Object.keys(result.theme.fonts).length > 0) {
+    if (Object.keys(result.variants.default.fonts).length > 0) {
       console.log('\nFonts:');
-      for (const [name, value] of Object.entries(result.theme.fonts)) {
+      for (const [name, value] of Object.entries(
+        result.variants.default.fonts,
+      )) {
         console.log(`  - ${name}: ${value}`);
       }
     }
 
     // Display breakpoints
-    if (Object.keys(result.theme.breakpoints).length > 0) {
+    if (Object.keys(result.variants.default.breakpoints).length > 0) {
       console.log('\nBreakpoints:');
-      for (const [name, value] of Object.entries(result.theme.breakpoints)) {
+      for (const [name, value] of Object.entries(
+        result.variants.default.breakpoints,
+      )) {
         console.log(`  - ${name}: ${value}`);
       }
     }
 
     // Display shadows
-    if (Object.keys(result.theme.shadows).length > 0) {
+    if (Object.keys(result.variants.default.shadows).length > 0) {
       console.log('\nShadows:');
-      for (const [name, value] of Object.entries(result.theme.shadows)) {
+      for (const [name, value] of Object.entries(
+        result.variants.default.shadows,
+      )) {
         console.log(`  - ${name}: ${value}`);
       }
     }
 
     // Display animations
-    if (Object.keys(result.theme.animations).length > 0) {
+    if (Object.keys(result.variants.default.animations).length > 0) {
       console.log('\nAnimations:');
-      for (const [name, value] of Object.entries(result.theme.animations)) {
+      for (const [name, value] of Object.entries(
+        result.variants.default.animations,
+      )) {
         console.log(`  - ${name}: ${value}`);
       }
     }
@@ -74,23 +84,25 @@ async function main(): Promise<void> {
     console.log('```javascript');
     console.log('const chartColors = [');
     if (
-      result.theme.colors.primary !== undefined &&
-      typeof result.theme.colors.primary !== 'string'
+      result.variants.default.colors.primary !== undefined &&
+      typeof result.variants.default.colors.primary !== 'string'
     ) {
-      console.log(`  '${result.theme.colors.primary[500]}',`);
+      console.log(`  '${result.variants.default.colors.primary[500]}',`);
     }
     if (
-      result.theme.colors.secondary !== undefined &&
-      typeof result.theme.colors.secondary !== 'string'
+      result.variants.default.colors.secondary !== undefined &&
+      typeof result.variants.default.colors.secondary !== 'string'
     ) {
-      console.log(`  '${result.theme.colors.secondary[500]}',`);
+      console.log(`  '${result.variants.default.colors.secondary[500]}',`);
     }
     console.log('];');
     console.log('```');
 
     // Show raw JSON output
     console.log('\nFull theme object:');
-    console.log(JSON.stringify(result.theme, null, JSON_INDENT_SPACES));
+    console.log(
+      JSON.stringify(result.variants.default, null, JSON_INDENT_SPACES),
+    );
   } catch (error) {
     if (error instanceof Error) {
       console.error('Error:', error.message);

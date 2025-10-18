@@ -236,7 +236,7 @@ async function buildTypes(): Promise<void> {
   const vitePluginDts = `/**
  * Vite plugin for automatic Tailwind theme type generation
  */
-export { tailwindThemeResolver } from './vite/index';
+export { tailwindResolver } from './vite/index';
 export type { VitePluginOptions } from './vite/index';
 `;
   await fs.writeFile(

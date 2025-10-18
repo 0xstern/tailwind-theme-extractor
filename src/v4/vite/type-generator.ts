@@ -2,9 +2,44 @@
  * Generates TypeScript type definitions from resolved theme
  */
 
-import type { ParseResult, Theme } from '../types';
+import type { ParseResult, TailwindResult, Theme } from '../types';
 
 const JSON_INDENT_SPACES = 2;
+
+/**
+ * Converts TailwindResult to ParseResult format for compatibility with generator functions
+ * This allows us to use the same generator logic for both runtime and build-time results
+ *
+ * @param result - TailwindResult from resolveTheme()
+ * @returns ParseResult format expected by generators
+ */
+function convertToParseResult(result: TailwindResult): ParseResult {
+  const { variants, selectors, ...rest } = result;
+
+  // Extract the default theme
+  const theme = variants.default as Theme;
+
+  // Build variants object in ParseResult format
+  const parseResultVariants: Record<
+    string,
+    { theme: Theme; selector: string }
+  > = {};
+
+  for (const [key, value] of Object.entries(variants)) {
+    if (key === 'default') continue; // Skip default, it's the base theme
+
+    parseResultVariants[key] = {
+      theme: value as Theme,
+      selector: selectors[key] ?? '',
+    };
+  }
+
+  return {
+    theme,
+    variants: parseResultVariants,
+    ...rest,
+  };
+}
 
 /**
  * Property configurations for theme type generation
@@ -126,17 +161,19 @@ function escapeStringLiteral(value: string): string {
 }
 
 /**
- * Generate TypeScript type declarations file (.d.ts)
- * This file is always generated and contains all type definitions
+ * Generate TypeScript type declarations file (types.ts)
+ * This file contains only the theme interface definition
+ *
+ * Internal function - accepts ParseResult format
  *
  * @param result - The parsed theme result
  * @param interfaceName - Name of the generated interface
  * @param sourceFile - Path to the source CSS file for documentation
  * @returns TypeScript type declaration string
  */
-export function generateTypeDeclarations(
+function generateTypeDeclarationsInternal(
   result: ParseResult,
-  interfaceName: string = 'GeneratedTheme',
+  interfaceName: string = 'DefaultTheme',
   sourceFile?: string,
 ): string {
   const typeDefinitions: Array<string> = [];
@@ -179,54 +216,75 @@ export function generateTypeDeclarations(
   typeDefinitions.push('}');
   typeDefinitions.push('');
 
-  // No need for variant interfaces - variants are just themes
+  // Generate variant interfaces for each theme variant
+  const variantInterfaces: Array<string> = [];
+  if (Object.keys(result.variants).length > 0) {
+    typeDefinitions.push('/**');
+    typeDefinitions.push(' * Theme variant interfaces');
+    typeDefinitions.push(' */');
+    for (const [variantName, variantData] of Object.entries(result.variants)) {
+      const safeExportName = toSafeIdentifier(variantName);
+      const variantTypeName = `${safeExportName.charAt(0).toUpperCase()}${safeExportName.slice(1)}`;
 
-  // Module augmentation to override library types
-  // We augment the Theme interface to be exactly our generated theme type
-  typeDefinitions.push("declare module 'tailwind-resolver' {");
-  typeDefinitions.push(`  export interface Theme extends ${interfaceName} {}`);
+      // Generate interface for this specific variant's theme structure
+      typeDefinitions.push(`export interface ${variantTypeName} {`);
+      for (const { key, generator } of THEME_PROPERTY_CONFIGS) {
+        const value = variantData.theme[key] as Record<string, unknown>;
+        if (hasKeys(value)) {
+          const typeString = generator(value);
+          typeDefinitions.push(`  ${key}: ${typeString};`);
+        }
+      }
+      typeDefinitions.push('}');
+      typeDefinitions.push('');
+
+      variantInterfaces.push(variantTypeName);
+    }
+  }
+
+  // Generate master Tailwind interface that matches ParseResult structure
+  typeDefinitions.push('/**');
+  typeDefinitions.push(
+    ' * Master Tailwind interface matching the structure returned by resolveTheme()',
+  );
+  typeDefinitions.push(
+    ' * This provides full type safety for all resolved theme data',
+  );
+  typeDefinitions.push(' */');
+  typeDefinitions.push('export interface Tailwind {');
+  typeDefinitions.push(
+    `  /** Theme variants (default, dark, custom themes, etc.) */`,
+  );
+  typeDefinitions.push('  variants: {');
+
+  // Add default variant first
+  typeDefinitions.push(`    default: ${interfaceName};`);
+
+  // Then add other variants
+  for (const [variantName] of Object.entries(result.variants)) {
+    const safeExportName = toSafeIdentifier(variantName);
+    const variantTypeName = `${safeExportName.charAt(0).toUpperCase()}${safeExportName.slice(1)}`;
+    typeDefinitions.push(`    ${safeExportName}: ${variantTypeName};`);
+  }
+  typeDefinitions.push('  };');
+
+  typeDefinitions.push(`  /** CSS selectors for each variant */`);
+  typeDefinitions.push('  selectors: {');
+  typeDefinitions.push('    default: string;');
+  for (const [variantName] of Object.entries(result.variants)) {
+    const safeExportName = toSafeIdentifier(variantName);
+    typeDefinitions.push(`    ${safeExportName}: string;`);
+  }
+  typeDefinitions.push('  };');
+
+  typeDefinitions.push(`  /** List of CSS files that were processed */`);
+  typeDefinitions.push('  files: Array<string>;');
+  typeDefinitions.push(`  /** Raw CSS variables */`);
+  typeDefinitions.push(
+    '  variables: Array<{ name: string; value: string; source: string }>;',
+  );
   typeDefinitions.push('}');
   typeDefinitions.push('');
-
-  // Type declarations for runtime exports
-  typeDefinitions.push('// Runtime value declarations');
-  typeDefinitions.push(`export declare const base: ${interfaceName};`);
-  typeDefinitions.push('export default base;');
-  typeDefinitions.push('');
-
-  // Type declarations for variants
-  if (Object.keys(result.variants).length > 0) {
-    for (const [variantName, variantData] of Object.entries(result.variants)) {
-      // Generate inline type for this variant based on its actual structure
-      const variantType = generateThemeTypeInline(variantData.theme);
-
-      // Sanitize variant name for JavaScript export
-      const safeExportName = toSafeIdentifier(variantName);
-
-      typeDefinitions.push(
-        `export declare const ${safeExportName}: ${variantType};`,
-      );
-    }
-    typeDefinitions.push('');
-
-    // Type declaration for selectors
-    typeDefinitions.push('/**');
-    typeDefinitions.push(' * CSS selectors for each theme variant');
-    typeDefinitions.push(' */');
-
-    // Generate selectors type
-    const selectorTypes = Object.keys(result.variants)
-      .map((variantName) => {
-        const safeExportName = toSafeIdentifier(variantName);
-        return `${safeExportName}: string`;
-      })
-      .join('; ');
-
-    typeDefinitions.push(
-      `export declare const selectors: { ${selectorTypes} };`,
-    );
-    typeDefinitions.push('');
-  }
 
   return typeDefinitions.join('\n');
 }
@@ -394,46 +452,18 @@ function removeEmptyProperties(theme: Theme): Partial<Theme> {
 }
 
 /**
- * Generates an inline type definition for a theme object
- * Only includes properties that are actually present in the theme
+ * Generate TypeScript runtime file (theme.ts)
+ * This file contains the runtime theme objects matching the Tailwind interface structure
  *
- * @param theme - The theme object to generate a type for
- * @returns Inline TypeScript type definition
- */
-function generateThemeTypeInline(theme: Theme): string {
-  const parts: Array<string> = [];
-
-  // Use centralized property configs, but skip defaults and keyframes for variants
-  const variantPropertyConfigs = THEME_PROPERTY_CONFIGS.filter(
-    ({ key }) => key !== 'defaults' && key !== 'keyframes',
-  );
-
-  // Only include non-empty properties
-  for (const { key, generator } of variantPropertyConfigs) {
-    const value = theme[key] as Record<string, unknown>;
-    if (hasKeys(value)) {
-      parts.push(`${key}: ${generator(value)}`);
-    }
-  }
-
-  if (parts.length === 0) {
-    return '{}';
-  }
-
-  return `{\n  ${parts.join(';\n  ')}\n}`;
-}
-
-/**
- * Generate TypeScript runtime file (.ts)
- * This file imports types from the .d.ts file and exports runtime values
+ * Internal function - accepts ParseResult format
  *
  * @param result - The parsed theme result
- * @param _interfaceName - Name of the generated interface (unused)
+ * @param interfaceName - Name of the generated interface for type annotations
  * @returns TypeScript runtime file string
  */
-export function generateRuntimeFile(
+function generateRuntimeFileInternal(
   result: ParseResult,
-  _interfaceName: string = 'GeneratedTheme',
+  interfaceName: string = 'DefaultTheme',
 ): string {
   const lines: Array<string> = [];
 
@@ -457,46 +487,161 @@ export function generateRuntimeFile(
   lines.push('// @generated');
   lines.push('');
 
-  // Export base theme with as const for type inference
-  lines.push(
-    `export const base = ${JSON.stringify(result.theme, null, JSON_INDENT_SPACES)} as const;`,
-  );
-  lines.push('');
-  lines.push('export default base;');
+  // Import types for annotations
+  lines.push(`import type { Tailwind, ${interfaceName} } from './types';`);
   lines.push('');
 
-  // Export variants
+  // Build variants object - start with default
+  const variantsObj: Record<string, unknown> = {
+    default: result.theme,
+  };
+  const selectorsObj: Record<string, string> = {
+    default: ':root',
+  };
+
+  // Add other variants
   if (Object.keys(result.variants).length > 0) {
     for (const [variantName, variantData] of Object.entries(result.variants)) {
+      const safeExportName = toSafeIdentifier(variantName);
       // Remove empty properties from the runtime object
       const cleanedTheme = removeEmptyProperties(variantData.theme);
-
-      // Sanitize variant name for JavaScript export
-      const safeExportName = toSafeIdentifier(variantName);
-
-      lines.push(
-        `export const ${safeExportName} = ${JSON.stringify(cleanedTheme, null, JSON_INDENT_SPACES)} as const;`,
-      );
-      lines.push('');
+      variantsObj[safeExportName] = cleanedTheme;
+      selectorsObj[safeExportName] = variantData.selector;
     }
-
-    // Export selectors
-    lines.push('/**');
-    lines.push(' * CSS selectors for each theme variant');
-    lines.push(' */');
-    lines.push('export const selectors = {');
-
-    const selectorEntries = Object.entries(result.variants)
-      .map(([variantName, variantData]) => {
-        const safeExportName = toSafeIdentifier(variantName);
-        return `  ${safeExportName}: '${escapeStringLiteral(variantData.selector)}'`;
-      })
-      .join(',\n');
-
-    lines.push(selectorEntries);
-    lines.push('} as const;');
-    lines.push('');
   }
 
+  // Export variants (includes default)
+  lines.push('/**');
+  lines.push(' * Theme variants (default, dark, custom themes, etc.)');
+  lines.push(' */');
+  lines.push(
+    `export const variants = ${JSON.stringify(variantsObj, null, JSON_INDENT_SPACES)} as Tailwind['variants'];`,
+  );
+  lines.push('');
+
+  // Export selectors (includes default)
+  lines.push('/**');
+  lines.push(' * CSS selectors for each theme variant');
+  lines.push(' */');
+  lines.push(
+    `export const selectors = ${JSON.stringify(selectorsObj, null, JSON_INDENT_SPACES)} as Tailwind['selectors'];`,
+  );
+  lines.push('');
+
+  // Export files (empty array since we don't track this in generated code)
+  lines.push('/**');
+  lines.push(' * List of CSS files that were processed');
+  lines.push(
+    ' * Note: This is populated at build time, not available in generated code',
+  );
+  lines.push(' */');
+  lines.push('export const files: Array<string> = [];');
+  lines.push('');
+
+  // Export variables (empty array since we don't include raw variables in generated code)
+  lines.push('/**');
+  lines.push(' * Raw CSS variables');
+  lines.push(
+    ' * Note: This is populated at runtime by resolveTheme(), not available in generated code',
+  );
+  lines.push(' */');
+  lines.push(
+    'export const variables: Array<{ name: string; value: string; source: string }> = [];',
+  );
+  lines.push('');
+
+  // Export master tailwind object matching the Tailwind interface
+  lines.push('/**');
+  lines.push(' * Master Tailwind object matching resolveTheme() structure');
+  lines.push(' * Use this for full compatibility with runtime API');
+  lines.push(' */');
+  lines.push('export const tailwind: Tailwind = {');
+  lines.push('  variants,');
+  lines.push('  selectors,');
+  lines.push('  files,');
+  lines.push('  variables,');
+  lines.push('};');
+  lines.push('');
+  lines.push('export default tailwind;');
+  lines.push('');
+
+  // Export individual variant constants for convenience
+  lines.push('/**');
+  lines.push(' * Convenience exports for individual variants');
+  lines.push(' */');
+  lines.push(
+    `export const ${interfaceName.charAt(0).toLowerCase()}${interfaceName.slice(1)} = variants.default;`,
+  );
+
+  if (Object.keys(result.variants).length > 0) {
+    for (const [variantName] of Object.entries(result.variants)) {
+      const safeExportName = toSafeIdentifier(variantName);
+      lines.push(
+        `export const ${safeExportName} = variants.${safeExportName};`,
+      );
+    }
+  }
+  lines.push('');
+
   return lines.join('\n');
+}
+
+/**
+ * Public wrapper for generateTypeDeclarationsInternal that accepts both result types
+ * Converts TailwindResult to ParseResult format if needed
+ *
+ * @param result - Either TailwindResult (from resolveTheme) or ParseResult (from parseCSS)
+ * @param interfaceName - Name of the generated interface
+ * @param sourceFile - Path to the source CSS file for documentation
+ * @returns TypeScript type declaration string
+ */
+export function generateTypeDeclarations(
+  result: TailwindResult | ParseResult,
+  interfaceName: string = 'DefaultTheme',
+  sourceFile?: string,
+): string {
+  // Check if it's a TailwindResult by looking for the new structure
+  const isTailwindResult = 'variants' in result && 'default' in result.variants;
+
+  if (isTailwindResult) {
+    // Convert TailwindResult to ParseResult
+    const parseResult = convertToParseResult(result as TailwindResult);
+    return generateTypeDeclarationsInternal(
+      parseResult,
+      interfaceName,
+      sourceFile,
+    );
+  }
+
+  // It's already a ParseResult
+  return generateTypeDeclarationsInternal(
+    result as ParseResult,
+    interfaceName,
+    sourceFile,
+  );
+}
+
+/**
+ * Public wrapper for generateRuntimeFileInternal that accepts both result types
+ * Converts TailwindResult to ParseResult format if needed
+ *
+ * @param result - Either TailwindResult (from resolveTheme) or ParseResult (from parseCSS)
+ * @param interfaceName - Name of the generated interface for type annotations
+ * @returns TypeScript runtime file string
+ */
+export function generateRuntimeFile(
+  result: TailwindResult | ParseResult,
+  interfaceName: string = 'DefaultTheme',
+): string {
+  // Check if it's a TailwindResult by looking for the new structure
+  const isTailwindResult = 'variants' in result && 'default' in result.variants;
+
+  if (isTailwindResult) {
+    // Convert TailwindResult to ParseResult
+    const parseResult = convertToParseResult(result as TailwindResult);
+    return generateRuntimeFileInternal(parseResult, interfaceName);
+  }
+
+  // It's already a ParseResult
+  return generateRuntimeFileInternal(result as ParseResult, interfaceName);
 }

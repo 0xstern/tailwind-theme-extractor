@@ -20,46 +20,131 @@ npm install -D tailwind-resolver
 
 ## Usage
 
-### Vite Plugin
+### Vite Plugin (Build-Time Generation)
+
+**1. Configure the plugin in `vite.config.ts`:**
 
 ```typescript
-// vite.config.ts
-
-import { tailwindThemeResolver } from 'tailwind-resolver/vite';
+import tailwindcss from '@tailwindcss/vite';
+import { tailwindResolver } from 'tailwind-resolver/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [
-    tailwindThemeResolver({
+    tailwindcss(),
+    tailwindResolver({
+      // Required: Path to your CSS input file
       input: 'src/styles.css',
+
+      // Optional: Output directory for generated files
+      // Default: 'src/generated/tailwindcss' if src/ exists, otherwise 'generated/tailwindcss'
+      outputDir: 'src/generated/tailwindcss',
+
+      // Optional: Resolve @import statements recursively
+      // Default: true
+      resolveImports: true,
+
+      // Optional: Generate runtime objects (.ts files) in addition to types
+      // Default: true
+      generateRuntime: true,
+
+      // Optional: Name of the generated TypeScript interface
+      // Default: 'DefaultTheme'
+      interfaceName: 'DefaultTheme',
+
+      // Optional: Enable debug logging for troubleshooting
+      // Default: false
+      debug: false,
     }),
   ],
 });
 ```
 
-Generates in `src/generated/tailwindcss/`:
+This generates files in `src/generated/tailwindcss/`:
 
-- `themes.d.ts` - TypeScript declarations
-- `themes.ts` - Runtime theme objects
-- `index.ts` - Re-exports
+- `types.ts` - TypeScript interfaces
+- `theme.ts` - Runtime theme objects (if `generateRuntime: true`)
+- `index.ts` - Re-exports (if `generateRuntime: true`)
 
-**Usage:**
+**2. Use the generated theme in your code:**
 
 ```typescript
-import { base, dark, selectors } from './generated/tailwindcss';
+import { dark, defaultTheme, tailwind } from './generated/tailwindcss';
 
-const chart = new Chart(ctx, {
+// Use the master tailwind object
+new Chart(ctx, {
   data: {
     datasets: [
       {
-        backgroundColor: [base.colors.primary[500], base.colors.secondary[500]],
+        backgroundColor: [
+          tailwind.variants.default.colors.primary[500],
+          tailwind.variants.dark.colors.background,
+        ],
       },
     ],
   },
 });
+
+// Or use individual variant exports for convenience
+const primary = defaultTheme.colors.primary[500];
+const darkBg = dark.colors.background;
+```
+
+### Runtime API (Dynamic Resolution)
+
+**1. Configure resolveTheme options:**
+
+```typescript
+import { resolveTheme } from 'tailwind-resolver';
+
+const result = await resolveTheme({
+  // Option 1: CSS file path
+  input: './src/styles.css',
+
+  // Option 2: Raw CSS content (alternative to input)
+  css: '@theme { --color-primary: blue; }',
+
+  // Optional: Base path for @import resolution (required when using css option)
+  basePath: process.cwd(),
+
+  // Optional: Resolve @import statements recursively
+  // Default: true
+  resolveImports: true,
+
+  // Optional: Include Tailwind CSS defaults from node_modules
+  // Default: true
+  includeTailwindDefaults: true,
+
+  // Optional: Enable debug logging
+  // Default: false
+  debug: false,
+});
+```
+
+**2. Use the resolved theme:**
+
+```typescript
+// With generated types for full type safety
+
+import type { Tailwind } from './generated/tailwindcss';
+
+// Without generated types (loosely typed)
+const result = await resolveTheme({ input: './styles.css' });
+console.log(result.variants.default.colors.primary);
+
+const result = await resolveTheme<Tailwind>({ input: './styles.css' });
+
+// Fully typed with autocomplete - same structure as generated constant
+console.log(result.variants.default.colors.primary[500]);
+console.log(result.variants.dark.colors.background);
+console.log(result.selectors.dark); // '[data-theme="dark"]'
+console.log(result.files); // Array<string>
+console.log(result.variables); // Array<CSSVariable>
 ```
 
 ### CLI
+
+Generate types without a build tool:
 
 ```bash
 # Bun
@@ -83,59 +168,6 @@ npx tailwind-resolver -i src/styles.css
 - `--no-runtime` - Types only
 - `-d, --debug` - Enable debug logging
 - `-h, --help` - Show help
-
-### Runtime API
-
-```typescript
-import { resolveTheme } from 'tailwind-resolver';
-
-const { theme, variants } = await resolveTheme({
-  input: './src/styles.css',
-});
-
-console.log(theme.colors.primary[500]);
-console.log(variants.dark.theme.colors.background);
-```
-
-## Configuration
-
-### Vite Plugin Options
-
-```typescript
-interface VitePluginOptions {
-  input: string; // CSS input file (required)
-  outputDir?: string; // Output directory
-  resolveImports?: boolean; // Resolve @import statements (default: true)
-  generateRuntime?: boolean; // Generate runtime objects (default: true)
-  interfaceName?: string; // Interface name (default: 'GeneratedTheme')
-  debug?: boolean; // Debug logging (default: false)
-}
-```
-
-### ParseOptions (Runtime API)
-
-```typescript
-interface ParseOptions {
-  input?: string; // CSS file path
-  css?: string; // Raw CSS content (alternative to input)
-  basePath?: string; // Base path for @import resolution (when using css)
-  resolveImports?: boolean; // Resolve @import statements (default: true)
-  includeTailwindDefaults?: boolean; // Include Tailwind defaults (default: true)
-  debug?: boolean; // Debug logging (default: false)
-}
-```
-
-### ParseResult
-
-```typescript
-interface ParseResult {
-  theme: Theme; // Base theme
-  variants: Record<string, ThemeVariant>; // Theme variants (dark, etc.)
-  variables: Array<CSSVariable>; // Raw CSS variables
-  deprecationWarnings: Array<DeprecationWarning>; // Warnings
-  files: Array<string>; // Processed files
-}
-```
 
 ## Theme Structure
 
@@ -180,21 +212,46 @@ interface ParseResult {
 **Usage:**
 
 ```typescript
-import { base, dark, selectors } from './generated/tailwindcss';
+import {
+  dark,
+  defaultTheme,
+  selectors,
+  tailwind,
+} from './generated/tailwindcss';
 
-console.log(base.colors.background); // '#ffffff'
+// All values are fully typed
+console.log(tailwind.variants.default.colors.background); // '#ffffff'
+console.log(tailwind.variants.dark.colors.background); // '#1f2937'
+console.log(tailwind.selectors.dark); // "[data-theme='dark']"
+
+// Or use individual exports
+console.log(defaultTheme.colors.background); // '#ffffff'
 console.log(dark.colors.background); // '#1f2937'
 console.log(selectors.dark); // "[data-theme='dark']"
 ```
 
 ## Type Safety
 
-The generated `themes.d.ts` uses module augmentation to provide autocomplete for `resolveTheme()`:
+The generated `types.ts` exports a `Tailwind` interface that provides full type safety for both the generated constant and the runtime API:
 
 ```typescript
-declare module 'tailwind-resolver' {
-  interface Theme extends GeneratedTheme {}
-}
+import type { Tailwind } from './generated/tailwindcss';
+
+import { resolveTheme, tailwind } from './generated/tailwindcss';
+
+// Generated constant - fully typed
+tailwind.variants.default.colors.primary[500]; // ✓ Type-safe
+tailwind.variants.dark.colors.background; // ✓ Type-safe
+tailwind.selectors.dark; // ✓ Type-safe
+
+// Runtime API - same structure, same types
+const result = await resolveTheme<Tailwind>({
+  input: './theme.css',
+});
+
+result.variants.default.colors.primary[500]; // ✓ Type-safe
+result.variants.dark.colors.background; // ✓ Type-safe
+result.selectors.dark; // ✓ Type-safe
 ```
 
 Autocomplete works automatically when the output directory is in `tsconfig.json` includes.
@@ -206,7 +263,7 @@ Enable debug mode to see warnings for failed imports:
 **Vite:**
 
 ```typescript
-tailwindThemeResolver({ input: 'src/styles.css', debug: true });
+tailwindResolver({ input: 'src/styles.css', debug: true });
 ```
 
 **CLI:**
@@ -237,13 +294,17 @@ Failed imports are silently skipped by design. Enable debug mode only when troub
 ### Chart.js
 
 ```typescript
-import { base } from './generated/tailwindcss';
+import { tailwind } from './generated/tailwindcss';
 
 new Chart(ctx, {
   data: {
     datasets: [
       {
-        backgroundColor: [base.colors.primary[500], base.colors.secondary[500]],
+        // Fully typed colors with autocomplete
+        backgroundColor: [
+          tailwind.variants.default.colors.primary[500],
+          tailwind.variants.dark.colors.secondary[500],
+        ],
       },
     ],
   },
@@ -253,19 +314,24 @@ new Chart(ctx, {
 ### Canvas
 
 ```typescript
-import { base } from './generated/tailwindcss';
+import { defaultTheme } from './generated/tailwindcss';
 
-ctx.fillStyle = base.colors.background;
-ctx.font = `${base.fontSize.xl.size} ${base.fonts.display}`;
+// All properties are type-safe
+ctx.fillStyle = defaultTheme.colors.background;
+ctx.font = `${defaultTheme.fontSize.xl.size} ${defaultTheme.fonts.display}`;
 ```
 
 ### Dynamic Themes
 
 ```typescript
-import { base, dark } from './generated/tailwindcss';
+import { tailwind } from './generated/tailwindcss';
 
-const theme = isDark ? dark : base;
-chartInstance.data.datasets[0].backgroundColor = theme.colors.primary[500];
+// Theme switching with full type safety
+const currentTheme = isDark
+  ? tailwind.variants.dark
+  : tailwind.variants.default;
+chartInstance.data.datasets[0].backgroundColor =
+  currentTheme.colors.primary[500];
 chartInstance.update();
 ```
 

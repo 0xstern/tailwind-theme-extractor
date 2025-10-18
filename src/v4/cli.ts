@@ -49,9 +49,9 @@ Examples:
   tailwind-resolver -i src/styles.css --debug
 
 Generated Files:
-  - ${OUTPUT_FILES.TYPES} (TypeScript declarations with module augmentation)
-  - ${OUTPUT_FILES.RUNTIME} (Runtime theme objects, if --runtime enabled)
-  - ${OUTPUT_FILES.INDEX_TS} (Re-exports, if --runtime enabled)
+  - ${OUTPUT_FILES.TYPES} (TypeScript interface definition)
+  - ${OUTPUT_FILES.THEME} (Runtime theme objects, if --runtime enabled)
+  - ${OUTPUT_FILES.INDEX} (Re-exports, if --runtime enabled)
 `;
 
 /**
@@ -117,8 +117,8 @@ function logSuccess(outputDir: string, generateRuntime: boolean): void {
   console.log('Generated files:');
   console.log(`  - ${join(outputDir, OUTPUT_FILES.TYPES)}`);
   if (generateRuntime) {
-    console.log(`  - ${join(outputDir, OUTPUT_FILES.RUNTIME)}`);
-    console.log(`  - ${join(outputDir, OUTPUT_FILES.INDEX_TS)}`);
+    console.log(`  - ${join(outputDir, OUTPUT_FILES.THEME)}`);
+    console.log(`  - ${join(outputDir, OUTPUT_FILES.INDEX)}`);
   }
 }
 

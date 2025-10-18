@@ -19,78 +19,113 @@
  * ```
  */
 
-import type { ParseOptions, ParseResult } from './types';
+import type {
+  ParseOptions,
+  TailwindResult,
+  Theme,
+  UnknownTailwind,
+} from './types';
 
 import { parseCSS } from './parser/css-parser';
 import { loadTailwindDefaults, mergeThemes } from './parser/tailwind-defaults';
 
 /**
- * Resolves theme variables from Tailwind v4 CSS files
+ * Resolves theme variables from Tailwind v4 CSS files with full type safety
+ *
+ * When used with a generated Tailwind type, provides complete TypeScript autocomplete
+ * for all theme properties, variants, selectors, files, and variables.
  *
  * Automatically includes Tailwind's default theme and merges with user overrides
  * unless `includeTailwindDefaults: false` is specified.
  *
  * Error Handling:
  * - File not found: Throws error if the specified filePath doesn't exist
- * - Missing `@import` files: Silently skipped, continues processing remaining CSS
+ * - Missing @import files: Silently skipped, continues processing remaining CSS
  * - Invalid CSS: PostCSS parsing errors will throw
  * - Tailwind not installed: Falls back to user theme only (no error thrown)
  * - Enable `debug: true` in options to log warnings for import resolution failures
  *
+ * @template TTailwind - The generated Tailwind interface from your project
  * @param options - Options for theme resolution
- * @returns Promise resolving to the parse result with theme, variables, and processed files
+ * @returns Promise resolving to the Tailwind structure with full type safety
  * @throws Error if neither input nor css is provided in options
  * @throws Error if input is provided but file cannot be read
  * @throws Error if CSS syntax is invalid
  *
  * @example
  * ```typescript
- * // Standard usage
- * const result = await resolveTheme({
+ * import type { Tailwind } from './generated/tailwindcss';
+ * import { resolveTheme } from 'tailwind-resolver';
+ *
+ * // With generated type for full type safety
+ * const tailwind = await resolveTheme<Tailwind>({
  *   input: './src/theme.css'
  * });
  *
- * // With debug mode for troubleshooting
- * const result = await resolveTheme({
- *   input: './src/theme.css',
- *   debug: true
- * });
+ * // Now fully typed - autocomplete works!
+ * tailwind.variants.default.colors.primary[500];
+ * tailwind.variants.dark.colors.background;
+ * tailwind.selectors.dark;
+ * tailwind.files;
+ * tailwind.variables;
  *
- * // Without Tailwind defaults
+ * // Without type parameter (fallback typing)
  * const result = await resolveTheme({
- *   input: './src/theme.css',
- *   includeTailwindDefaults: false
+ *   input: './src/theme.css'
  * });
  * ```
  */
-export async function resolveTheme(
+export async function resolveTheme<TTailwind = UnknownTailwind>(
   options: ParseOptions,
-): Promise<ParseResult> {
+): Promise<TailwindResult<TTailwind>> {
   const { includeTailwindDefaults = true, basePath } = options;
 
-  // Parse user's theme
+  // Parse user's theme (returns ParseResult<Theme> from internal parser)
   const userResult = await parseCSS(options);
 
-  // If user doesn't want defaults, return as-is
-  if (includeTailwindDefaults == false) {
-    return userResult;
+  let finalTheme: Theme;
+
+  // If user doesn't want defaults, use user theme as-is
+  if (includeTailwindDefaults === false) {
+    finalTheme = userResult.theme;
+  } else {
+    // Try to load Tailwind's default theme
+    const defaultTheme = await loadTailwindDefaults(basePath ?? process.cwd());
+
+    // If no defaults found (Tailwind not installed), use user theme
+    if (defaultTheme === null) {
+      finalTheme = userResult.theme;
+    } else {
+      // Merge: user theme overrides defaults
+      finalTheme = mergeThemes(defaultTheme, userResult.theme);
+    }
   }
 
-  // Try to load Tailwind's default theme
-  const defaultTheme = await loadTailwindDefaults(basePath ?? process.cwd());
-
-  // If no defaults found (Tailwind not installed), return user theme as-is
-  if (defaultTheme === null) {
-    return userResult;
-  }
-
-  // Merge: user theme overrides defaults
-  const mergedTheme = mergeThemes(defaultTheme, userResult.theme);
-
-  return {
-    ...userResult,
-    theme: mergedTheme,
+  // Build variants object with default variant
+  const variants: Record<string, unknown> = {
+    default: finalTheme,
   };
+
+  const selectors: Record<string, string> = {
+    default: ':root',
+  };
+
+  // Add other variants
+  for (const [variantName, variantData] of Object.entries(
+    userResult.variants,
+  )) {
+    variants[variantName] = variantData.theme;
+    selectors[variantName] = variantData.selector;
+  }
+
+  // Return TailwindResult structure
+  return {
+    variants,
+    selectors,
+    files: userResult.files,
+    variables: userResult.variables,
+    deprecationWarnings: userResult.deprecationWarnings,
+  } as TailwindResult<TTailwind>;
 }
 
 // Re-export types for consumers
@@ -123,4 +158,6 @@ export type {
   ParseResult,
   ThemeVariant,
   DeprecationWarning,
+  TailwindResult,
+  UnknownTailwind,
 } from './types';

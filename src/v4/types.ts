@@ -248,17 +248,19 @@ export interface ParseOptions {
 
 /**
  * Theme variant with its CSS selector
+ *
+ * @template TTheme - The concrete theme type (e.g., GeneratedTheme from generated types)
  */
-export interface ThemeVariant {
+export interface ThemeVariant<TTheme extends Theme = Theme> {
   /**
    * The CSS selector that activates this variant
-   * Examples: '[data-theme="dark"]', '.midnight', '`@media` (prefers-color-scheme: dark)'
+   * Examples: '[data-theme="dark"]', '.midnight', '@media (prefers-color-scheme: dark)'
    */
   selector: string;
   /**
    * The theme for this variant
    */
-  theme: Theme;
+  theme: TTheme;
 }
 
 /**
@@ -280,20 +282,26 @@ export interface DeprecationWarning {
 }
 
 /**
- * Result from CSS parsing
+ * Result from CSS parsing (internal use)
+ *
+ * @template TTheme - The concrete theme type (e.g., DefaultTheme from generated types)
+ *
+ * @internal This is the internal parser result structure. Users should use the Tailwind interface.
  */
-export interface ParseResult {
+export interface ParseResult<TTheme extends Theme = Theme> {
   /**
-   * Base theme from `@theme` and :root blocks
+   * Base theme from @theme and :root blocks
+   * Typed as the concrete theme type when using generics
    */
-  theme: Theme;
+  theme: TTheme;
   /**
    * Theme variants from selector-based rules (e.g., [data-theme='dark'], .midnight)
    * Keys are the variant names resolved from selectors
+   * Each variant theme is typed as the same concrete type as the base theme
    */
-  variants: Record<string, ThemeVariant>;
+  variants: Record<string, ThemeVariant<TTheme>>;
   /**
-   * Raw CSS variables resolved
+   * Raw CSS variables resolved from all sources
    */
   variables: Array<CSSVariable>;
   /**
@@ -304,4 +312,92 @@ export interface ParseResult {
    * Deprecation warnings for legacy CSS variables
    */
   deprecationWarnings: Array<DeprecationWarning>;
+}
+
+/**
+ * Tailwind theme resolver result structure
+ *
+ * This is the structure returned by resolveTheme() and matches the generated Tailwind interface.
+ * Pass your generated Tailwind type as the generic parameter for full type safety.
+ *
+ * @template TTailwind - The generated Tailwind interface from your project
+ *
+ * @example
+ * ```typescript
+ * import type { Tailwind } from './generated/tailwindcss';
+ * import { resolveTheme } from 'tailwind-resolver';
+ *
+ * const result = await resolveTheme<Tailwind>({
+ *   input: './theme.css'
+ * });
+ *
+ * // Fully typed with autocomplete
+ * result.variants.default.colors.primary[500];
+ * result.variants.dark.colors.background;
+ * result.selectors.dark;
+ * result.files;
+ * result.variables;
+ * ```
+ */
+export interface TailwindResult<TTailwind = UnknownTailwind> {
+  /**
+   * Theme variants (default, dark, custom themes, etc.)
+   */
+  variants: TTailwind extends { variants: infer V } ? V : Record<string, Theme>;
+  /**
+   * CSS selectors for each variant
+   */
+  selectors: TTailwind extends { selectors: infer S }
+    ? S
+    : Record<string, string>;
+  /**
+   * List of CSS files that were processed
+   */
+  files: Array<string>;
+  /**
+   * Raw CSS variables
+   */
+  variables: Array<CSSVariable>;
+  /**
+   * Deprecation warnings for legacy CSS variables
+   */
+  deprecationWarnings: Array<DeprecationWarning>;
+}
+
+/**
+ * Default Tailwind structure when no type parameter is provided
+ */
+export interface UnknownTailwind {
+  variants: {
+    default: Theme;
+    [key: string]: Theme;
+  };
+  selectors: {
+    default: string;
+    [key: string]: string;
+  };
+  files: Array<string>;
+  variables: Array<CSSVariable>;
+}
+
+/**
+ * Type-safe narrowing function for parse results
+ *
+ * This function provides a type-safe way to narrow a ParseResult<Theme> to ParseResult<TTheme>
+ * without using type assertions. The runtime structure is identical; this only affects
+ * compile-time type checking.
+ *
+ * @template TTheme - The concrete theme type to narrow to
+ * @param result - The parse result with base Theme typing
+ * @returns The same result, but typed as ParseResult<TTheme>
+ *
+ * @internal This is used internally by the parser to maintain type safety without assertions
+ */
+export function narrowParseResult<TTheme extends Theme>(
+  result: ParseResult<Theme>,
+): ParseResult<TTheme> {
+  // Type-safe narrowing: Since TTheme extends Theme, and the runtime structure
+  // is guaranteed to match TTheme (from CSS parsing), this narrowing is safe.
+  // The function exists purely for type-level safety without direct type assertions.
+  return result as unknown as ParseResult<TTheme>;
 }

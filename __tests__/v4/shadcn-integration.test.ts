@@ -3,7 +3,7 @@
  * Tests variable resolution, self-referential handling, and Tailwind defaults
  */
 
-import type { ParseResult } from '../../src/v4/types';
+import type { TailwindResult } from '../../src/v4/types';
 
 import { resolve } from 'node:path';
 
@@ -18,7 +18,7 @@ const EXPECTED_MIN_VARIANTS = 15;
 const EXPECTED_MIN_COLOR_KEYS = 30;
 const EXPECTED_MIN_FONT_STACK_LENGTH = 20;
 
-let result: ParseResult;
+let result: TailwindResult;
 
 beforeAll(async () => {
   // Parse shadcn-global.css which imports default-theme.css and shadcn-themes.css
@@ -52,12 +52,14 @@ describe('Variable Resolution from Tailwind Defaults', () => {
   test('resolves chart colors from Tailwind defaults', () => {
     // shadcn-global.css has: --chart-1: var(--color-blue-300)
     // This should resolve to the actual oklch value from Tailwind defaults
-    expect(result.theme.colors.chart).toBeDefined();
+    expect(result.variants.default.colors.chart).toBeDefined();
     expect(
-      (result.theme.colors.chart as Record<string, string>)['1'],
+      (result.variants.default.colors.chart as Record<string, string>)['1'],
     ).toBeDefined();
 
-    const chart1 = (result.theme.colors.chart as Record<string, string>)['1'];
+    const chart1 = (
+      result.variants.default.colors.chart as Record<string, string>
+    )['1'];
     // Should be resolved to actual oklch value, not var()
     expect(chart1).not.toContain('var(');
     expect(chart1).toContain('oklch');
@@ -65,7 +67,10 @@ describe('Variable Resolution from Tailwind Defaults', () => {
   });
 
   test('resolves all chart colors to Tailwind defaults', () => {
-    const chartColors = result.theme.colors.chart as Record<string, string>;
+    const chartColors = result.variants.default.colors.chart as Record<
+      string,
+      string
+    >;
 
     expect(chartColors['1']).toBe('oklch(80.9% 0.105 251.813)'); // blue-300
     expect(chartColors['2']).toBe('oklch(62.3% 0.214 259.815)'); // blue-500
@@ -107,13 +112,13 @@ describe('Variable Resolution from Tailwind Defaults', () => {
     ];
 
     for (const colorName of defaultColors) {
-      expect(result.theme.colors[colorName]).toBeDefined();
+      expect(result.variants.default.colors[colorName]).toBeDefined();
     }
   });
 
   test('Tailwind color scales are complete', () => {
     // Check that blue scale has all variants
-    const blue = result.theme.colors.blue as Record<string, string>;
+    const blue = result.variants.default.colors.blue as Record<string, string>;
     const expectedVariants = [
       '50',
       '100',
@@ -135,14 +140,14 @@ describe('Variable Resolution from Tailwind Defaults', () => {
   });
 
   test('includes Tailwind default fonts', () => {
-    expect(result.theme.fonts.sans).toBeDefined();
-    expect(result.theme.fonts.serif).toBeDefined();
-    expect(result.theme.fonts.mono).toBeDefined();
+    expect(result.variants.default.fonts.sans).toBeDefined();
+    expect(result.variants.default.fonts.serif).toBeDefined();
+    expect(result.variants.default.fonts.mono).toBeDefined();
 
     // Should be actual font stacks, not empty
-    expect(result.theme.fonts.sans).toContain('ui-sans-serif');
-    expect(result.theme.fonts.serif).toContain('ui-serif');
-    expect(result.theme.fonts.mono).toContain('ui-monospace');
+    expect(result.variants.default.fonts.sans).toContain('ui-sans-serif');
+    expect(result.variants.default.fonts.serif).toContain('ui-serif');
+    expect(result.variants.default.fonts.mono).toContain('ui-monospace');
   });
 });
 
@@ -150,15 +155,15 @@ describe('Self-Referential Variable Handling', () => {
   test('skips self-referential font variables', () => {
     // shadcn-global.css has: --font-sans: var(--font-sans)
     // This should be skipped, allowing Tailwind defaults to be used
-    expect(result.theme.fonts.sans).toBeDefined();
-    expect(result.theme.fonts.sans).not.toBe('var(--font-sans)');
-    expect(result.theme.fonts.sans).toContain('ui-sans-serif'); // From Tailwind defaults
+    expect(result.variants.default.fonts.sans).toBeDefined();
+    expect(result.variants.default.fonts.sans).not.toBe('var(--font-sans)');
+    expect(result.variants.default.fonts.sans).toContain('ui-sans-serif'); // From Tailwind defaults
   });
 
   test('skips self-referential mono font', () => {
-    expect(result.theme.fonts.mono).toBeDefined();
-    expect(result.theme.fonts.mono).not.toBe('var(--font-mono)');
-    expect(result.theme.fonts.mono).toContain('ui-monospace'); // From Tailwind defaults
+    expect(result.variants.default.fonts.mono).toBeDefined();
+    expect(result.variants.default.fonts.mono).not.toBe('var(--font-mono)');
+    expect(result.variants.default.fonts.mono).toContain('ui-monospace'); // From Tailwind defaults
   });
 });
 
@@ -166,9 +171,9 @@ describe('Two-Layer Variable Resolution (shadcn Pattern)', () => {
   test('resolves @theme variables that reference :root variables', () => {
     // @theme has: --color-background: var(--background)
     // :root has: --background: oklch(1 0 0)
-    expect(result.theme.colors.background).toBeDefined();
-    expect(result.theme.colors.background).toBe('oklch(1 0 0)');
-    expect(result.theme.colors.background).not.toContain('var(');
+    expect(result.variants.default.colors.background).toBeDefined();
+    expect(result.variants.default.colors.background).toBe('oklch(1 0 0)');
+    expect(result.variants.default.colors.background).not.toContain('var(');
   });
 
   test('resolves semantic color tokens', () => {
@@ -191,24 +196,26 @@ describe('Two-Layer Variable Resolution (shadcn Pattern)', () => {
       accentForeground: 'oklch(0.205 0 0)',
     };
 
-    const colors = result.theme.colors;
+    const colors = result.variants.default.colors;
     for (const [key, expectedValue] of Object.entries(semanticTokens)) {
       expect(colors[key]).toBe(expectedValue);
     }
   });
 
   test('resolves destructive color', () => {
-    expect(result.theme.colors.destructive).toBe('oklch(0.577 0.245 27.325)');
+    expect(result.variants.default.colors.destructive).toBe(
+      'oklch(0.577 0.245 27.325)',
+    );
   });
 
   test('resolves border and input colors', () => {
-    expect(result.theme.colors.border).toBe('oklch(0.922 0 0)');
-    expect(result.theme.colors.input).toBe('oklch(0.922 0 0)');
-    expect(result.theme.colors.ring).toBe('oklch(0.708 0 0)');
+    expect(result.variants.default.colors.border).toBe('oklch(0.922 0 0)');
+    expect(result.variants.default.colors.input).toBe('oklch(0.922 0 0)');
+    expect(result.variants.default.colors.ring).toBe('oklch(0.708 0 0)');
   });
 
   test('resolves sidebar colors', () => {
-    const colors = result.theme.colors;
+    const colors = result.variants.default.colors;
     expect(colors.sidebar).toBe('oklch(0.985 0 0)');
     expect(colors.sidebarForeground).toBe('oklch(0.145 0 0)');
     expect(colors.sidebarPrimary).toBe('oklch(0.205 0 0)');
@@ -222,57 +229,61 @@ describe('Two-Layer Variable Resolution (shadcn Pattern)', () => {
   test('resolves nested var() references', () => {
     // :root has: --surface-foreground: var(--foreground)
     // --foreground: oklch(0.145 0 0)
-    expect(result.theme.colors.surfaceForeground).toBe('oklch(0.145 0 0)');
+    expect(result.variants.default.colors.surfaceForeground).toBe(
+      'oklch(0.145 0 0)',
+    );
 
     // :root has: --code: var(--surface)
     // --surface: oklch(0.98 0 0)
-    expect(result.theme.colors.code).toBe('oklch(0.98 0 0)');
+    expect(result.variants.default.colors.code).toBe('oklch(0.98 0 0)');
 
     // :root has: --code-foreground: var(--surface-foreground)
     // --surface-foreground: var(--foreground)
     // --foreground: oklch(0.145 0 0)
-    expect(result.theme.colors.codeForeground).toBe('oklch(0.145 0 0)');
+    expect(result.variants.default.colors.codeForeground).toBe(
+      'oklch(0.145 0 0)',
+    );
   });
 });
 
 describe('Radius and Calc() Expressions', () => {
   test('resolves base radius', () => {
     // :root has: --radius: 0.625rem
-    expect(result.theme.radius.lg).toBe('0.625rem');
+    expect(result.variants.default.radius.lg).toBe('0.625rem');
   });
 
   test('preserves calc() expressions for radius variants', () => {
     // @theme has: --radius-sm: calc(var(--radius) - 4px)
-    expect(result.theme.radius.sm).toBe('calc(0.625rem - 4px)');
-    expect(result.theme.radius.md).toBe('calc(0.625rem - 2px)');
-    expect(result.theme.radius.xl).toBe('calc(0.625rem + 4px)');
+    expect(result.variants.default.radius.sm).toBe('calc(0.625rem - 4px)');
+    expect(result.variants.default.radius.md).toBe('calc(0.625rem - 2px)');
+    expect(result.variants.default.radius.xl).toBe('calc(0.625rem + 4px)');
   });
 });
 
 describe('Breakpoint Extensions', () => {
   test('includes custom breakpoints', () => {
-    expect(result.theme.breakpoints['3xl']).toBe('1600px');
-    expect(result.theme.breakpoints['4xl']).toBe('2000px');
+    expect(result.variants.default.breakpoints['3xl']).toBe('1600px');
+    expect(result.variants.default.breakpoints['4xl']).toBe('2000px');
   });
 
   test('includes default Tailwind breakpoints', () => {
     // From default-theme.css
-    expect(result.theme.breakpoints.sm).toBe('40rem');
-    expect(result.theme.breakpoints.md).toBe('48rem');
-    expect(result.theme.breakpoints.lg).toBe('64rem');
-    expect(result.theme.breakpoints.xl).toBe('80rem');
-    expect(result.theme.breakpoints['2xl']).toBe('96rem');
+    expect(result.variants.default.breakpoints.sm).toBe('40rem');
+    expect(result.variants.default.breakpoints.md).toBe('48rem');
+    expect(result.variants.default.breakpoints.lg).toBe('64rem');
+    expect(result.variants.default.breakpoints.xl).toBe('80rem');
+    expect(result.variants.default.breakpoints['2xl']).toBe('96rem');
   });
 });
 
 describe('Theme Variants from shadcn-themes.css', () => {
   test('resolves dark mode variant from .dark selector', () => {
     expect(result.variants.dark).toBeDefined();
-    expect(result.variants.dark?.selector).toBe('.dark');
+    expect(result.selectors.dark).toBe('.dark');
   });
 
   test('dark mode overrides semantic colors', () => {
-    const dark = result.variants.dark?.theme;
+    const dark = result.variants.dark;
     expect(dark).toBeDefined();
 
     if (dark === undefined) {
@@ -286,7 +297,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('dark mode has resolved chart colors', () => {
-    const dark = result.variants.dark?.theme;
+    const dark = result.variants.dark;
     if (dark === undefined) {
       throw new Error('Dark variant should be defined');
     }
@@ -298,7 +309,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('dark mode handles alpha channel colors', () => {
-    const dark = result.variants.dark?.theme;
+    const dark = result.variants.dark;
     if (dark === undefined) {
       throw new Error('Dark variant should be defined');
     }
@@ -315,7 +326,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   test('resolves theme-mono variant', () => {
     expect(result.variants['theme-mono']).toBeDefined();
 
-    const mono = result.variants['theme-mono']?.theme;
+    const mono = result.variants['theme-mono'];
     if (mono === undefined) {
       throw new Error('Theme-mono variant should be defined');
     }
@@ -345,7 +356,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('theme-blue resolves primary colors from Tailwind defaults', () => {
-    const blue = result.variants['theme-blue']?.theme;
+    const blue = result.variants['theme-blue'];
     if (blue === undefined) {
       throw new Error('Theme-blue variant should be defined');
     }
@@ -357,7 +368,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('theme-green resolves lime colors from Tailwind defaults', () => {
-    const green = result.variants['theme-green']?.theme;
+    const green = result.variants['theme-green'];
     if (green === undefined) {
       throw new Error('Theme-green variant should be defined');
     }
@@ -382,7 +393,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('theme-rounded-none sets radius to 0', () => {
-    const variant = result.variants['theme-rounded-none']?.theme;
+    const variant = result.variants['theme-rounded-none'];
     if (variant === undefined) {
       throw new Error('Theme-rounded-none variant should be defined');
     }
@@ -391,7 +402,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('theme-rounded-full has large radius', () => {
-    const variant = result.variants['theme-rounded-full']?.theme;
+    const variant = result.variants['theme-rounded-full'];
     if (variant === undefined) {
       throw new Error('Theme-rounded-full variant should be defined');
     }
@@ -416,7 +427,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
 describe('Media Query Variants', () => {
   test('resolves theme-mono media query overrides', () => {
     // theme-mono has @media (min-width: 1024px) with font size overrides
-    const mono = result.variants['theme-mono']?.theme;
+    const mono = result.variants['theme-mono'];
     if (mono === undefined) {
       throw new Error('Theme-mono variant should be defined');
     }
@@ -426,7 +437,7 @@ describe('Media Query Variants', () => {
   });
 
   test('resolves theme-scaled media query overrides', () => {
-    const scaled = result.variants['theme-scaled']?.theme;
+    const scaled = result.variants['theme-scaled'];
     if (scaled === undefined) {
       throw new Error('Theme-scaled variant should be defined');
     }
@@ -470,7 +481,7 @@ describe('Variable Count and Coverage', () => {
   });
 
   test('base theme has comprehensive color palette', () => {
-    const colorKeys = Object.keys(result.theme.colors);
+    const colorKeys = Object.keys(result.variants.default.colors);
 
     // Should have Tailwind defaults + shadcn semantic tokens
     expect(colorKeys.length).toBeGreaterThan(EXPECTED_MIN_COLOR_KEYS);
@@ -479,7 +490,7 @@ describe('Variable Count and Coverage', () => {
 
 describe('Special Value Handling', () => {
   test('handles oklch with alpha channel', () => {
-    const dark = result.variants.dark?.theme;
+    const dark = result.variants.dark;
     if (dark === undefined) {
       throw new Error('Dark variant should be defined');
     }
@@ -492,13 +503,13 @@ describe('Special Value Handling', () => {
 
   test('handles hex color values', () => {
     // default-theme.css has --color-black: #000; --color-white: #fff;
-    expect(result.theme.colors.black).toBe('#000');
-    expect(result.theme.colors.white).toBe('#fff');
+    expect(result.variants.default.colors.black).toBe('#000');
+    expect(result.variants.default.colors.white).toBe('#fff');
   });
 
   test('handles multi-line font stacks', () => {
     // default-theme.css has multi-line font family definitions
-    const sansFontStack = result.theme.fonts.sans;
+    const sansFontStack = result.variants.default.fonts.sans;
     expect(sansFontStack).toBeDefined();
 
     if (sansFontStack === undefined) {
@@ -514,11 +525,11 @@ describe('Special Value Handling', () => {
 describe('Spacing and Layout from Defaults', () => {
   test('includes Tailwind default spacing', () => {
     // default-theme.css has --spacing: 0.25rem
-    expect(result.theme.spacing.base).toBe('0.25rem');
+    expect(result.variants.default.spacing.base).toBe('0.25rem');
   });
 
   test('includes container sizes from defaults', () => {
-    const containers = result.theme.containers;
+    const containers = result.variants.default.containers;
     expect(containers['3xs']).toBe('16rem');
     expect(containers['2xs']).toBe('18rem');
     expect(containers.xs).toBe('20rem');
@@ -530,9 +541,9 @@ describe('Spacing and Layout from Defaults', () => {
 describe('Font Sizes with Line Heights from Defaults', () => {
   test('resolves font sizes with line heights', () => {
     // default-theme.css has --text-xs: 0.75rem; --text-xs--line-height: calc(1 / 0.75);
-    expect(result.theme.fontSize.xs).toBeDefined();
+    expect(result.variants.default.fontSize.xs).toBeDefined();
 
-    const xs = result.theme.fontSize.xs;
+    const xs = result.variants.default.fontSize.xs;
     if (xs === undefined || typeof xs === 'string') {
       throw new Error('Font size xs should be an object');
     }
@@ -545,60 +556,60 @@ describe('Font Sizes with Line Heights from Defaults', () => {
     const sizes = ['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'];
 
     for (const size of sizes) {
-      expect(result.theme.fontSize[size]).toBeDefined();
+      expect(result.variants.default.fontSize[size]).toBeDefined();
     }
   });
 });
 
 describe('Shadows from Defaults', () => {
   test('includes default shadow values', () => {
-    expect(result.theme.shadows['2xs']).toBeDefined();
-    expect(result.theme.shadows.xs).toBeDefined();
-    expect(result.theme.shadows.sm).toBeDefined();
-    expect(result.theme.shadows.md).toBeDefined();
-    expect(result.theme.shadows.lg).toBeDefined();
-    expect(result.theme.shadows.xl).toBeDefined();
-    expect(result.theme.shadows['2xl']).toBeDefined();
+    expect(result.variants.default.shadows['2xs']).toBeDefined();
+    expect(result.variants.default.shadows.xs).toBeDefined();
+    expect(result.variants.default.shadows.sm).toBeDefined();
+    expect(result.variants.default.shadows.md).toBeDefined();
+    expect(result.variants.default.shadows.lg).toBeDefined();
+    expect(result.variants.default.shadows.xl).toBeDefined();
+    expect(result.variants.default.shadows['2xl']).toBeDefined();
   });
 
   test('includes inset shadows', () => {
-    expect(result.theme.insetShadows['2xs']).toBeDefined();
-    expect(result.theme.insetShadows.xs).toBeDefined();
-    expect(result.theme.insetShadows.sm).toBeDefined();
+    expect(result.variants.default.insetShadows['2xs']).toBeDefined();
+    expect(result.variants.default.insetShadows.xs).toBeDefined();
+    expect(result.variants.default.insetShadows.sm).toBeDefined();
   });
 
   test('includes drop shadows', () => {
-    expect(result.theme.dropShadows.xs).toBeDefined();
-    expect(result.theme.dropShadows.sm).toBeDefined();
-    expect(result.theme.dropShadows.md).toBeDefined();
+    expect(result.variants.default.dropShadows.xs).toBeDefined();
+    expect(result.variants.default.dropShadows.sm).toBeDefined();
+    expect(result.variants.default.dropShadows.md).toBeDefined();
   });
 
   test('includes text shadows', () => {
-    expect(result.theme.textShadows['2xs']).toBeDefined();
-    expect(result.theme.textShadows.xs).toBeDefined();
-    expect(result.theme.textShadows.sm).toBeDefined();
+    expect(result.variants.default.textShadows['2xs']).toBeDefined();
+    expect(result.variants.default.textShadows.xs).toBeDefined();
+    expect(result.variants.default.textShadows.sm).toBeDefined();
   });
 });
 
 describe('Animations and Keyframes from Defaults', () => {
   test('includes default animations', () => {
-    expect(result.theme.animations.spin).toBeDefined();
-    expect(result.theme.animations.ping).toBeDefined();
-    expect(result.theme.animations.pulse).toBeDefined();
-    expect(result.theme.animations.bounce).toBeDefined();
+    expect(result.variants.default.animations.spin).toBeDefined();
+    expect(result.variants.default.animations.ping).toBeDefined();
+    expect(result.variants.default.animations.pulse).toBeDefined();
+    expect(result.variants.default.animations.bounce).toBeDefined();
   });
 
   test('includes keyframes', () => {
-    expect(result.theme.keyframes.spin).toBeDefined();
-    expect(result.theme.keyframes.ping).toBeDefined();
-    expect(result.theme.keyframes.pulse).toBeDefined();
-    expect(result.theme.keyframes.bounce).toBeDefined();
+    expect(result.variants.default.keyframes.spin).toBeDefined();
+    expect(result.variants.default.keyframes.ping).toBeDefined();
+    expect(result.variants.default.keyframes.pulse).toBeDefined();
+    expect(result.variants.default.keyframes.bounce).toBeDefined();
   });
 });
 
 describe('No Unresolved var() References', () => {
   test('base theme has no var() in colors', () => {
-    const colors = result.theme.colors;
+    const colors = result.variants.default.colors;
 
     // Helper to check all values recursively
     const checkNoVar = (obj: unknown): void => {
@@ -617,10 +628,10 @@ describe('No Unresolved var() References', () => {
   });
 
   test('base theme has no var() in fonts', () => {
-    const fonts = result.theme.fonts;
+    const fonts = result.variants.default.fonts;
 
     for (const value of Object.values(fonts)) {
-      if (value.startsWith('var(')) {
+      if (typeof value === 'string' && value.startsWith('var(')) {
         throw new Error(`Found unresolved var() in fonts: ${value}`);
       }
     }
@@ -630,11 +641,8 @@ describe('No Unresolved var() References', () => {
     // Some variants might have unresolved var() for custom fonts
     // but chart colors should always be resolved
     for (const variant of Object.values(result.variants)) {
-      if (variant.theme.colors.chart !== undefined) {
-        const chartColors = variant.theme.colors.chart as Record<
-          string,
-          string
-        >;
+      if (variant.colors.chart !== undefined) {
+        const chartColors = variant.colors.chart as Record<string, string>;
         for (const value of Object.values(chartColors)) {
           expect(value).not.toContain('var(');
         }

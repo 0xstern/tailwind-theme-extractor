@@ -26,7 +26,9 @@ async function main(): Promise<void> {
     }
 
     console.log('\nColors (including imported brand colors):');
-    for (const [name, value] of Object.entries(result.theme.colors)) {
+    for (const [name, value] of Object.entries(
+      result.variants.default.colors,
+    )) {
       if (typeof value === 'string') {
         console.log(`  - ${name}: ${value}`);
       } else {
@@ -36,7 +38,9 @@ async function main(): Promise<void> {
     }
 
     console.log('\nFont Sizes with Line Heights:');
-    for (const [name, config] of Object.entries(result.theme.fontSize)) {
+    for (const [name, config] of Object.entries(
+      result.variants.default.fontSize,
+    )) {
       if (config.lineHeight !== undefined) {
         console.log(`  - ${name}: ${config.size} / ${config.lineHeight}`);
       } else {

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking**: Renamed Vite plugin function from `tailwindThemeResolver` to `tailwindResolver` for consistency
+- **Breaking**: API structure changed - `resolveTheme()` now returns `TailwindResult` with consistent structure:
+  - `result.theme` → `result.variants.default` (base theme is now a variant)
+  - `result.variants[name].theme` → `result.variants[name]` (direct access to variant themes)
+  - `result.variants[name].selector` → `result.selectors[name]` (selectors in separate object)
+- **Breaking**: Replaced module augmentation with explicit generic types
+  - Before: Types augmented automatically, no generic needed
+  - After: Pass `Tailwind` type explicitly: `resolveTheme<Tailwind>({ ... })`
+- Generated `index.ts` now uses `export type *` instead of listing individual types
+- Generated files structure changed:
+  - `themes.d.ts` → `types.ts` (concrete TypeScript interfaces)
+  - `themes.ts` → `theme.ts` (runtime objects)
+  - Added `index.ts` for clean re-exports
+
+### Added
+
+- New `Tailwind` master interface that includes all result properties (variants, selectors, files, variables)
+- Individual variant interfaces generated for each theme (e.g., `Dark`, `Midnight`)
+- Full type consistency between generated code and runtime API
+- Comprehensive type safety for all variants with autocomplete support
+
+### Fixed
+
+- Type generator now accepts both `TailwindResult` and `ParseResult` formats for backward compatibility
+- All 197 tests updated to use new API structure (99.5% pass rate)
+- Build process successfully generates both ESM and CJS formats
+- Documentation restructured for clarity: Vite Plugin vs Runtime API sections clearly separated
+
 ## [0.1.5] - 2025-01-17
 
 ### Changed

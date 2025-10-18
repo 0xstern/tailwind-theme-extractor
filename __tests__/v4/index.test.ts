@@ -18,8 +18,8 @@ describe('Basic Theme Resolution', () => {
       resolveImports: false,
     });
 
-    expect(result.theme.colors.primary).toBe('#3b82f6');
-    expect(result.theme.spacing['4']).toBe('1rem');
+    expect(result.variants.default.colors.primary).toBe('#3b82f6');
+    expect(result.variants.default.spacing['4']).toBe('1rem');
   });
 
   test('resolves theme from :root block', async () => {
@@ -33,8 +33,8 @@ describe('Basic Theme Resolution', () => {
       resolveImports: false,
     });
 
-    expect(result.theme.colors.secondary).toBe('#8b5cf6');
-    expect(result.theme.fonts.sans).toBe("'Inter', sans-serif");
+    expect(result.variants.default.colors.secondary).toBe('#8b5cf6');
+    expect(result.variants.default.fonts.sans).toBe("'Inter', sans-serif");
   });
 
   test('throws error when neither input nor css provided', async () => {
@@ -48,7 +48,7 @@ describe('Basic Theme Resolution', () => {
       input: './examples/v4/basic-theme.css',
     });
 
-    expect(result.theme.colors).toBeDefined();
+    expect(result.variants.default.colors).toBeDefined();
     expect(result.files.length).toBeGreaterThan(0);
   });
 });
@@ -66,15 +66,15 @@ describe('Color Scale Resolution', () => {
       resolveImports: false,
     });
 
-    expect((result.theme.colors.blue as Record<number, string>)[50]).toBe(
-      '#eff6ff',
-    );
-    expect((result.theme.colors.blue as Record<number, string>)[500]).toBe(
-      '#3b82f6',
-    );
-    expect((result.theme.colors.blue as Record<number, string>)[900]).toBe(
-      '#1e3a8a',
-    );
+    expect(
+      (result.variants.default.colors.blue as Record<number, string>)[50],
+    ).toBe('#eff6ff');
+    expect(
+      (result.variants.default.colors.blue as Record<number, string>)[500],
+    ).toBe('#3b82f6');
+    expect(
+      (result.variants.default.colors.blue as Record<number, string>)[900],
+    ).toBe('#1e3a8a');
   });
 
   test('converts multi-word color names to camelCase', async () => {
@@ -88,7 +88,9 @@ describe('Color Scale Resolution', () => {
     });
 
     expect(
-      (result.theme.colors.brandPrimary as Record<number, string>)[500],
+      (
+        result.variants.default.colors.brandPrimary as Record<number, string>
+      )[500],
     ).toBe('#3b82f6');
   });
 
@@ -104,10 +106,14 @@ describe('Color Scale Resolution', () => {
     });
 
     expect(
-      (result.theme.colors.button as Record<string, string>)['500-hover'],
+      (result.variants.default.colors.button as Record<string, string>)[
+        '500-hover'
+      ],
     ).toBe('#60a5fa');
     expect(
-      (result.theme.colors.button as Record<string, string>)['500-active'],
+      (result.variants.default.colors.button as Record<string, string>)[
+        '500-active'
+      ],
     ).toBe('#3b82f6');
   });
 });
@@ -127,13 +133,13 @@ describe('Variant Resolution', () => {
       resolveImports: false,
     });
 
-    expect(result.theme.colors.background).toBe('#ffffff');
+    expect(result.variants.default.colors.background).toBe('#ffffff');
     expect(result.variants.dark).toBeDefined();
 
     if (result.variants.dark === undefined) {
       throw new Error('Dark variant should be defined');
     }
-    expect(result.variants.dark.theme.colors.background).toBe('#1f2937');
+    expect(result.variants.dark.colors.background).toBe('#1f2937');
   });
 
   test('resolves class-based variants', async () => {
@@ -155,8 +161,8 @@ describe('Variant Resolution', () => {
     if (result.variants.midnight === undefined) {
       throw new Error('Midnight variant should be defined');
     }
-    expect(result.variants.midnight.selector).toBe('.midnight');
-    expect(result.variants.midnight.theme.colors.primary).toBe('#818cf8');
+    expect(result.selectors.midnight).toBe('.midnight');
+    expect(result.variants.midnight.colors.primary).toBe('#818cf8');
   });
 
   test('resolves media query variants', async () => {
@@ -180,9 +186,7 @@ describe('Variant Resolution', () => {
     if (result.variants.dark === undefined) {
       throw new Error('Dark variant should be defined');
     }
-    expect(result.variants.dark.selector).toContain(
-      'prefers-color-scheme: dark',
-    );
+    expect(result.selectors.dark).toContain('prefers-color-scheme: dark');
   });
 
   test('merges multiple variant definitions', async () => {
@@ -204,8 +208,8 @@ describe('Variant Resolution', () => {
     if (result.variants.custom === undefined) {
       throw new Error('Custom variant should be defined');
     }
-    expect(result.variants.custom.theme.colors.primary).toBe('#3b82f6');
-    expect(result.variants.custom.theme.colors.secondary).toBe('#8b5cf6');
+    expect(result.variants.custom.colors.primary).toBe('#3b82f6');
+    expect(result.variants.custom.colors.secondary).toBe('#8b5cf6');
   });
 });
 
@@ -221,13 +225,13 @@ describe('Font Size Resolution', () => {
       resolveImports: false,
     });
 
-    expect(result.theme.fontSize.sm).toBeDefined();
+    expect(result.variants.default.fontSize.sm).toBeDefined();
 
-    if (result.theme.fontSize.sm === undefined) {
+    if (result.variants.default.fontSize.sm === undefined) {
       throw new Error('Font size sm should be defined');
     }
-    expect(result.theme.fontSize.sm.size).toBe('0.875rem');
-    expect(result.theme.fontSize.sm.lineHeight).toBe('1.25rem');
+    expect(result.variants.default.fontSize.sm.size).toBe('0.875rem');
+    expect(result.variants.default.fontSize.sm.lineHeight).toBe('1.25rem');
   });
 });
 
