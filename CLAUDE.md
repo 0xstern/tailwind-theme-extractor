@@ -97,7 +97,7 @@ When creating commits:
 - **Focus on business impact**, not implementation details
 - **Format**: `type(scope): description`
   - Types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `chore`
-  - Example: `feat(theme): add CSS variable extraction for Tailwind v4`
+  - Example: `feat(theme): add CSS variable resolution for Tailwind v4`
 - **Never mention AI assistance** in commit messages
 
 ## Testing

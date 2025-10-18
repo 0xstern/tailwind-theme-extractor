@@ -1,5 +1,5 @@
 /**
- * Core types for the Tailwind v4 theme extractor
+ * Core types for the Tailwind v4 theme resolver
  */
 
 /**
@@ -154,7 +154,7 @@ export interface ThemeDefaults {
 }
 
 /**
- * Represents extracted `@keyframes` rules
+ * Represents resolved `@keyframes` rules
  */
 export interface ThemeKeyframes {
   [key: string]: string;
@@ -188,7 +188,7 @@ export interface Theme {
 }
 
 /**
- * Raw CSS variable extracted from parsing
+ * Raw CSS variable resolved from parsing
  */
 export interface CSSVariable {
   name: string;
@@ -200,7 +200,7 @@ export interface CSSVariable {
    */
   selector?: string;
   /**
-   * For variant source: the extracted variant name
+   * For variant source: the resolved variant name
    * Examples: 'dark', 'blue', 'midnight'
    */
   variantName?: string;
@@ -289,11 +289,11 @@ export interface ParseResult {
   theme: Theme;
   /**
    * Theme variants from selector-based rules (e.g., [data-theme='dark'], .midnight)
-   * Keys are the variant names extracted from selectors
+   * Keys are the variant names resolved from selectors
    */
   variants: Record<string, ThemeVariant>;
   /**
-   * Raw CSS variables extracted
+   * Raw CSS variables resolved
    */
   variables: Array<CSSVariable>;
   /**

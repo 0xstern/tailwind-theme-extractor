@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
 
 import { beforeAll, describe, expect, test } from 'bun:test';
 
-import { extractTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../src/v4/index';
 
 // Test constants for expected counts
 const EXPECTED_FILE_COUNT = 3;
@@ -22,7 +22,7 @@ let result: ParseResult;
 
 beforeAll(async () => {
   // Parse shadcn-global.css which imports default-theme.css and shadcn-themes.css
-  result = await extractTheme({
+  result = await resolveTheme({
     input: resolve(__dirname, './fixtures/shadcn-global.css'),
     resolveImports: true,
     basePath: __dirname, // Use test directory as basePath to find node_modules
@@ -236,7 +236,7 @@ describe('Two-Layer Variable Resolution (shadcn Pattern)', () => {
 });
 
 describe('Radius and Calc() Expressions', () => {
-  test('extracts base radius', () => {
+  test('resolves base radius', () => {
     // :root has: --radius: 0.625rem
     expect(result.theme.radius.lg).toBe('0.625rem');
   });
@@ -266,7 +266,7 @@ describe('Breakpoint Extensions', () => {
 });
 
 describe('Theme Variants from shadcn-themes.css', () => {
-  test('extracts dark mode variant from .dark selector', () => {
+  test('resolves dark mode variant from .dark selector', () => {
     expect(result.variants.dark).toBeDefined();
     expect(result.variants.dark?.selector).toBe('.dark');
   });
@@ -308,11 +308,11 @@ describe('Theme Variants from shadcn-themes.css', () => {
     expect(dark.colors.input).toBe('oklch(1 0 0 / 15%)');
   });
 
-  test('extracts theme-default variant', () => {
+  test('resolves theme-default variant', () => {
     expect(result.variants['theme-default']).toBeDefined();
   });
 
-  test('extracts theme-mono variant', () => {
+  test('resolves theme-mono variant', () => {
     expect(result.variants['theme-mono']).toBeDefined();
 
     const mono = result.variants['theme-mono']?.theme;
@@ -325,7 +325,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
     expect(mono.colors.primary).not.toContain('var(');
   });
 
-  test('extracts color theme variants', () => {
+  test('resolves color theme variants', () => {
     const colorThemes = [
       'theme-blue',
       'theme-green',
@@ -367,7 +367,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
     expect(green.colors.primary).not.toContain('var(');
   });
 
-  test('extracts radius variants', () => {
+  test('resolves radius variants', () => {
     const radiusVariants = [
       'theme-rounded-none',
       'theme-rounded-small',
@@ -399,7 +399,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
     expect(variant.radius.lg).toBe('1.2rem');
   });
 
-  test('extracts font variants', () => {
+  test('resolves font variants', () => {
     const fontVariants = [
       'theme-inter',
       'theme-noto-sans',
@@ -414,7 +414,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
 });
 
 describe('Media Query Variants', () => {
-  test('extracts theme-mono media query overrides', () => {
+  test('resolves theme-mono media query overrides', () => {
     // theme-mono has @media (min-width: 1024px) with font size overrides
     const mono = result.variants['theme-mono']?.theme;
     if (mono === undefined) {
@@ -425,7 +425,7 @@ describe('Media Query Variants', () => {
     expect(mono.fontSize.lg).toBeDefined();
   });
 
-  test('extracts theme-scaled media query overrides', () => {
+  test('resolves theme-scaled media query overrides', () => {
     const scaled = result.variants['theme-scaled']?.theme;
     if (scaled === undefined) {
       throw new Error('Theme-scaled variant should be defined');
@@ -457,7 +457,7 @@ describe('Nested Variant Handling', () => {
 });
 
 describe('Variable Count and Coverage', () => {
-  test('extracts substantial number of variables', () => {
+  test('resolves substantial number of variables', () => {
     // Should have hundreds of variables from all three files
     expect(result.variables.length).toBeGreaterThan(EXPECTED_MIN_VARIABLES);
   });
@@ -528,7 +528,7 @@ describe('Spacing and Layout from Defaults', () => {
 });
 
 describe('Font Sizes with Line Heights from Defaults', () => {
-  test('extracts font sizes with line heights', () => {
+  test('resolves font sizes with line heights', () => {
     // default-theme.css has --text-xs: 0.75rem; --text-xs--line-height: calc(1 / 0.75);
     expect(result.theme.fontSize.xs).toBeDefined();
 
@@ -541,7 +541,7 @@ describe('Font Sizes with Line Heights from Defaults', () => {
     expect(xs.lineHeight).toBe('calc(1 / 0.75)');
   });
 
-  test('extracts all default font sizes', () => {
+  test('resolves all default font sizes', () => {
     const sizes = ['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'];
 
     for (const size of sizes) {

@@ -1,5 +1,5 @@
 /**
- * Main CSS parser for extracting Tailwind v4 theme variables
+ * Main CSS parser for resolving Tailwind v4 theme variables
  * Entry point for parsing CSS files and building theme objects
  */
 
@@ -16,12 +16,12 @@ import { buildThemes } from './theme-builder';
 import { extractVariables } from './variable-extractor';
 
 /**
- * Parses CSS file(s) and extracts Tailwind v4 theme variables
+ * Parses CSS file(s) and resolves Tailwind v4 theme variables
  *
  * This is the main entry point for CSS parsing. It handles:
  * - Reading CSS files or parsing raw CSS strings
  * - Recursively resolving `@import` statements
- * - Extracting variables from `@theme` and :root blocks
+ * - Resolving variables from `@theme` and :root blocks
  * - Building a structured theme object
  *
  * Error Handling:

@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains example CSS theme files and demonstration scripts for the Tailwind Theme Extractor.
+This directory contains example CSS theme files and demonstration scripts for the Tailwind Theme Resolver.
 
 ## CSS Theme Files
 
@@ -31,9 +31,9 @@ Demonstrates the `@import` resolution feature:
 
 Complete feature demonstration showing:
 
-- Theme extraction from CSS files
+- Theme resolution from CSS files
 - Accessing all theme namespaces
-- Statistics about extracted variables
+- Statistics about resolved variables
 - Example usage with chart libraries
 
 **Run it:**
@@ -44,7 +44,7 @@ bun run examples/v4/demo.ts
 
 **Output includes:**
 
-- File statistics (files processed, variables extracted)
+- File statistics (files processed, variables resolved)
 - All colors with their values
 - Font definitions
 - Breakpoints, shadows, and animations
@@ -75,8 +75,8 @@ bun run examples/v4/demo-imports.ts
 
 1. Start with `basic-theme.css` as a template
 2. Modify the CSS variables to match your design system
-3. Use the demo scripts to test your theme extraction
-4. Integrate the extracted theme into your application
+3. Use the demo scripts to test your theme resolution
+4. Integrate the resolved theme into your application
 
 ## Key Features Demonstrated
 
@@ -92,9 +92,9 @@ bun run examples/v4/demo-imports.ts
 ### Chart Libraries
 
 ```typescript
-import { extractTheme } from 'tailwind-theme-extractor';
+import { resolveTheme } from 'tailwind-theme-resolver';
 
-const { theme } = await extractTheme({
+const { theme } = await resolveTheme({
   filePath: './examples/v4/basic-theme.css',
 });
 
@@ -109,7 +109,7 @@ const colors = [
 ### Canvas Rendering
 
 ```typescript
-const { theme } = await extractTheme({
+const { theme } = await resolveTheme({
   filePath: './theme.css',
 });
 
@@ -122,7 +122,7 @@ ctx.font = `${theme.fontSize.xl.size} ${theme.fonts.sans}`;
 
 ```typescript
 // Generate theme tokens at build time
-const { theme, variants } = await extractTheme({
+const { theme, variants } = await resolveTheme({
   filePath: './src/theme.css',
   resolveImports: true,
 });

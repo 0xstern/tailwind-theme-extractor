@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 
-import { extractTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../src/v4/index';
 
 describe('Tailwind Default Theme', () => {
   test('loads Tailwind defaults when includeTailwindDefaults is true', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: '@theme { --color-primary-500: #custom; }',
       includeTailwindDefaults: true,
     });
@@ -27,7 +27,7 @@ describe('Tailwind Default Theme', () => {
   });
 
   test('does not load defaults when includeTailwindDefaults is false', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: '@theme { --color-primary-500: #custom; }',
       includeTailwindDefaults: false,
     });
@@ -41,7 +41,7 @@ describe('Tailwind Default Theme', () => {
   });
 
   test('user values override Tailwind defaults', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: '@theme { --color-red-500: #custom-red; }',
       includeTailwindDefaults: true,
     });
@@ -53,7 +53,7 @@ describe('Tailwind Default Theme', () => {
   });
 
   test('merges user color scale with Tailwind defaults', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --color-red-500: #custom-red;
@@ -78,7 +78,7 @@ describe('Tailwind Default Theme', () => {
 
   test('gracefully handles Tailwind not being installed', async () => {
     // This test always passes - we just verify no errors thrown
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: '@theme { --color-primary-500: #custom; }',
       includeTailwindDefaults: true,
     });

@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-This document provides a visual representation and detailed explanation of the Tailwind Theme Extractor parsing pipeline.
+This document provides a visual representation and detailed explanation of the Tailwind Theme Resolver parsing pipeline.
 
 ## High-Level Pipeline
 
@@ -31,7 +31,7 @@ CSS Input
                         ▼
                 ┌───────────────┐
                 │   Variable    │
-                │  Extractor    │
+                │  Resolver    │
                 │(@theme,:root) │
                 └───────┬───────┘
                         │
@@ -70,7 +70,7 @@ CSS Input
 - Read CSS from file or raw string
 - Initialize PostCSS parsing
 - Coordinate import resolution
-- Trigger variable extraction
+- Trigger variable resolution
 - Return structured ParseResult
 
 **Error Handling:**
@@ -112,15 +112,15 @@ When `debug: true`:
 
 ```typescript
 console.warn(
-  '[Tailwind Theme Extractor] Failed to resolve import: ./missing.css',
+  '[Tailwind Theme Resolver] Failed to resolve import: ./missing.css',
 );
 console.warn('  Resolved path: /absolute/path/to/missing.css');
 console.warn('  Error: ENOENT: no such file or directory');
 ```
 
-### 3. Variable Extractor (`src/v4/parser/variable-extractor.ts`)
+### 3. Variable Resolver (`src/v4/parser/variable-resolver.ts`)
 
-**Purpose** - Extract CSS variables from @theme, :root, and variant selectors.
+**Purpose** - Resolve CSS variables from @theme, :root, and variant selectors.
 
 **Three Sources:**
 
@@ -138,7 +138,7 @@ console.warn('  Error: ENOENT: no such file or directory');
 
 - Multi-word namespaces: `text-shadow`, `drop-shadow`, `inset-shadow`
 - Singular variable mappings: `--spacing` → `spacing.base`
-- Keyframes extraction: `@keyframes` rules captured separately
+- Keyframes resolution: `@keyframes` rules captured separately
 
 ### 4. Theme Builder (`src/v4/parser/theme-builder.ts`)
 
@@ -155,7 +155,7 @@ const NAMESPACE_MAP: Record<string, NamespaceMapping> = {
   },
   text: {
     property: 'fontSize',
-    processor: processFontSizeVariable, // Extracts size + line-height
+    processor: processFontSizeVariable, // Resolves size + line-height
   },
   spacing: { property: 'spacing' }, // Simple 1:1 mapping
   // ... 22 total namespaces
@@ -166,7 +166,7 @@ const NAMESPACE_MAP: Record<string, NamespaceMapping> = {
 
 - Main function (`buildThemes`): Cyclomatic complexity < 10 (after extracting helpers)
 - Helper function (`buildTheme`): Cyclomatic complexity < 10 (after extracting processors)
-- Modular design with 4 extracted helper functions:
+- Modular design with 4 resolved helper functions:
   - `buildReferenceMap()` - Builds var() reference mappings
   - `groupVariantVariables()` - Groups variant variables by name
   - `processReferencedVariable()` - Handles referenced variables
@@ -266,7 +266,7 @@ handleHotUpdate → Regenerate on CSS changes
 **One-shot generation:**
 
 ```bash
-tailwind-theme-extractor -i src/styles.css --debug
+tailwind-theme-resolver -i src/styles.css --debug
 ```
 
 **basePath Handling:**
@@ -301,7 +301,7 @@ Useful for:
 Uses modern TypeScript module augmentation instead of triple-slash directives:
 
 ```typescript
-declare module 'tailwind-theme-extractor' {
+declare module 'tailwind-theme-resolver' {
   interface Theme extends GeneratedTheme {}
 }
 ```
@@ -347,7 +347,7 @@ declare module 'tailwind-theme-extractor' {
    ├─ Loads Tailwind defaults from node_modules
    └─ Creates PostCSS AST
 
-2. Variable Extractor
+2. Variable Resolver
    ├─ Finds: --color-primary-500 (source: 'theme')
    ├─ Finds: --color-chart-1 (source: 'theme', value: 'var(--color-blue-300)')
    ├─ Finds: --spacing-4 (source: 'theme')
@@ -410,13 +410,13 @@ declare module 'tailwind-theme-extractor' {
 | ------------------- | ---------- | -------------------------------------- |
 | CSS Parsing         | O(n)       | n = file size, PostCSS linear scan     |
 | Import Resolution   | O(d × n)   | d = import depth, n = avg file size    |
-| Variable Extraction | O(v)       | v = number of CSS variables            |
+| Variable Resolution | O(v)       | v = number of CSS variables            |
 | Theme Building      | O(v)       | Single pass with constant-time lookups |
 | Type Generation     | O(p)       | p = number of theme properties         |
 
 ### Optimizations Applied
 
-1. **Single-pass traversal** - Variable extractor walks AST once
+1. **Single-pass traversal** - Variable resolver walks AST once
 2. **Configuration maps** - O(1) namespace lookups vs O(n) switch statements
 3. **Module-level constants** - Avoid re-creating config objects
 4. **Timestamp caching** - Tailwind defaults cached with file mtime
@@ -463,7 +463,7 @@ Enable via `debug: true` in ParseOptions to get:
 **Example:**
 
 ```typescript
-const result = await extractTheme({
+const result = await resolveTheme({
   filePath: './theme.css',
   debug: true, // Logs warnings for missing imports
 });
@@ -507,7 +507,7 @@ const THEME_PROPERTY_CONFIGS = [
 ];
 ```
 
-That's it! The pipeline will automatically handle extraction, building, and type generation.
+That's it! The pipeline will automatically handle resolution, building, and type generation.
 
 ## Testing Strategy
 

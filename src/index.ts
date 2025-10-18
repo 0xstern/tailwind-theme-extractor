@@ -1,5 +1,5 @@
 /**
- * Tailwind Theme Extractor
+ * Tailwind Theme Resolver
  *
  * Default export - always points to the latest version
  * Currently: Tailwind v4
@@ -7,12 +7,12 @@
  * @example
  * ```typescript
  * // Import latest version (currently v4)
- * import { extractTheme } from 'tailwind-theme-extractor';
+ * import { resolveTheme } from 'tailwind-theme-resolver';
  *
  * // Or import specific version
- * import { extractTheme } from 'tailwind-theme-extractor/v4';
+ * import { resolveTheme } from 'tailwind-theme-resolver/v4';
  *
- * const result = await extractTheme({
+ * const result = await resolveTheme({
  *   filePath: './src/theme.css'
  * });
  * ```
@@ -22,4 +22,4 @@
 export * from './v4/index';
 
 // Default export
-export { extractTheme as default } from './v4/index';
+export { resolveTheme as default } from './v4/index';

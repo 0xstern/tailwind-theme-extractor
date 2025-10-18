@@ -1,16 +1,16 @@
 /**
- * Tailwind v4 Theme Extractor
+ * Tailwind v4 Theme Resolver
  *
- * A library for parsing Tailwind v4 CSS files and extracting theme variables
+ * A library for parsing Tailwind v4 CSS files and resolving theme variables
  * into a structured JavaScript object for use in contexts where CSS variables
  * are not available (e.g., charts, iframes, canvas).
  *
  * @example
  * ```typescript
- * import { extractTheme } from 'tailwind-theme-extractor/v4';
+ * import { resolveTheme } from 'tailwind-theme-resolver/v4';
  *
  * // Parse from file
- * const result = await extractTheme({
+ * const result = await resolveTheme({
  *   input: './src/theme.css'
  * });
  *
@@ -25,7 +25,7 @@ import { parseCSS } from './parser/css-parser';
 import { loadTailwindDefaults, mergeThemes } from './parser/tailwind-defaults';
 
 /**
- * Extracts theme variables from Tailwind v4 CSS files
+ * Resolves theme variables from Tailwind v4 CSS files
  *
  * Automatically includes Tailwind's default theme and merges with user overrides
  * unless `includeTailwindDefaults: false` is specified.
@@ -37,7 +37,7 @@ import { loadTailwindDefaults, mergeThemes } from './parser/tailwind-defaults';
  * - Tailwind not installed: Falls back to user theme only (no error thrown)
  * - Enable `debug: true` in options to log warnings for import resolution failures
  *
- * @param options - Options for theme extraction
+ * @param options - Options for theme resolution
  * @returns Promise resolving to the parse result with theme, variables, and processed files
  * @throws Error if neither input nor css is provided in options
  * @throws Error if input is provided but file cannot be read
@@ -46,24 +46,24 @@ import { loadTailwindDefaults, mergeThemes } from './parser/tailwind-defaults';
  * @example
  * ```typescript
  * // Standard usage
- * const result = await extractTheme({
+ * const result = await resolveTheme({
  *   input: './src/theme.css'
  * });
  *
  * // With debug mode for troubleshooting
- * const result = await extractTheme({
+ * const result = await resolveTheme({
  *   input: './src/theme.css',
  *   debug: true
  * });
  *
  * // Without Tailwind defaults
- * const result = await extractTheme({
+ * const result = await resolveTheme({
  *   input: './src/theme.css',
  *   includeTailwindDefaults: false
  * });
  * ```
  */
-export async function extractTheme(
+export async function resolveTheme(
   options: ParseOptions,
 ): Promise<ParseResult> {
   const { includeTailwindDefaults = true, basePath } = options;

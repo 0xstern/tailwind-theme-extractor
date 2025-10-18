@@ -1,6 +1,6 @@
 /**
  * Dark mode variant - comprehensive overrides
- * Tests data attribute selector variant extraction
+ * Tests data attribute selector variant resolution
  */
 
 [data-theme='dark'] {

@@ -86,7 +86,7 @@ export async function resolveImports(
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         console.warn(
-          `[Tailwind Theme Extractor] Failed to resolve import: ${importPath}`,
+          `[Tailwind Theme Resolver] Failed to resolve import: ${importPath}`,
         );
         console.warn(`  Resolved path: ${resolvedPath}`);
         console.warn(`  Error: ${errorMessage}`);
@@ -108,7 +108,7 @@ export async function resolveImports(
  * - `@import` url('file.css')
  *
  * @param params - The raw params string from the `@import` at-rule
- * @returns The extracted file path, or null if parsing fails
+ * @returns The resolved file path, or null if parsing fails
  */
 function parseImportPath(params: string): string | null {
   // Remove whitespace

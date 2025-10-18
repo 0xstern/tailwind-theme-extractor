@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 
-import { extractTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../src/v4/index';
 
 // Test constants
 const EXPECTED_DEPRECATION_WARNING_COUNT_FOUR = 4;
 
 describe('Singular Variables (Deprecated Format)', () => {
   test('handles --spacing (singular) as spacing.base', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: '@theme { --spacing: 0.25rem; }',
       includeTailwindDefaults: false,
     });
@@ -16,7 +16,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   });
 
   test('handles --blur (singular) as blur.default', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: '@theme { --blur: 8px; }',
       includeTailwindDefaults: false,
     });
@@ -25,7 +25,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   });
 
   test('handles --shadow (singular) as shadows.default', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: '@theme { --shadow: 0 1px 3px rgba(0,0,0,0.1); }',
       includeTailwindDefaults: false,
     });
@@ -34,7 +34,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   });
 
   test('handles --radius (singular) as radius.default', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: '@theme { --radius: 0.25rem; }',
       includeTailwindDefaults: false,
     });
@@ -43,7 +43,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   });
 
   test('handles multiple singular variables together', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --spacing: 0.25rem;
@@ -62,7 +62,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   });
 
   test('singular variables work alongside suffixed versions', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --blur: 8px;
@@ -79,19 +79,19 @@ describe('Singular Variables (Deprecated Format)', () => {
   });
 
   test('unknown singular variables use "default" key', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: '@theme { --custom: some-value; }',
       includeTailwindDefaults: false,
     });
 
-    // Should extract with 'default' key for unknown namespaces
+    // Should resolve with 'default' key for unknown namespaces
     expect(result.variables).toHaveLength(1);
     expect(result.variables[0]?.name).toBe('--custom');
     expect(result.variables[0]?.value).toBe('some-value');
   });
 
   test('singular variables work with variants', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --blur: 4px;
@@ -113,7 +113,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   });
 
   test('preserves singular variable values exactly as defined', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --spacing: calc(0.25rem * 2);
@@ -128,7 +128,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   });
 
   test('generates deprecation warnings for known singular variables', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --spacing: 0.25rem;
@@ -170,7 +170,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   });
 
   test('does not generate warnings for suffixed variables', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --blur-sm: 4px;
@@ -185,7 +185,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   });
 
   test('deprecation warnings work with variants', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --blur: 4px;

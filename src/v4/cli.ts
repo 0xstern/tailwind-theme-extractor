@@ -22,10 +22,10 @@ interface CliOptions {
 }
 
 const HELP_TEXT = `
-Tailwind Theme Extractor CLI
+Tailwind Theme Resolver CLI
 
 Usage:
-  tailwind-theme-extractor [options]
+  tailwind-theme-resolver [options]
 
 Options:
   --input, -i <path>     Path to CSS input file (required)
@@ -37,16 +37,16 @@ Options:
 
 Examples:
   # Generate types and runtime
-  tailwind-theme-extractor -i src/styles.css
+  tailwind-theme-resolver -i src/styles.css
 
   # Generate types only
-  tailwind-theme-extractor -i src/styles.css --no-runtime
+  tailwind-theme-resolver -i src/styles.css --no-runtime
 
   # Custom output directory
-  tailwind-theme-extractor -i src/styles.css -o src/theme
+  tailwind-theme-resolver -i src/styles.css -o src/theme
 
   # Enable debug logging
-  tailwind-theme-extractor -i src/styles.css --debug
+  tailwind-theme-resolver -i src/styles.css --debug
 
 Generated Files:
   - ${OUTPUT_FILES.TYPES} (TypeScript declarations with module augmentation)
@@ -99,7 +99,7 @@ function validateOptions(options: CliOptions): void {
  * @param outputDir - Resolved output directory
  */
 function logConfiguration(options: CliOptions, outputDir: string): void {
-  console.log('Tailwind Theme Extractor\n');
+  console.log('Tailwind Theme Resolver\n');
   console.log(`  Input:   ${options.input}`);
   console.log(`  Output:  ${outputDir}`);
   console.log(`  Runtime: ${options.runtime ? 'enabled' : 'disabled'}`);

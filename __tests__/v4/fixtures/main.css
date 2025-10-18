@@ -48,7 +48,7 @@
   --color-descendant: #456456;
 }
 
-/* ID selector (should try to extract) */
+/* ID selector (should try to resolve) */
 #custom-theme {
   --color-id-selector: #789789;
 }

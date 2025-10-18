@@ -6,7 +6,7 @@ import type { ParseResult } from '../../src/v4/types';
 
 import { beforeAll, describe, expect, test } from 'bun:test';
 
-import { extractTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../src/v4/index';
 
 let result: ParseResult;
 
@@ -17,7 +17,7 @@ const LONG_VALUE_MIN_LENGTH = 100;
 
 beforeAll(async () => {
   // Parse once before all tests
-  result = await extractTheme({
+  result = await resolveTheme({
     input: './__tests__/v4/fixtures/main.css',
     resolveImports: true,
   });
@@ -55,8 +55,8 @@ describe('Import Resolution', () => {
   });
 });
 
-describe('Color Extraction', () => {
-  test('extracts standard color scales with numeric keys', () => {
+describe('Color Resolution', () => {
+  test('resolves standard color scales with numeric keys', () => {
     expect(result.theme.colors.red).toBeDefined();
     expect((result.theme.colors.red as Record<number, string>)[50]).toBe(
       'oklch(0.98 0.02 25)',
@@ -106,7 +106,7 @@ describe('Color Extraction', () => {
     );
   });
 
-  test('extracts flat colors with camelCase names', () => {
+  test('resolves flat colors with camelCase names', () => {
     expect(result.theme.colors.errorPrimary).toBe('#ef4444');
     expect(result.theme.colors.successDefault).toBe('#10b981');
     expect(result.theme.colors.warningSubtle).toBe('#fbbf24');
@@ -119,7 +119,7 @@ describe('Color Extraction', () => {
 });
 
 describe('Theme Variants', () => {
-  test('extracts dark mode variant', () => {
+  test('resolves dark mode variant', () => {
     expect(result.variants.dark).toBeDefined();
 
     if (result.variants.dark === undefined) {
@@ -137,7 +137,7 @@ describe('Theme Variants', () => {
     expect(result.variants.dark.theme.colors.errorPrimary).toBe('#f87171');
   });
 
-  test('extracts custom data-attribute themes', () => {
+  test('resolves custom data-attribute themes', () => {
     expect(result.variants.ocean).toBeDefined();
     expect(result.variants.sunset).toBeDefined();
     expect(result.variants.forest).toBeDefined();
@@ -157,7 +157,7 @@ describe('Theme Variants', () => {
     expect(result.variants.forest.theme.colors.brandMain).toBe('#10b981');
   });
 
-  test('extracts class-based variants', () => {
+  test('resolves class-based variants', () => {
     expect(result.variants.midnight).toBeDefined();
 
     if (result.variants.midnight === undefined) {
@@ -168,7 +168,7 @@ describe('Theme Variants', () => {
     expect(result.variants.midnight.theme.colors.brandMain).toBe('#818cf8');
   });
 
-  test('extracts data-mode attribute variants', () => {
+  test('resolves data-mode attribute variants', () => {
     expect(result.variants.blue).toBeDefined();
 
     if (result.variants.blue === undefined) {
@@ -177,12 +177,12 @@ describe('Theme Variants', () => {
     expect(result.variants.blue.theme.colors.background).toBe('#dbeafe');
   });
 
-  test('extracts media query variants', () => {
+  test('resolves media query variants', () => {
     // Light variant from @media (prefers-color-scheme: light)
     expect(result.variants.light).toBeDefined();
   });
 
-  test('extracts at least 20 variants', () => {
+  test('resolves at least 20 variants', () => {
     expect(Object.keys(result.variants).length).toBeGreaterThanOrEqual(
       MIN_VARIANT_COUNT,
     );
@@ -211,8 +211,8 @@ describe('Theme Variants', () => {
   });
 });
 
-describe('Font Extraction', () => {
-  test('extracts font families', () => {
+describe('Font Resolution', () => {
+  test('resolves font families', () => {
     expect(result.theme.fonts.sans).toBe(
       'ui-sans-serif, system-ui, sans-serif',
     );
@@ -222,7 +222,7 @@ describe('Font Extraction', () => {
     expect(result.theme.fonts['body-text']).toBe("'Inter', sans-serif");
   });
 
-  test('extracts font sizes with line heights', () => {
+  test('resolves font sizes with line heights', () => {
     expect(result.theme.fontSize.xs).toBeDefined();
 
     if (result.theme.fontSize.xs === undefined) {
@@ -247,29 +247,29 @@ describe('Font Extraction', () => {
 });
 
 describe('Spacing & Layout', () => {
-  test('extracts spacing scale', () => {
+  test('resolves spacing scale', () => {
     expect(result.theme.spacing['0']).toBe('0');
     expect(result.theme.spacing['1']).toBe('0.25rem');
     expect(result.theme.spacing['96']).toBe('24rem');
   });
 
-  test('extracts breakpoints', () => {
+  test('resolves breakpoints', () => {
     expect(result.theme.breakpoints.sm).toBe('40rem');
     expect(result.theme.breakpoints.md).toBe('48rem');
     expect(result.theme.breakpoints['3xl']).toBe('120rem');
   });
 
-  test('extracts container sizes', () => {
+  test('resolves container sizes', () => {
     expect(result.theme.containers.sm).toBe('40rem');
     expect(result.theme.containers.md).toBe('48rem');
   });
 
-  test('extracts tracking (letter spacing)', () => {
+  test('resolves tracking (letter spacing)', () => {
     expect(result.theme.tracking.tighter).toBe('-0.05em');
     expect(result.theme.tracking.wide).toBe('0.025em');
   });
 
-  test('extracts leading (line height)', () => {
+  test('resolves leading (line height)', () => {
     expect(result.theme.leading.none).toBe('1');
     expect(result.theme.leading.tight).toBe('1.25');
     expect(result.theme.leading.loose).toBe('2');
@@ -277,14 +277,14 @@ describe('Spacing & Layout', () => {
 });
 
 describe('Border & Effects', () => {
-  test('extracts border radius', () => {
+  test('resolves border radius', () => {
     expect(result.theme.radius.sm).toBe('0.125rem');
     expect(result.theme.radius.full).toBe('9999px');
     // --radius-custom-button becomes radius['custom-button']
     expect(result.theme.radius['custom-button']).toBeDefined();
   });
 
-  test('extracts box shadows', () => {
+  test('resolves box shadows', () => {
     expect(result.theme.shadows.sm).toBeDefined();
     expect(result.theme.shadows.md).toBeDefined();
     expect(result.theme.shadows['elevation-1']).toBeDefined();
@@ -297,7 +297,7 @@ describe('Border & Effects', () => {
     expect(result.theme.textShadows).toBeDefined();
   });
 
-  test('extracts blur values', () => {
+  test('resolves blur values', () => {
     expect(result.theme.blur.none).toBe('0');
     expect(result.theme.blur.sm).toBe('4px');
     expect(result.theme.blur.lg).toBe('16px');
@@ -305,24 +305,24 @@ describe('Border & Effects', () => {
 });
 
 describe('Animations & Transforms', () => {
-  test('extracts perspective', () => {
+  test('resolves perspective', () => {
     expect(result.theme.perspective.near).toBe('500px');
     expect(result.theme.perspective.normal).toBe('1000px');
   });
 
-  test('extracts aspect ratios', () => {
+  test('resolves aspect ratios', () => {
     expect(result.theme.aspect.square).toBe('1/1');
     expect(result.theme.aspect.video).toBe('16/9');
   });
 
-  test('extracts easing functions', () => {
+  test('resolves easing functions', () => {
     expect(result.theme.ease.linear).toBe('linear');
     // --ease-in-out becomes ease['in-out']
     expect(result.theme.ease['in-out']).toBeDefined();
     expect(result.theme.ease.fluid).toBe('cubic-bezier(0.3, 0, 0, 1)');
   });
 
-  test('extracts animations', () => {
+  test('resolves animations', () => {
     // Animations may be overridden by media query variants (reduced-motion: none)
     expect(result.theme.animations.spin).toBeDefined();
     expect(result.theme.animations.ping).toBeDefined();
@@ -361,7 +361,7 @@ describe('Edge Cases', () => {
     expect(result.variants.mixed.theme.colors.mixedValid).toBe('#555555');
   });
 
-  test('extracts all raw variables', () => {
+  test('resolves all raw variables', () => {
     expect(result.variables.length).toBeGreaterThan(MIN_VARIABLE_COUNT);
   });
 

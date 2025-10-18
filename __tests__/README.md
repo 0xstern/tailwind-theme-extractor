@@ -1,6 +1,6 @@
 # Tests
 
-This directory contains the test suite for the Tailwind Theme Extractor, organized using Bun's test framework.
+This directory contains the test suite for the Tailwind Theme Resolver, organized using Bun's test framework.
 
 ## Structure
 
@@ -13,7 +13,7 @@ __tests__/
 │   ├── meta-and-keyframes.test.ts  # Meta variables and keyframes tests
 │   ├── tailwind-defaults.test.ts   # Tailwind default theme tests
 │   └── parser/
-│       └── variable-extractor.test.ts  # Unit tests for parser utilities
+│       └── variable-resolver.test.ts  # Unit tests for parser utilities
 ├── fixtures/                       # Test fixture CSS files (shared)
 │   ├── main.css                    # Master test file
 │   ├── base-theme.css              # Complete theme
@@ -48,20 +48,20 @@ bun test --coverage
 ### Unit Tests
 
 - **`v4/index.test.ts`**: Core API functionality
-  - Theme extraction from `@theme` and `:root`
+  - Theme resolution from `@theme` and `:root`
   - Color scale parsing
-  - Variant extraction
+  - Variant resolution
   - Import resolution
   - Error handling
 
 - **`v4/singular-variables.test.ts`**: Deprecated variable patterns
   - Detection of singular variables (`--spacing`, `--blur`, etc.)
   - Deprecation warning generation
-  - Fallback value extraction with default keys
+  - Fallback value resolution with default keys
 
 - **`v4/meta-and-keyframes.test.ts`**: Meta variables and animations
-  - `--default-*` meta variable extraction
-  - `@keyframes` animation extraction
+  - `--default-*` meta variable resolution
+  - `@keyframes` animation resolution
   - Integration with theme object
 
 - **`v4/tailwind-defaults.test.ts`**: Default theme integration
@@ -69,8 +69,8 @@ bun test --coverage
   - Theme merging behavior
   - User overrides
 
-- **`v4/parser/variable-extractor.test.ts`**: Parser utilities
-  - Variant name extraction from selectors
+- **`v4/parser/variable-resolver.test.ts`**: Parser utilities
+  - Variant name resolution from selectors
   - Variable name parsing
   - kebab-case to camelCase conversion
   - Color scale parsing
@@ -80,7 +80,7 @@ bun test --coverage
 
 - **`v4/integration.test.ts`**: Comprehensive edge case testing
   - 9 CSS files with 3-level deep nested imports
-  - 200+ CSS variables extraction
+  - 200+ CSS variables resolution
   - 20+ theme variants
   - All Tailwind v4 namespaces
   - Complex color naming (multi-word, camelCase, custom variants)

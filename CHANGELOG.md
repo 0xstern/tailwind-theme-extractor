@@ -7,7 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.4] - 2025-10-17
+## [0.1.4] - 2025-01-17
+
+### Changed
+
+- **Breaking**: Package renamed from `tailwind-theme-extractor` to `tailwind-theme-resolver`
+- **Breaking**: Repository URLs updated to match new package name
+- **Breaking**: CLI command renamed from `tailwind-theme-extractor` to `tailwind-theme-resolver`
+
+### Migration Guide
+
+For existing users of `tailwind-theme-extractor`:
+
+```bash
+# Uninstall old package
+npm uninstall tailwind-theme-extractor
+
+# Install new package
+npm install tailwind-theme-resolver
+
+# Update imports (API is the same, just package name changed)
+- import { resolveTheme } from 'tailwind-theme-extractor';
++ import { resolveTheme } from 'tailwind-theme-resolver';
+
+# CLI command name changed
+- npx tailwind-theme-extractor --input theme.css
++ npx tailwind-theme-resolver --input theme.css
+```
+
+## [0.1.4-legacy] - 2025-01-17
 
 ### Fixed
 
@@ -44,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Breaking**: Renamed `filePath` parameter to `input` across all APIs for consistency
-  - Runtime API: `extractTheme({ input: './theme.css' })`
+  - Runtime API: `resolveTheme({ input: './theme.css' })`
   - Vite plugin: Already used `input`, no change needed
   - CLI: Already used `--input`, no change needed
 - Updated all documentation and examples to reflect consistent `input` naming
@@ -138,10 +166,10 @@ npm uninstall tailwind-v4-theme-extractor
 npm install tailwind-theme-extractor
 
 # Update imports (default import remains the same)
-import { extractTheme } from 'tailwind-theme-extractor';
+import { resolveTheme } from 'tailwind-theme-extractor';
 
 # Or use explicit v4 import to lock to v4
-import { extractTheme } from 'tailwind-theme-extractor/v4';
+import { resolveTheme } from 'tailwind-theme-extractor/v4';
 
 # Vite plugin imports
 import tailwindTheme from 'tailwind-theme-extractor/vite';

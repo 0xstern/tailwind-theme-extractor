@@ -3,7 +3,7 @@ import { join } from 'path';
 
 import { describe, expect, test } from 'bun:test';
 
-import { extractTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../src/v4/index';
 
 // Test constants
 const EXPECTED_THEME_VARIANT_COUNT = 9;
@@ -29,8 +29,8 @@ describe('Complex CSS Functions and Variables', () => {
   });
 
   describe('Base Theme - calc() functions', () => {
-    test('extracts font sizes with calc() expressions resolved', async () => {
-      const result = await extractTheme({
+    test('resolves font sizes with calc() expressions resolved', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -42,8 +42,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(result.theme.fontSize['2xl']?.size).toBe('calc(1rem * 1.5)');
     });
 
-    test('extracts radius with calc() and resolved variable references', async () => {
-      const result = await extractTheme({
+    test('resolves radius with calc() and resolved variable references', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -54,8 +54,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(result.theme.radius.dynamic).toBe('calc(0.5rem * 1.5 + 0.25rem)');
     });
 
-    test('extracts complex spacing calculations', async () => {
-      const result = await extractTheme({
+    test('resolves complex spacing calculations', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -66,8 +66,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(result.theme.spacing.complex).toContain('0.5rem');
     });
 
-    test('extracts unnamespaced variables with resolved values', async () => {
-      const result = await extractTheme({
+    test('resolves unnamespaced variables with resolved values', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -85,8 +85,8 @@ describe('Complex CSS Functions and Variables', () => {
   });
 
   describe('Base Theme - min() and max() functions', () => {
-    test('extracts min() with resolved variables', async () => {
-      const result = await extractTheme({
+    test('resolves min() with resolved variables', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -95,8 +95,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(result.theme.containers.fluid).toBe('min(100% - 2rem, 80rem)');
     });
 
-    test('extracts max() with viewport units', async () => {
-      const result = await extractTheme({
+    test('resolves max() with viewport units', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -104,8 +104,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(result.theme.containers.responsive).toBe('max(20rem, 50vw)');
     });
 
-    test('extracts nested min/max combinations as raw variables', async () => {
-      const result = await extractTheme({
+    test('resolves nested min/max combinations as raw variables', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -126,13 +126,13 @@ describe('Complex CSS Functions and Variables', () => {
   });
 
   describe('Base Theme - clamp() functions', () => {
-    test('extracts fluid typography with clamp() resolved', async () => {
-      const result = await extractTheme({
+    test('resolves fluid typography with clamp() resolved', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
 
-      // Font size with clamp() may resolve to minimum value during extraction
+      // Font size with clamp() may resolve to minimum value during resolution
       // The system resolves all var() references, producing the final value
       expect(result.theme.fontSize.fluid?.size).toBeDefined();
       // Verify it contains the resolved value (may be 1rem or the full clamp)
@@ -140,8 +140,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(fluidSize).toMatch(/^(1rem|clamp\(1rem, 2\.5vw, 2rem\))$/);
     });
 
-    test('extracts responsive padding with calc() inside clamp() in raw variables', async () => {
-      const result = await extractTheme({
+    test('resolves responsive padding with calc() inside clamp() in raw variables', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -156,13 +156,13 @@ describe('Complex CSS Functions and Variables', () => {
   });
 
   describe('Base Theme - Multiple variable references', () => {
-    test('extracts shadow with resolved variables', async () => {
-      const result = await extractTheme({
+    test('resolves shadow with resolved variables', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
 
-      // Shadow variables are extracted into theme.shadows
+      // Shadow variables are resolved into theme.shadows
       // --shadow-complex should be in shadows.complex
       const shadowVar = result.variables.find(
         (v) => v.name === '--shadow-complex',
@@ -171,8 +171,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(shadowVar?.value).toBeDefined();
     });
 
-    test('extracts grid column width with complex calculation', async () => {
-      const result = await extractTheme({
+    test('resolves grid column width with complex calculation', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -187,8 +187,8 @@ describe('Complex CSS Functions and Variables', () => {
   });
 
   describe(':root semantic mappings', () => {
-    test('extracts heading calculations with resolved variables', async () => {
-      const result = await extractTheme({
+    test('resolves heading calculations with resolved variables', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -203,8 +203,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(h2Var?.value).toContain('1rem'); // --text-base resolved
     });
 
-    test('extracts section gap with resolved variables', async () => {
-      const result = await extractTheme({
+    test('resolves section gap with resolved variables', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -217,14 +217,14 @@ describe('Complex CSS Functions and Variables', () => {
   });
 
   describe('Theme Variants', () => {
-    test('extracts all theme variants', async () => {
-      const result = await extractTheme({
+    test('resolves all theme variants', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
 
       const variantNames = Object.keys(result.variants);
-      // Responsive variant has nested media queries that may not extract as separate variant
+      // Responsive variant has nested media queries that may not resolve as separate variant
       expect(variantNames.length).toBeGreaterThanOrEqual(
         EXPECTED_THEME_VARIANT_COUNT - 1,
       );
@@ -239,7 +239,7 @@ describe('Complex CSS Functions and Variables', () => {
     });
 
     test('dark variant overrides in raw variables (no reference map)', async () => {
-      const result = await extractTheme({
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -255,7 +255,7 @@ describe('Complex CSS Functions and Variables', () => {
     });
 
     test('dark variant adjusts spacing with calc() and resolved values', async () => {
-      const result = await extractTheme({
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -271,7 +271,7 @@ describe('Complex CSS Functions and Variables', () => {
     });
 
     test('compact variant reduces all spacing values', async () => {
-      const result = await extractTheme({
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -292,7 +292,7 @@ describe('Complex CSS Functions and Variables', () => {
     });
 
     test('large variant increases spacing and typography', async () => {
-      const result = await extractTheme({
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -313,7 +313,7 @@ describe('Complex CSS Functions and Variables', () => {
     });
 
     test('high-contrast variant increases color intensity', async () => {
-      const result = await extractTheme({
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -334,7 +334,7 @@ describe('Complex CSS Functions and Variables', () => {
     });
 
     test('gradient variant defines gradient properties with resolved values', async () => {
-      const result = await extractTheme({
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -360,7 +360,7 @@ describe('Complex CSS Functions and Variables', () => {
     });
 
     test('math-heavy variant handles golden ratio calculations with resolved values', async () => {
-      const result = await extractTheme({
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -386,7 +386,7 @@ describe('Complex CSS Functions and Variables', () => {
     });
 
     test('math-heavy variant handles complex clamp with min/max', async () => {
-      const result = await extractTheme({
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -403,8 +403,8 @@ describe('Complex CSS Functions and Variables', () => {
   });
 
   describe('Edge Cases Theme', () => {
-    test('extracts ultra-complex nested functions - calc(clamp(min/max/calc))', async () => {
-      const result = await extractTheme({
+    test('resolves ultra-complex nested functions - calc(clamp(min/max/calc))', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -427,8 +427,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(ultraComplex?.value).toContain('80rem'); // --container-max
     });
 
-    test('extracts hyper-nested clamp with calc/min/max at all levels', async () => {
-      const result = await extractTheme({
+    test('resolves hyper-nested clamp with calc/min/max at all levels', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -448,8 +448,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(hyperNested?.value).toContain('1rem'); // --spacing-md
     });
 
-    test('extracts calc with nested clamp and arithmetic operations', async () => {
-      const result = await extractTheme({
+    test('resolves calc with nested clamp and arithmetic operations', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -471,8 +471,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(calculatedClamp?.value).toMatch(/\//);
     });
 
-    test('extracts mixed units in calc()', async () => {
-      const result = await extractTheme({
+    test('resolves mixed units in calc()', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -489,8 +489,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(mixedUnits?.value).toBe('calc(50% - 1rem + 10vw)');
     });
 
-    test('extracts multiple min() and max() functions with resolved vars', async () => {
-      const result = await extractTheme({
+    test('resolves multiple min() and max() functions with resolved vars', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -507,8 +507,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(multiConstraint?.value).toContain('max(1.5rem, 50px)');
     });
 
-    test('extracts clamp with all calc() expressions resolved', async () => {
-      const result = await extractTheme({
+    test('resolves clamp with all calc() expressions resolved', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -524,8 +524,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(tripleCalc?.value).toContain('calc(2rem - 0.5rem)');
     });
 
-    test('extracts deeply nested var() references fully resolved', async () => {
-      const result = await extractTheme({
+    test('resolves deeply nested var() references fully resolved', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -547,8 +547,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(level4?.value).toBe('min(calc(0.25rem * 2), 2rem)');
     });
 
-    test('extracts negative values in calc() with resolved vars', async () => {
-      const result = await extractTheme({
+    test('resolves negative values in calc() with resolved vars', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -568,8 +568,8 @@ describe('Complex CSS Functions and Variables', () => {
       expect(offsetNegative?.value).toBe('calc(1rem - 2rem)');
     });
 
-    test('extracts chained operations with all vars resolved', async () => {
-      const result = await extractTheme({
+    test('resolves chained operations with all vars resolved', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -589,8 +589,8 @@ describe('Complex CSS Functions and Variables', () => {
   });
 
   describe('Nested Variant Combinations', () => {
-    test('extracts compact.dark nested theme', async () => {
-      const result = await extractTheme({
+    test('resolves compact.dark nested theme', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -611,8 +611,8 @@ describe('Complex CSS Functions and Variables', () => {
   });
 
   describe('Responsive Theme with Media Queries', () => {
-    test('extracts responsive base unit', async () => {
-      const result = await extractTheme({
+    test('resolves responsive base unit', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -629,8 +629,8 @@ describe('Complex CSS Functions and Variables', () => {
   });
 
   describe('Overall Structure and Completeness', () => {
-    test('extracts comprehensive theme with all properties', async () => {
-      const result = await extractTheme({
+    test('resolves comprehensive theme with all properties', async () => {
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -650,7 +650,7 @@ describe('Complex CSS Functions and Variables', () => {
     });
 
     test('preserves all CSS function wrappers', async () => {
-      const result = await extractTheme({
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });
@@ -665,7 +665,7 @@ describe('Complex CSS Functions and Variables', () => {
         v.value.includes('clamp('),
       );
 
-      // Verify we extracted CSS functions
+      // Verify we resolved CSS functions
       expect(calcVars.length).toBeGreaterThan(0);
       expect(minVars.length).toBeGreaterThan(0);
       expect(maxVars.length).toBeGreaterThan(0);
@@ -673,7 +673,7 @@ describe('Complex CSS Functions and Variables', () => {
     });
 
     test('handles all variants correctly', async () => {
-      const result = await extractTheme({
+      const result = await resolveTheme({
         css,
         includeTailwindDefaults: false,
       });

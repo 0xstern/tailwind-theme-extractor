@@ -1,21 +1,21 @@
-# Tailwind Theme Extractor
+# Tailwind Theme Resolver
 
-Extract Tailwind CSS v4 theme variables into TypeScript types and runtime objects.
+Resolve Tailwind CSS v4 theme variables into TypeScript types and runtime objects.
 
 ## Installation
 
 ```bash
 # Bun
-bun add -D tailwind-theme-extractor
+bun add -D tailwind-theme-resolver
 
 # pnpm
-pnpm add -D tailwind-theme-extractor
+pnpm add -D tailwind-theme-resolver
 
 # Yarn
-yarn add -D tailwind-theme-extractor
+yarn add -D tailwind-theme-resolver
 
 # npm
-npm install -D tailwind-theme-extractor
+npm install -D tailwind-theme-resolver
 ```
 
 ## Usage
@@ -25,12 +25,12 @@ npm install -D tailwind-theme-extractor
 ```typescript
 // vite.config.ts
 
-import { tailwindThemeExtractor } from 'tailwind-theme-extractor/vite';
+import { tailwindThemeResolver } from 'tailwind-theme-resolver/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [
-    tailwindThemeExtractor({
+    tailwindThemeResolver({
       input: 'src/styles.css',
     }),
   ],
@@ -63,16 +63,16 @@ const chart = new Chart(ctx, {
 
 ```bash
 # Bun
-bunx tailwind-theme-extractor -i src/styles.css
+bunx tailwind-theme-resolver -i src/styles.css
 
 # pnpm
-pnpm exec tailwind-theme-extractor -i src/styles.css
+pnpm exec tailwind-theme-resolver -i src/styles.css
 
 # Yarn
-yarn tailwind-theme-extractor -i src/styles.css
+yarn tailwind-theme-resolver -i src/styles.css
 
 # npm
-npx tailwind-theme-extractor -i src/styles.css
+npx tailwind-theme-resolver -i src/styles.css
 ```
 
 **Options:**
@@ -87,9 +87,9 @@ npx tailwind-theme-extractor -i src/styles.css
 ### Runtime API
 
 ```typescript
-import { extractTheme } from 'tailwind-theme-extractor';
+import { resolveTheme } from 'tailwind-theme-resolver';
 
-const { theme, variants } = await extractTheme({
+const { theme, variants } = await resolveTheme({
   input: './src/styles.css',
 });
 
@@ -189,10 +189,10 @@ console.log(selectors.dark); // "[data-theme='dark']"
 
 ## Type Safety
 
-The generated `themes.d.ts` uses module augmentation to provide autocomplete for `extractTheme()`:
+The generated `themes.d.ts` uses module augmentation to provide autocomplete for `resolveTheme()`:
 
 ```typescript
-declare module 'tailwind-theme-extractor' {
+declare module 'tailwind-theme-resolver' {
   interface Theme extends GeneratedTheme {}
 }
 ```
@@ -206,26 +206,26 @@ Enable debug mode to see warnings for failed imports:
 **Vite:**
 
 ```typescript
-tailwindThemeExtractor({ input: 'src/styles.css', debug: true });
+tailwindThemeResolver({ input: 'src/styles.css', debug: true });
 ```
 
 **CLI:**
 
 ```bash
-bunx tailwind-theme-extractor -i src/styles.css --debug
+bunx tailwind-theme-resolver -i src/styles.css --debug
 # or: pnpm exec / yarn / npx
 ```
 
 **Runtime:**
 
 ```typescript
-extractTheme({ input: './theme.css', debug: true });
+resolveTheme({ input: './theme.css', debug: true });
 ```
 
 **Output:**
 
 ```
-[Tailwind Theme Extractor] Failed to resolve import: ./components/theme.css
+[Tailwind Theme Resolver] Failed to resolve import: ./components/theme.css
   Resolved path: /Users/you/project/src/components/theme.css
   Error: ENOENT: no such file or directory
 ```
@@ -294,7 +294,7 @@ MIT
 
 ## Contributing
 
-Issues and pull requests welcome on [GitHub](https://github.com/0xstern/tailwind-theme-extractor).
+Issues and pull requests welcome on [GitHub](https://github.com/0xstern/tailwind-theme-resolver).
 
 ## Support
 

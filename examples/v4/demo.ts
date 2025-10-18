@@ -1,28 +1,28 @@
 /**
- * Demo script showing how to use the theme extractor
+ * Demo script showing how to use the theme resolver
  */
 
-import { extractTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../src/v4/index';
 
 const JSON_INDENT_SPACES = 2;
 
 // eslint-disable-next-line complexity
 async function main(): Promise<void> {
-  console.log('Tailwind v4 Theme Extractor Demo\n');
+  console.log('Tailwind v4 Theme Resolver Demo\n');
 
   try {
-    // Extract theme from the example CSS file
-    const result = await extractTheme({
+    // Resolve theme from the example CSS file
+    const result = await resolveTheme({
       input: './examples/v4/basic-theme.css',
       resolveImports: true,
     });
 
-    console.log('Theme extracted successfully!\n');
+    console.log('Theme resolved successfully!\n');
 
     // Display statistics
     console.log('Statistics:');
     console.log(`  - Files processed: ${result.files.length}`);
-    console.log(`  - Variables extracted: ${result.variables.length}\n`);
+    console.log(`  - Variables resolved: ${result.variables.length}\n`);
 
     // Display colors
     console.log('Colors:');

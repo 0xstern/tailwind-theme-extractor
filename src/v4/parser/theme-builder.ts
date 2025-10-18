@@ -444,7 +444,7 @@ function groupVariantVariables(
  * Separates base theme from variants (e.g., dark mode, custom themes)
  * Resolves var() references from @theme to :root/:variant values
  *
- * @param variables - Array of CSS variables extracted from parsing
+ * @param variables - Array of CSS variables resolved from parsing
  * @param keyframes - Map of keyframe name to CSS string
  * @param defaultTheme - Optional Tailwind default theme for var() resolution
  * @returns Object with base theme, variants, and deprecation warnings

@@ -1,5 +1,5 @@
 /**
- * Tests for variable extraction utilities
+ * Tests for variable resolution utilities
  */
 
 import { describe, expect, test } from 'bun:test';

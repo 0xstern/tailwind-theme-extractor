@@ -53,7 +53,7 @@
   background: white;
   color: black;
 
-  /* But CSS variables should be extracted */
+  /* But CSS variables should be resolved */
   --color-mixed-valid: #555555;
   --spacing-mixed: 2rem;
 }

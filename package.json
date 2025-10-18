@@ -1,7 +1,7 @@
 {
-  "name": "tailwind-theme-extractor",
+  "name": "tailwind-theme-resolver",
   "version": "0.1.4",
-  "description": "Extract Tailwind theme variables into JavaScript objects. Supports Tailwind v4 with future-proof versioning.",
+  "description": "Resolve Tailwind theme variables into JavaScript objects. Supports Tailwind v4 with future-proof versioning.",
   "keywords": [
     "tailwind",
     "tailwindcss",
@@ -11,27 +11,27 @@
     "css-variables",
     "postcss",
     "parser",
-    "extractor",
+    "resolver",
     "chart",
     "canvas",
     "typescript",
-    "theme-extraction"
+    "theme-resolution"
   ],
   "author": "0xstern <mrsirstern@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/0xstern/tailwind-theme-extractor.git"
+    "url": "https://github.com/0xstern/tailwind-theme-resolver.git"
   },
   "bugs": {
-    "url": "https://github.com/0xstern/tailwind-theme-extractor/issues"
+    "url": "https://github.com/0xstern/tailwind-theme-resolver/issues"
   },
-  "homepage": "https://github.com/0xstern/tailwind-theme-extractor#readme",
+  "homepage": "https://github.com/0xstern/tailwind-theme-resolver#readme",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "bin": {
-    "tailwind-theme-extractor": "./dist/v4/cli.cjs"
+    "tailwind-theme-resolver": "./dist/v4/cli.cjs"
   },
   "exports": {
     ".": {

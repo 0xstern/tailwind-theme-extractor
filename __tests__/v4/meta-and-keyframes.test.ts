@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 
-import { extractTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../src/v4/index';
 
 // Test constants
 const EXPECTED_KEYFRAME_COUNT_THREE = 3;
 const EXPECTED_KEYFRAME_COUNT_FOUR = 4;
 
 describe('Meta Variables (--default-*)', () => {
-  test('extracts --default-* meta variables', async () => {
-    const result = await extractTheme({
+  test('resolves --default-* meta variables', async () => {
+    const result = await resolveTheme({
       css: `
         @theme {
           --default-transition-duration: 150ms;
@@ -27,7 +27,7 @@ describe('Meta Variables (--default-*)', () => {
   });
 
   test('converts --default-* keys to camelCase', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --default-font-feature-settings: "liga" 1;
@@ -42,7 +42,7 @@ describe('Meta Variables (--default-*)', () => {
   });
 
   test('works with custom meta variables', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --default-border-width: 1px;
@@ -57,7 +57,7 @@ describe('Meta Variables (--default-*)', () => {
   });
 
   test('preserves --theme() function calls', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --default-font-family: --theme(--font-sans, sans-serif);
@@ -72,9 +72,9 @@ describe('Meta Variables (--default-*)', () => {
   });
 });
 
-describe('@keyframes Extraction', () => {
-  test('extracts @keyframes rules', async () => {
-    const result = await extractTheme({
+describe('@keyframes Resolution', () => {
+  test('resolves @keyframes rules', async () => {
+    const result = await resolveTheme({
       css: `
         @keyframes spin {
           to { transform: rotate(360deg); }
@@ -98,7 +98,7 @@ describe('@keyframes Extraction', () => {
   });
 
   test('preserves complete keyframe definitions', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @keyframes bounce {
           0%, 100% {
@@ -120,8 +120,8 @@ describe('@keyframes Extraction', () => {
     expect(result.theme.keyframes.bounce).toContain('cubic-bezier');
   });
 
-  test('extracts multiple keyframes', async () => {
-    const result = await extractTheme({
+  test('resolves multiple keyframes', async () => {
+    const result = await resolveTheme({
       css: `
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -139,7 +139,7 @@ describe('@keyframes Extraction', () => {
   });
 
   test('works alongside --animate-* variables', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --animate-spin: spin 1s linear infinite;
@@ -170,8 +170,8 @@ describe('@keyframes Extraction', () => {
 });
 
 describe('Meta Variables + Keyframes Combined', () => {
-  test('extracts both meta variables and keyframes', async () => {
-    const result = await extractTheme({
+  test('resolves both meta variables and keyframes', async () => {
+    const result = await resolveTheme({
       css: `
         @theme {
           --default-transition-duration: 300ms;
@@ -196,7 +196,7 @@ describe('Meta Variables + Keyframes Combined', () => {
   });
 
   test('handles empty defaults and keyframes gracefully', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --color-primary: #3b82f6;
@@ -213,7 +213,7 @@ describe('Meta Variables + Keyframes Combined', () => {
 
 describe('Tailwind v4 Real-World Examples', () => {
   test('handles Tailwind-like meta variables', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --default-transition-duration: 150ms;
@@ -236,7 +236,7 @@ describe('Tailwind v4 Real-World Examples', () => {
   });
 
   test('handles Tailwind-like keyframes', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @keyframes spin {
           to {

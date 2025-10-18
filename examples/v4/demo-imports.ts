@@ -2,23 +2,23 @@
  * Demo script showing `@import` resolution
  */
 
-import { extractTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../src/v4/index';
 
 async function main(): Promise<void> {
-  console.log('Tailwind v4 Theme Extractor - @import Demo\n');
+  console.log('Tailwind v4 Theme Resolver - @import Demo\n');
 
   try {
-    // Extract theme from file with imports
-    const result = await extractTheme({
+    // Resolve theme from file with imports
+    const result = await resolveTheme({
       input: './examples/v4/main-theme.css',
       resolveImports: true,
     });
 
-    console.log('Theme extracted with imports resolved!\n');
+    console.log('Theme resolved with imports resolved!\n');
 
     console.log('Statistics:');
     console.log(`  - Files processed: ${result.files.length}`);
-    console.log(`  - Variables extracted: ${result.variables.length}\n`);
+    console.log(`  - Variables resolved: ${result.variables.length}\n`);
 
     console.log('Processed files:');
     for (const file of result.files) {

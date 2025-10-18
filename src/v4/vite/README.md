@@ -1,13 +1,13 @@
-# Vite Plugin - Tailwind Theme Extractor
+# Vite Plugin - Tailwind Theme Resolver
 
 Auto-generates TypeScript types and runtime theme objects from your Tailwind CSS v4 theme files. Types regenerate automatically on file changes with HMR support.
 
 ## Installation
 
 ```bash
-npm install -D tailwind-theme-extractor
+npm install -D tailwind-theme-resolver
 # or
-bun add -D tailwind-theme-extractor
+bun add -D tailwind-theme-resolver
 ```
 
 ## Setup
@@ -15,12 +15,12 @@ bun add -D tailwind-theme-extractor
 Add the plugin to your `vite.config.ts`:
 
 ```typescript
-import { tailwindThemeExtractor } from 'tailwind-theme-extractor/vite';
+import { tailwindThemeResolver } from 'tailwind-theme-resolver/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [
-    tailwindThemeExtractor({
+    tailwindThemeResolver({
       input: 'src/styles.css',
     }),
   ],
@@ -30,7 +30,7 @@ export default defineConfig({
 **Version-specific import** (lock to v4):
 
 ```typescript
-import { tailwindThemeExtractor } from 'tailwind-theme-extractor/v4/vite';
+import { tailwindThemeResolver } from 'tailwind-theme-resolver/v4/vite';
 ```
 
 ## Generated Files
@@ -63,7 +63,7 @@ export interface GeneratedTheme {
 }
 
 // Augments the runtime API types
-declare module 'tailwind-theme-extractor' {
+declare module 'tailwind-theme-resolver' {
   interface Theme extends GeneratedTheme {}
 }
 
@@ -245,7 +245,7 @@ Changes to any imported file trigger regeneration.
 
 ### Theme Variants
 
-Extracts dark mode and custom theme variants:
+Resolves dark mode and custom theme variants:
 
 ```css
 @theme {
@@ -343,13 +343,13 @@ If you don't see this message:
 - Efficient file watching via Vite's native watcher
 - Incremental updates (only regenerates on CSS changes)
 
-## Comparison: Runtime vs. Build-Time Extraction
+## Comparison: Runtime vs. Build-Time Resolution
 
-### Without Plugin (Runtime Extraction)
+### Without Plugin (Runtime Resolution)
 
 ```typescript
 // Async call on every app load
-const { theme } = await extractTheme({ filePath: './styles.css' });
+const { theme } = await resolveTheme({ filePath: './styles.css' });
 const color = theme.colors.primary; // Generic types
 ```
 
@@ -375,7 +375,7 @@ const color = base.colors.primary[500]; // Exact literal type
 ### Custom Interface Name
 
 ```typescript
-tailwindThemeExtractor({
+tailwindThemeResolver({
   input: 'src/styles.css',
   interfaceName: 'MyAppTheme',
 });
@@ -388,7 +388,7 @@ export interface MyAppTheme {
   // Your theme
 }
 
-declare module 'tailwind-theme-extractor' {
+declare module 'tailwind-theme-resolver' {
   interface Theme extends MyAppTheme {}
 }
 ```
@@ -396,7 +396,7 @@ declare module 'tailwind-theme-extractor' {
 ### Disable Import Resolution
 
 ```typescript
-tailwindThemeExtractor({
+tailwindThemeResolver({
   input: 'src/styles.css',
   resolveImports: false, // Don't process @import statements
 });

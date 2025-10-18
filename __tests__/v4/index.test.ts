@@ -4,11 +4,11 @@
 
 import { describe, expect, test } from 'bun:test';
 
-import { extractTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../src/v4/index';
 
-describe('Basic Theme Extraction', () => {
-  test('extracts theme from @theme block', async () => {
-    const result = await extractTheme({
+describe('Basic Theme Resolution', () => {
+  test('resolves theme from @theme block', async () => {
+    const result = await resolveTheme({
       css: `
         @theme {
           --color-primary: #3b82f6;
@@ -22,8 +22,8 @@ describe('Basic Theme Extraction', () => {
     expect(result.theme.spacing['4']).toBe('1rem');
   });
 
-  test('extracts theme from :root block', async () => {
-    const result = await extractTheme({
+  test('resolves theme from :root block', async () => {
+    const result = await resolveTheme({
       css: `
         :root {
           --color-secondary: #8b5cf6;
@@ -38,13 +38,13 @@ describe('Basic Theme Extraction', () => {
   });
 
   test('throws error when neither input nor css provided', async () => {
-    expect(extractTheme({})).rejects.toThrow(
+    expect(resolveTheme({})).rejects.toThrow(
       'Either input or css must be provided',
     );
   });
 
-  test('extracts from file path', async () => {
-    const result = await extractTheme({
+  test('resolves from file path', async () => {
+    const result = await resolveTheme({
       input: './examples/v4/basic-theme.css',
     });
 
@@ -53,9 +53,9 @@ describe('Basic Theme Extraction', () => {
   });
 });
 
-describe('Color Scale Extraction', () => {
-  test('extracts standard numeric color scales', async () => {
-    const result = await extractTheme({
+describe('Color Scale Resolution', () => {
+  test('resolves standard numeric color scales', async () => {
+    const result = await resolveTheme({
       css: `
         @theme {
           --color-blue-50: #eff6ff;
@@ -78,7 +78,7 @@ describe('Color Scale Extraction', () => {
   });
 
   test('converts multi-word color names to camelCase', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --color-brand-primary-500: #3b82f6;
@@ -93,7 +93,7 @@ describe('Color Scale Extraction', () => {
   });
 
   test('handles color variants with suffixes', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         @theme {
           --color-button-500-hover: #60a5fa;
@@ -112,9 +112,9 @@ describe('Color Scale Extraction', () => {
   });
 });
 
-describe('Variant Extraction', () => {
-  test('extracts data-theme dark mode variant', async () => {
-    const result = await extractTheme({
+describe('Variant Resolution', () => {
+  test('resolves data-theme dark mode variant', async () => {
+    const result = await resolveTheme({
       css: `
         @theme {
           --color-background: #ffffff;
@@ -136,8 +136,8 @@ describe('Variant Extraction', () => {
     expect(result.variants.dark.theme.colors.background).toBe('#1f2937');
   });
 
-  test('extracts class-based variants', async () => {
-    const result = await extractTheme({
+  test('resolves class-based variants', async () => {
+    const result = await resolveTheme({
       css: `
         @theme {
           --color-primary: #3b82f6;
@@ -159,8 +159,8 @@ describe('Variant Extraction', () => {
     expect(result.variants.midnight.theme.colors.primary).toBe('#818cf8');
   });
 
-  test('extracts media query variants', async () => {
-    const result = await extractTheme({
+  test('resolves media query variants', async () => {
+    const result = await resolveTheme({
       css: `
         @theme {
           --color-primary: #3b82f6;
@@ -186,7 +186,7 @@ describe('Variant Extraction', () => {
   });
 
   test('merges multiple variant definitions', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       css: `
         [data-theme='custom'] {
           --color-primary: #3b82f6;
@@ -209,9 +209,9 @@ describe('Variant Extraction', () => {
   });
 });
 
-describe('Font Size Extraction', () => {
-  test('extracts font sizes with line heights', async () => {
-    const result = await extractTheme({
+describe('Font Size Resolution', () => {
+  test('resolves font sizes with line heights', async () => {
+    const result = await resolveTheme({
       css: `
         @theme {
           --text-sm: 0.875rem;
@@ -233,7 +233,7 @@ describe('Font Size Extraction', () => {
 
 describe('Import Resolution', () => {
   test('resolves @import statements', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       input: './examples/v4/main-theme.css',
       resolveImports: true,
     });
@@ -244,7 +244,7 @@ describe('Import Resolution', () => {
   });
 
   test('skips import resolution when disabled', async () => {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       input: './examples/v4/main-theme.css',
       resolveImports: false,
     });

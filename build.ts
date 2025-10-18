@@ -17,7 +17,7 @@ const CHECK_MARK = `${COLOR_SUCCESS}✓${RESET}`;
 const CROSS_MARK = `${COLOR_ERROR}✖${RESET}`;
 
 console.log(
-  `${BOLD}Tailwind Theme Extractor - Build Process${RESET_BOLD}${RESET}`,
+  `${BOLD}Tailwind Theme Resolver - Build Process${RESET_BOLD}${RESET}`,
 );
 
 // Configuration
@@ -236,7 +236,7 @@ async function buildTypes(): Promise<void> {
   const vitePluginDts = `/**
  * Vite plugin for automatic Tailwind theme type generation
  */
-export { tailwindThemeExtractor } from './vite/index';
+export { tailwindThemeResolver } from './vite/index';
 export type { VitePluginOptions } from './vite/index';
 `;
   await fs.writeFile(

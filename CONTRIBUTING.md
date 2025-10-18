@@ -1,4 +1,4 @@
-# Contributing to Tailwind v4 Theme Extractor
+# Contributing to Tailwind v4 Theme Resolver
 
 Thank you for your interest in contributing to this project. This document outlines the process and guidelines for contributing.
 
@@ -71,7 +71,7 @@ type(scope): description
 feat(parser): add support for custom color scales
 fix(build): resolve sourcemap generation issue
 docs(readme): update installation instructions
-test(integration): add tests for variant extraction
+test(integration): add tests for variant resolution
 refactor(types): simplify theme interface structure
 ```
 

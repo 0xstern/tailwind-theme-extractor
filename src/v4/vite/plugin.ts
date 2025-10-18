@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { extractTheme } from '../index';
+import { resolveTheme } from '../index';
 import {
   generateRuntimeFile,
   generateTypeDeclarations,
@@ -74,7 +74,7 @@ export interface VitePluginOptions {
   debug?: boolean;
 }
 
-export function tailwindThemeExtractor(
+export function tailwindThemeResolver(
   options: VitePluginOptions,
 ): PluginOption {
   const {
@@ -132,7 +132,7 @@ export function tailwindThemeExtractor(
   }
 
   return {
-    name: 'vite-plugin-tailwind-theme-extractor',
+    name: 'vite-plugin-tailwind-theme-resolver',
 
     configResolved(config) {
       projectRoot = config.root;
@@ -172,7 +172,7 @@ export function tailwindThemeExtractor(
  *
  * Error Handling:
  * - Input file not found: Throws error and logs to console
- * - Missing `@import` files: Silently skipped (see extractTheme)
+ * - Missing `@import` files: Silently skipped (see resolveTheme)
  * - Invalid CSS syntax: Throws error with parse details
  * - File system errors: Throws if output directory cannot be created or files cannot be written
  * - Enable `debug` parameter to log warnings for import resolution failures
@@ -208,7 +208,7 @@ export async function generateThemeFiles(
   basePath?: string,
 ): Promise<{ files: Array<string> }> {
   try {
-    const result = await extractTheme({
+    const result = await resolveTheme({
       input: inputPath,
       resolveImports,
       debug,
