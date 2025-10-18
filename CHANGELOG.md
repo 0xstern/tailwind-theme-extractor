@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored
+
+- **CLI Organization**: Restructured CLI into dedicated directory with comprehensive documentation
+  - Moved `src/v4/cli.ts` → `src/v4/cli/index.ts` for better organization
+  - Created `src/v4/cli/README.md` with complete CLI usage guide, examples, and troubleshooting
+  - CLI and Vite plugin now have separate, focused READMEs in their respective directories
+  - Documentation included in published package for better discoverability
+- **Type Organization**: Moved shared types to appropriate locations
+  - Moved `RuntimeGenerationOptions` from `src/v4/vite/plugin.ts` → `src/v4/types.ts`
+  - Re-exported `RuntimeGenerationOptions` from Vite plugin for backward compatibility
+  - Both CLI and Vite plugin now import from shared type definitions
+  - Cleaner separation of concerns between implementation-specific and shared code
+
 ## [0.1.6] - 2025-01-18
 
 ### Changed

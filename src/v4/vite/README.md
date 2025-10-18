@@ -343,7 +343,7 @@ Cannot find module './generated/tailwindcss/themes'
 The plugin logs theme updates to the console:
 
 ```
-  ℹ  Tailwind theme types updated from styles.css
+  ℹ  Tailwind theme updated from styles.css
 ```
 
 If you don't see this message:

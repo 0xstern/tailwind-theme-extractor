@@ -207,6 +207,39 @@ export interface CSSVariable {
 }
 
 /**
+ * Options for controlling what gets generated in runtime files
+ */
+export interface RuntimeGenerationOptions {
+  /**
+   * Generate theme variants (default, dark, custom themes)
+   * This is typically the main data you need for runtime theme access
+   * @default true
+   */
+  variants?: boolean;
+
+  /**
+   * Generate CSS selectors for each variant
+   * Useful for dynamic theme switching
+   * @default true
+   */
+  selectors?: boolean;
+
+  /**
+   * Generate list of processed CSS files
+   * Useful for debugging, rarely needed in production
+   * @default false
+   */
+  files?: boolean;
+
+  /**
+   * Generate raw CSS variables with metadata
+   * Useful for debugging, rarely needed in production
+   * @default false
+   */
+  variables?: boolean;
+}
+
+/**
  * Options for parsing CSS files
  */
 export interface ParseOptions {

@@ -39,7 +39,7 @@ const entryPoints = [
   { name: 'v4-index', path: 'src/v4/index.ts', outputName: 'v4/index' },
 
   // v4 CLI
-  { name: 'v4-cli', path: 'src/v4/cli.ts', outputName: 'v4/cli' },
+  { name: 'v4-cli', path: 'src/v4/cli/index.ts', outputName: 'v4/cli' },
 
   // v4 Vite plugin
   {

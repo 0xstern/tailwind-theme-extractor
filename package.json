@@ -59,9 +59,12 @@
     "dist/**/*.js",
     "dist/**/*.mjs",
     "dist/**/*.d.ts",
+    "dist/**/*.cjs",
     "!dist/**/*.map",
     "README.md",
-    "LICENSE.md"
+    "LICENSE.md",
+    "src/v4/cli/README.md",
+    "src/v4/vite/README.md"
   ],
   "type": "module",
   "sideEffects": false,

@@ -5,6 +5,8 @@
 
 import type { HmrContext, PluginOption } from 'vite';
 
+import type { RuntimeGenerationOptions } from '../types';
+
 import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -38,37 +40,10 @@ export const DEFAULT_OUTPUT_DIRS = {
 export const DEFAULT_INTERFACE_NAME = 'DefaultTheme';
 
 /**
- * Options for controlling what gets generated in the runtime file
+ * Re-export RuntimeGenerationOptions for convenience
+ * (Defined in ../types.ts)
  */
-export interface RuntimeGenerationOptions {
-  /**
-   * Generate theme variants (default, dark, custom themes)
-   * This is typically the main data you need for runtime theme access
-   * @default true
-   */
-  variants?: boolean;
-
-  /**
-   * Generate CSS selectors for each variant
-   * Useful for dynamic theme switching
-   * @default true
-   */
-  selectors?: boolean;
-
-  /**
-   * Generate list of processed CSS files
-   * Useful for debugging, rarely needed in production
-   * @default false
-   */
-  files?: boolean;
-
-  /**
-   * Generate raw CSS variables with metadata
-   * Useful for debugging, rarely needed in production
-   * @default false
-   */
-  variables?: boolean;
-}
+export type { RuntimeGenerationOptions };
 
 export interface VitePluginOptions {
   /**
@@ -195,7 +170,7 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
     // Log if source file provided (HMR only)
     if (sourceFile !== undefined) {
       console.log(
-        `  ℹ  Tailwind theme types updated from ${path.basename(sourceFile)}`,
+        `  ℹ  Tailwind theme updated from ${path.basename(sourceFile)}`,
       );
     }
   }
