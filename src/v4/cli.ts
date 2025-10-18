@@ -25,7 +25,7 @@ const HELP_TEXT = `
 Tailwind Theme Resolver CLI
 
 Usage:
-  tailwind-theme-resolver [options]
+  tailwind-resolver [options]
 
 Options:
   --input, -i <path>     Path to CSS input file (required)
@@ -37,16 +37,16 @@ Options:
 
 Examples:
   # Generate types and runtime
-  tailwind-theme-resolver -i src/styles.css
+  tailwind-resolver -i src/styles.css
 
   # Generate types only
-  tailwind-theme-resolver -i src/styles.css --no-runtime
+  tailwind-resolver -i src/styles.css --no-runtime
 
   # Custom output directory
-  tailwind-theme-resolver -i src/styles.css -o src/theme
+  tailwind-resolver -i src/styles.css -o src/theme
 
   # Enable debug logging
-  tailwind-theme-resolver -i src/styles.css --debug
+  tailwind-resolver -i src/styles.css --debug
 
 Generated Files:
   - ${OUTPUT_FILES.TYPES} (TypeScript declarations with module augmentation)

@@ -7,10 +7,10 @@
  * @example
  * ```typescript
  * // Import latest version (currently v4)
- * import { resolveTheme } from 'tailwind-theme-resolver';
+ * import { resolveTheme } from 'tailwind-resolver';
  *
  * // Or import specific version
- * import { resolveTheme } from 'tailwind-theme-resolver/v4';
+ * import { resolveTheme } from 'tailwind-resolver/v4';
  *
  * const result = await resolveTheme({
  *   filePath: './src/theme.css'

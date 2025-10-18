@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "tailwind-theme-resolver",
+      "name": "tailwind-resolver",
       "dependencies": {
         "postcss": "^8.5.6",
         "postcss-import": "^16.1.1",

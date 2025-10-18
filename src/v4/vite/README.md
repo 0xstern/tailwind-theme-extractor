@@ -5,9 +5,9 @@ Auto-generates TypeScript types and runtime theme objects from your Tailwind CSS
 ## Installation
 
 ```bash
-npm install -D tailwind-theme-resolver
+npm install -D tailwind-resolver
 # or
-bun add -D tailwind-theme-resolver
+bun add -D tailwind-resolver
 ```
 
 ## Setup
@@ -15,7 +15,7 @@ bun add -D tailwind-theme-resolver
 Add the plugin to your `vite.config.ts`:
 
 ```typescript
-import { tailwindThemeResolver } from 'tailwind-theme-resolver/vite';
+import { tailwindThemeResolver } from 'tailwind-resolver/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
@@ -30,7 +30,7 @@ export default defineConfig({
 **Version-specific import** (lock to v4):
 
 ```typescript
-import { tailwindThemeResolver } from 'tailwind-theme-resolver/v4/vite';
+import { tailwindThemeResolver } from 'tailwind-resolver/v4/vite';
 ```
 
 ## Generated Files
@@ -63,7 +63,7 @@ export interface GeneratedTheme {
 }
 
 // Augments the runtime API types
-declare module 'tailwind-theme-resolver' {
+declare module 'tailwind-resolver' {
   interface Theme extends GeneratedTheme {}
 }
 
@@ -388,7 +388,7 @@ export interface MyAppTheme {
   // Your theme
 }
 
-declare module 'tailwind-theme-resolver' {
+declare module 'tailwind-resolver' {
   interface Theme extends MyAppTheme {}
 }
 ```

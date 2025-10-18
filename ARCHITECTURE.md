@@ -266,7 +266,7 @@ handleHotUpdate → Regenerate on CSS changes
 **One-shot generation:**
 
 ```bash
-tailwind-theme-resolver -i src/styles.css --debug
+tailwind-resolver -i src/styles.css --debug
 ```
 
 **basePath Handling:**
@@ -301,7 +301,7 @@ Useful for:
 Uses modern TypeScript module augmentation instead of triple-slash directives:
 
 ```typescript
-declare module 'tailwind-theme-resolver' {
+declare module 'tailwind-resolver' {
   interface Theme extends GeneratedTheme {}
 }
 ```

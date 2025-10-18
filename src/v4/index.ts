@@ -7,7 +7,7 @@
  *
  * @example
  * ```typescript
- * import { resolveTheme } from 'tailwind-theme-resolver/v4';
+ * import { resolveTheme } from 'tailwind-resolver/v4';
  *
  * // Parse from file
  * const result = await resolveTheme({

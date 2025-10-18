@@ -1,6 +1,6 @@
 {
-  "name": "tailwind-theme-resolver",
-  "version": "0.1.4",
+  "name": "tailwind-resolver",
+  "version": "0.1.5",
   "description": "Resolve Tailwind theme variables into JavaScript objects. Supports Tailwind v4 with future-proof versioning.",
   "keywords": [
     "tailwind",
@@ -21,17 +21,17 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/0xstern/tailwind-theme-resolver.git"
+    "url": "https://github.com/0xstern/tailwind-resolver.git"
   },
   "bugs": {
-    "url": "https://github.com/0xstern/tailwind-theme-resolver/issues"
+    "url": "https://github.com/0xstern/tailwind-resolver/issues"
   },
-  "homepage": "https://github.com/0xstern/tailwind-theme-resolver#readme",
+  "homepage": "https://github.com/0xstern/tailwind-resolver#readme",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "bin": {
-    "tailwind-theme-resolver": "./dist/v4/cli.cjs"
+    "tailwind-resolver": "./dist/v4/cli.cjs"
   },
   "exports": {
     ".": {

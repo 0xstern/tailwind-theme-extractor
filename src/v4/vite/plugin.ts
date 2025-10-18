@@ -132,7 +132,7 @@ export function tailwindThemeResolver(
   }
 
   return {
-    name: 'vite-plugin-tailwind-theme-resolver',
+    name: 'vite-plugin-tailwind-resolver',
 
     configResolved(config) {
       projectRoot = config.root;

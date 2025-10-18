@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2025-01-17
+
+### Changed
+
+- **Breaking**: Package renamed from `tailwind-theme-resolver` to `tailwind-resolver` (shorter, more general)
+- **Breaking**: Repository URLs updated to match new package name
+- **Breaking**: CLI command renamed from `tailwind-theme-resolver` to `tailwind-resolver`
+
+### Migration Guide
+
+For existing users of `tailwind-theme-resolver`:
+
+```bash
+# Uninstall old package
+npm uninstall tailwind-theme-resolver
+
+# Install new package
+npm install tailwind-resolver
+
+# Update imports (API is the same, just package name changed)
+- import { resolveTheme } from 'tailwind-theme-resolver';
++ import { resolveTheme } from 'tailwind-resolver';
+
+# CLI command name changed
+- npx tailwind-theme-resolver --input theme.css
++ npx tailwind-resolver --input theme.css
+```
+
 ## [0.1.4] - 2025-01-17
 
 ### Changed

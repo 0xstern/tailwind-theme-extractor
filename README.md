@@ -6,16 +6,16 @@ Resolve Tailwind CSS v4 theme variables into TypeScript types and runtime object
 
 ```bash
 # Bun
-bun add -D tailwind-theme-resolver
+bun add -D tailwind-resolver
 
 # pnpm
-pnpm add -D tailwind-theme-resolver
+pnpm add -D tailwind-resolver
 
 # Yarn
-yarn add -D tailwind-theme-resolver
+yarn add -D tailwind-resolver
 
 # npm
-npm install -D tailwind-theme-resolver
+npm install -D tailwind-resolver
 ```
 
 ## Usage
@@ -25,7 +25,7 @@ npm install -D tailwind-theme-resolver
 ```typescript
 // vite.config.ts
 
-import { tailwindThemeResolver } from 'tailwind-theme-resolver/vite';
+import { tailwindThemeResolver } from 'tailwind-resolver/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
@@ -63,16 +63,16 @@ const chart = new Chart(ctx, {
 
 ```bash
 # Bun
-bunx tailwind-theme-resolver -i src/styles.css
+bunx tailwind-resolver -i src/styles.css
 
 # pnpm
-pnpm exec tailwind-theme-resolver -i src/styles.css
+pnpm exec tailwind-resolver -i src/styles.css
 
 # Yarn
-yarn tailwind-theme-resolver -i src/styles.css
+yarn tailwind-resolver -i src/styles.css
 
 # npm
-npx tailwind-theme-resolver -i src/styles.css
+npx tailwind-resolver -i src/styles.css
 ```
 
 **Options:**
@@ -87,7 +87,7 @@ npx tailwind-theme-resolver -i src/styles.css
 ### Runtime API
 
 ```typescript
-import { resolveTheme } from 'tailwind-theme-resolver';
+import { resolveTheme } from 'tailwind-resolver';
 
 const { theme, variants } = await resolveTheme({
   input: './src/styles.css',
@@ -192,7 +192,7 @@ console.log(selectors.dark); // "[data-theme='dark']"
 The generated `themes.d.ts` uses module augmentation to provide autocomplete for `resolveTheme()`:
 
 ```typescript
-declare module 'tailwind-theme-resolver' {
+declare module 'tailwind-resolver' {
   interface Theme extends GeneratedTheme {}
 }
 ```
@@ -212,7 +212,7 @@ tailwindThemeResolver({ input: 'src/styles.css', debug: true });
 **CLI:**
 
 ```bash
-bunx tailwind-theme-resolver -i src/styles.css --debug
+bunx tailwind-resolver -i src/styles.css --debug
 # or: pnpm exec / yarn / npx
 ```
 
@@ -294,7 +294,7 @@ MIT
 
 ## Contributing
 
-Issues and pull requests welcome on [GitHub](https://github.com/0xstern/tailwind-theme-resolver).
+Issues and pull requests welcome on [GitHub](https://github.com/0xstern/tailwind-resolver).
 
 ## Support
 

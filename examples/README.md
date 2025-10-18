@@ -92,7 +92,7 @@ bun run examples/v4/demo-imports.ts
 ### Chart Libraries
 
 ```typescript
-import { resolveTheme } from 'tailwind-theme-resolver';
+import { resolveTheme } from 'tailwind-resolver';
 
 const { theme } = await resolveTheme({
   filePath: './examples/v4/basic-theme.css',
