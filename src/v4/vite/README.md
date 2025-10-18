@@ -134,12 +134,14 @@ interface VitePluginOptions {
    * - object: Granular control over what to include
    * @default true
    */
-  generateRuntime?: boolean | {
-    variants?: boolean;    // Theme variants (default: true)
-    selectors?: boolean;   // CSS selectors (default: true)
-    files?: boolean;       // Processed files (default: false)
-    variables?: boolean;   // Raw variables (default: false)
-  };
+  generateRuntime?:
+    | boolean
+    | {
+        variants?: boolean; // Theme variants (default: true)
+        selectors?: boolean; // CSS selectors (default: true)
+        files?: boolean; // Processed files (default: false)
+        variables?: boolean; // Raw variables (default: false)
+      };
 
   /**
    * Include Tailwind CSS defaults from node_modules
@@ -411,9 +413,9 @@ tailwindResolver({
 tailwindResolver({
   input: 'src/styles.css',
   generateRuntime: {
-    variants: true,   // Need theme data
-    selectors: true,  // Need selectors for dynamic switching
-    files: false,     // Skip debug data
+    variants: true, // Need theme data
+    selectors: true, // Need selectors for dynamic switching
+    files: false, // Skip debug data
     variables: false, // Skip debug data
   },
 });

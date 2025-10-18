@@ -529,20 +529,43 @@ export function buildThemes(
   // Build theme for each variant (variants don't get separate keyframes)
   const emptyKeyframes = new Map<string, string>();
   for (const [variantName, { selector, variables: varVars }] of variantGroups) {
+    // For nested variants (e.g., "compact.dark"), include variables from parent variants
+    // This ensures proper CSS cascade behavior where nested selectors can reference
+    // variables defined in their parent selectors
+    const parentVariantVars: Array<CSSVariable> = [];
+
+    // Check if this is a compound variant (contains a dot)
+    if (variantName.includes('.')) {
+      const parts = variantName.split('.');
+      // Include variables from each parent variant
+      for (const part of parts) {
+        const parentGroup = variantGroups.get(part);
+        if (parentGroup !== undefined) {
+          parentVariantVars.push(...parentGroup.variables);
+        }
+      }
+    }
+
     // Create variant-specific variable map that includes the variant's values
     // This allows @theme variables with var() to be re-resolved with variant values
     // Example: @theme has --radius-lg: var(--radius), variant has --radius: 0
     //          Result: variant.radius.lg should be 0
+    // For nested variants: compact.dark gets variables from [compact, dark, compact.dark]
     const variantVariablesMap = createVariablesMap([
       ...defaultVariables,
       ...dedupedThemeVars,
       ...dedupedRootVars,
+      ...parentVariantVars,
       ...varVars,
     ]);
 
     // Include @theme variables when building variant themes so they can be
     // re-resolved with the variant's var() values
-    const variantThemeVariables = [...dedupedThemeVars, ...varVars];
+    const variantThemeVariables = [
+      ...dedupedThemeVars,
+      ...parentVariantVars,
+      ...varVars,
+    ];
 
     variants[variantName] = {
       selector,
@@ -565,7 +588,7 @@ export function buildThemes(
   // This ensures the library returns fully resolved values for use in JavaScript
   // Each variable needs to be resolved with the appropriate context:
   // - Base variables (theme/root): Use allVariablesMap
-  // - Variant variables: Use variant-specific map (base + variant)
+  // - Variant variables: Use variant-specific map (base + parent variants + variant)
   const resolvedVariables = variables.map((variable) => {
     let resolveMap: Map<string, string>;
 
@@ -573,10 +596,24 @@ export function buildThemes(
       // For variant variables, create a map with base + this specific variant's variables
       const variantGroup = variantGroups.get(variable.variantName);
       const variantVars = variantGroup?.variables ?? [];
+
+      // For nested variants, include parent variant variables
+      const parentVariantVars: Array<CSSVariable> = [];
+      if (variable.variantName.includes('.')) {
+        const parts = variable.variantName.split('.');
+        for (const part of parts) {
+          const parentGroup = variantGroups.get(part);
+          if (parentGroup !== undefined) {
+            parentVariantVars.push(...parentGroup.variables);
+          }
+        }
+      }
+
       const variantSpecificVariables = [
         ...defaultVariables,
         ...dedupedThemeVars,
         ...dedupedRootVars,
+        ...parentVariantVars,
         ...variantVars,
       ];
       resolveMap = createVariablesMap(variantSpecificVariables);

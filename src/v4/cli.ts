@@ -2,6 +2,8 @@
 /**
  * CLI tool for generating Tailwind theme types and runtime objects
  */
+import type { RuntimeGenerationOptions } from './vite/plugin';
+
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -10,7 +12,6 @@ import {
   DEFAULT_OUTPUT_DIRS,
   generateThemeFiles,
   OUTPUT_FILES,
-  type RuntimeGenerationOptions,
 } from './vite/plugin';
 
 interface CliOptions {

@@ -56,6 +56,58 @@ function isSelfReferential(name: string, value: string): boolean {
 }
 
 /**
+ * Extracts data-theme attribute values from a selector
+ * @param selector - CSS selector to parse
+ * @returns Array of data-theme values
+ */
+function extractDataThemeValues(selector: string): Array<string> {
+  const values: Array<string> = [];
+  const matches = selector.matchAll(/\[data-theme\s*=\s*['"]([^'"]+)['"]\]/g);
+  for (const match of matches) {
+    if (match[1] !== undefined) {
+      values.push(match[1]);
+    }
+  }
+  return values;
+}
+
+/**
+ * Extracts data attribute value from a selector (if no data-theme found)
+ * @param selector - CSS selector to parse
+ * @returns Data attribute value or null
+ */
+function extractDataAttributeValue(selector: string): string | null {
+  const match = selector.match(/\[data-[\w-]+\s*=\s*['"]([^'"]+)['"]\]/);
+  return match?.[1] ?? null;
+}
+
+/**
+ * Extracts class names from a selector
+ * @param selector - CSS selector to parse
+ * @returns Array of class names
+ */
+function extractClassNames(selector: string): Array<string> {
+  const classNames: Array<string> = [];
+  const matches = selector.matchAll(/\.([a-z][\w-]*)/gi);
+  for (const match of matches) {
+    if (match[1] !== undefined) {
+      classNames.push(match[1]);
+    }
+  }
+  return classNames;
+}
+
+/**
+ * Extracts media query color scheme preference
+ * @param selector - CSS selector to parse
+ * @returns Color scheme preference or null
+ */
+function extractMediaColorScheme(selector: string): string | null {
+  const match = selector.match(/prefers-color-scheme:\s*(\w+)/);
+  return match?.[1] ?? null;
+}
+
+/**
  * Extracts variant name from CSS selector
  *
  * Patterns supported:
@@ -65,40 +117,42 @@ function isSelfReferential(name: string, value: string): boolean {
  * - .midnight → 'midnight'
  * - .dark → 'dark'
  * - `@media` (prefers-color-scheme: dark) → 'dark'
+ * - [data-theme='compact'].dark → 'compact.dark' (compound selectors for same element)
+ * - .theme-default .theme-container → 'theme-default' (descendant selectors - only first)
  *
  * @param selector - The CSS selector to extract variant name from
  * @returns The variant name or null if not a recognized pattern
  */
 export function extractVariantName(selector: string): string | null {
-  // Match [data-theme='value'] or [data-theme="value"] (highest priority)
-  const dataThemeMatch = selector.match(
-    /\[data-theme\s*=\s*['"]([^'"]+)['"]\]/,
-  );
-  if (dataThemeMatch?.[1] !== undefined) {
-    return dataThemeMatch[1];
+  // For selectors with spaces (descendant/child/sibling combinators),
+  // only extract from the first part (the actual variant)
+  // Example: ".theme-default .theme-container" → only use ".theme-default"
+  const firstPart = selector.split(/[\s>+~]/)[0]?.trim() ?? '';
+
+  const variants: Array<string> = [];
+
+  // Extract data-theme attributes
+  variants.push(...extractDataThemeValues(firstPart));
+
+  // Extract other data attributes if no data-theme found
+  if (variants.length === 0) {
+    const dataAttr = extractDataAttributeValue(firstPart);
+    if (dataAttr !== null) {
+      variants.push(dataAttr);
+    }
   }
 
-  // Match any [data-*='value'] attribute selector (e.g., [data-slot='select-trigger'])
-  const dataAttrMatch = selector.match(
-    /\[data-[\w-]+\s*=\s*['"]([^'"]+)['"]\]/,
-  );
-  if (dataAttrMatch?.[1] !== undefined) {
-    return dataAttrMatch[1];
+  // Extract class names
+  variants.push(...extractClassNames(firstPart));
+
+  // Extract media query preference (check full selector)
+  const mediaScheme = extractMediaColorScheme(selector);
+  if (mediaScheme !== null) {
+    variants.push(mediaScheme);
   }
 
-  // Match .classname (like .dark, .midnight, .theme-default)
-  const classMatch = selector.match(/\.([a-z][\w-]*)/i);
-  if (classMatch?.[1] !== undefined) {
-    return classMatch[1];
-  }
-
-  // Match `@media` (prefers-color-scheme: dark)
-  const mediaMatch = selector.match(/prefers-color-scheme:\s*(\w+)/);
-  if (mediaMatch?.[1] !== undefined) {
-    return mediaMatch[1];
-  }
-
-  return null;
+  // Return combined variant name or null
+  return variants.length > 0 ? variants.join('.') : null;
 }
 
 /**

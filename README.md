@@ -50,10 +50,10 @@ export default defineConfig({
       // - object: Granular control
       // Default: true
       generateRuntime: {
-        variants: true,    // Theme variants (default, dark, etc.)
-        selectors: true,   // CSS selectors for variants
-        files: false,      // Processed file list (debug only)
-        variables: false,  // Raw CSS variables (debug only)
+        variants: true, // Theme variants (default, dark, etc.)
+        selectors: true, // CSS selectors for variants
+        files: false, // Processed file list (debug only)
+        variables: false, // Raw CSS variables (debug only)
       },
 
       // Optional: Include Tailwind CSS defaults from node_modules

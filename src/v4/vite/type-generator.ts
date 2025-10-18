@@ -433,7 +433,6 @@ function hasKeys(obj: Record<string, unknown> | undefined): boolean {
   return obj !== undefined && Object.keys(obj).length > 0;
 }
 
-
 /**
  * Removes empty objects and arrays from a theme object
  * Returns a new object with only non-empty properties

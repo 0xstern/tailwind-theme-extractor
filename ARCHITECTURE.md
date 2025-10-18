@@ -224,7 +224,7 @@ console.warn('  Resolved path: /absolute/path/to/missing.css');
 console.warn('  Error: ENOENT: no such file or directory');
 ```
 
-### 3. Variable Resolver (`src/v4/parser/variable-resolver.ts`)
+### 3. Variable Resolver (`src/v4/parser/variable-extractor.ts`)
 
 **Purpose** - Resolve CSS variables from @theme, :root, and variant selectors.
 
@@ -232,7 +232,7 @@ console.warn('  Error: ENOENT: no such file or directory');
 
 1. **@theme blocks** - Tailwind v4 namespace declarations
 2. **:root blocks** - Global CSS variables
-3. **Variant selectors** - Dark mode, custom themes
+3. **Variant selectors** - Dark mode, custom themes, nested combinations
 
 **Optimization:**
 
@@ -245,6 +245,21 @@ console.warn('  Error: ENOENT: no such file or directory');
 - Multi-word namespaces: `text-shadow`, `drop-shadow`, `inset-shadow`
 - Singular variable mappings: `--spacing` → `spacing.base`
 - Keyframes resolution: `@keyframes` rules captured separately
+- Nested variant combinations: `[data-theme='compact'].dark` → `'compact.dark'`
+- Descendant selectors: `.theme-default .theme-container` → `'theme-default'` (first part only)
+
+**Variant Name Extraction:**
+
+The `extractVariantName()` function intelligently handles different selector patterns:
+
+- **Compound selectors** (same element): Joins all variant parts with `.`
+  - Example: `[data-theme='compact'].dark` → `'compact.dark'`
+  - Example: `.theme.dark.high-contrast` → `'theme.dark.high-contrast'`
+- **Descendant selectors** (different elements): Extracts only first part
+  - Example: `.theme-default .theme-container` → `'theme-default'`
+  - Example: `.dark > .content` → `'dark'`
+
+This ensures proper CSS cascade behavior where nested selectors can reference variables from their parent selectors.
 
 ### 4. Theme Builder (`src/v4/parser/theme-builder.ts`)
 
@@ -307,6 +322,21 @@ The theme builder implements a two-phase resolution system for `var()` reference
    - Build nested structure (e.g., `colors.primary.500`)
 5. Separate base theme from variant overrides
 6. Generate deprecation warnings for legacy patterns
+
+**Nested Variant Resolution:**
+
+For nested/compound variants (e.g., `compact.dark`), the theme builder includes variables from parent variants:
+
+1. **Detect Nested Variants**: Check if variant name contains `.` separator
+2. **Gather Parent Variables**: For `compact.dark`, include variables from both `compact` and `dark` variants
+3. **Build Resolution Context**: Create variant-specific variable map with proper cascade order:
+   - Tailwind defaults (lowest priority)
+   - Base theme variables (`@theme`, `:root`)
+   - Parent variant variables (e.g., `compact`, `dark`)
+   - Current variant variables (e.g., `compact.dark`) (highest priority)
+4. **Resolve with Context**: Variable references like `var(--spacing-md)` resolve using the full cascade
+
+This mirrors CSS's natural cascade behavior, ensuring that `[data-theme='compact'].dark` can reference variables defined in both `[data-theme='compact']` and `.dark` selectors.
 
 ### 5. Tailwind Defaults Loader (`src/v4/parser/tailwind-defaults.ts`)
 
@@ -685,11 +715,12 @@ That's it! The pipeline will automatically handle resolution, building, and type
 
 ### Test Coverage
 
-- 197 passing tests (99.5% pass rate)
-- 731 expect() assertions
+- 198 passing tests (100% pass rate)
+- 733 expect() assertions
 - All core paths covered
 - Updated to use new `TailwindResult` API structure
 - Tests verify both runtime API and generated code consistency
+- Comprehensive coverage of nested variant combinations and variable resolution
 
 ## Related Documentation
 

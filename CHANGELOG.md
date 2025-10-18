@@ -49,9 +49,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Type generator now accepts both `TailwindResult` and `ParseResult` formats for backward compatibility
-- All 197 tests updated to use new API structure (99.5% pass rate)
+- All 198 tests passing (100% pass rate)
 - Build process successfully generates both ESM and CJS formats
 - Documentation restructured for clarity: Vite Plugin vs Runtime API sections clearly separated
+- Nested variant combinations now properly supported (e.g., `[data-theme='compact'].dark`)
+  - Variant name extraction now handles compound selectors on same element (joins with `.`)
+  - Variable resolution includes parent variant variables for proper CSS cascade behavior
+  - Descendant selectors (e.g., `.theme-default .theme-container`) only extract first part
 
 ## [0.1.5] - 2025-01-17
 
