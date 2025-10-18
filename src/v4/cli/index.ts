@@ -33,12 +33,15 @@ Options:
   --output, -o <path>    Output directory (default: auto-detect)
   --runtime, -r          Generate runtime theme object (default: true)
   --no-runtime           Skip runtime generation (types only)
-  --debug, -d            Enable debug logging for troubleshooting
+  --debug, -d            Enable debug mode (logging + include debug data in runtime)
   --help, -h             Show this help message
 
 Examples:
-  # Generate types and runtime
+  # Generate types and runtime (production optimized)
   tailwind-resolver -i src/styles.css
+
+  # Debug mode: enable logging and include debug data
+  tailwind-resolver -i src/styles.css --debug
 
   # Generate types only
   tailwind-resolver -i src/styles.css --no-runtime
@@ -46,13 +49,15 @@ Examples:
   # Custom output directory
   tailwind-resolver -i src/styles.css -o src/theme
 
-  # Enable debug logging
-  tailwind-resolver -i src/styles.css --debug
-
 Generated Files:
   - ${OUTPUT_FILES.TYPES} (TypeScript interface definition)
   - ${OUTPUT_FILES.THEME} (Runtime theme objects, if --runtime enabled)
   - ${OUTPUT_FILES.INDEX} (Re-exports, if --runtime enabled)
+
+Debug Mode (--debug):
+  ✓ Show import resolution warnings
+  ✓ Include 'files' array in runtime (processed file list)
+  ✓ Include 'variables' array in runtime (raw CSS variables)
 `;
 
 /**
@@ -138,14 +143,15 @@ async function main(): Promise<void> {
     const basePath = dirname(absoluteInputPath);
 
     // Convert boolean runtime option to RuntimeGenerationOptions
+    // When --debug is enabled, include debug data (files, variables) in runtime
     const runtimeOptions: RuntimeGenerationOptions | false =
       options.runtime === false
         ? false
         : {
             variants: true,
             selectors: true,
-            files: false, // Production default: exclude debug data
-            variables: false, // Production default: exclude debug data
+            files: options.debug as boolean, // Include when debug mode is on
+            variables: options.debug as boolean, // Include when debug mode is on
           };
 
     await generateThemeFiles(

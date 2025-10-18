@@ -66,9 +66,21 @@ export interface VitePluginOptions {
   /**
    * Control what gets generated in the runtime file
    * - `false`: No runtime file (types only)
-   * - `true`: Generate all runtime data (variants, selectors, files, variables)
-   * - object: Granular control over what to include
+   * - `true`: Generate variants and selectors (optimized for production, excludes debug data)
+   * - object: Granular control - set `files: true` and `variables: true` for debugging
    * @default true
+   *
+   * @example
+   * // Production (default)
+   * generateRuntime: true
+   *
+   * // Development with debug data
+   * generateRuntime: {
+   *   variants: true,
+   *   selectors: true,
+   *   files: true,      // Include processed file list
+   *   variables: true,  // Include raw CSS variables
+   * }
    */
   generateRuntime?: boolean | RuntimeGenerationOptions;
 

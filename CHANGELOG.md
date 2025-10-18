@@ -20,11 +20,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Changed from `visited.size < MAX_ITERATIONS` to explicit iteration counter
   - Prevents edge case where exactly 100 unique variables would exit prematurely
 
+### Added
+
+- **CLI**: Added `--dev` flag for development mode
+  - Includes debug data (`files` and `variables` arrays) in runtime output
+  - Production mode (default) excludes debug data for smaller bundle sizes
+  - Clear visual comparison in help text showing what gets generated in each mode
+
 ### Improved
 
 - **Error Messages**: Enhanced error context in theme file generation
   - Error logs now include file path for faster debugging
   - Better visibility into which CSS file caused failures
+
+### Fixed
+
+- **Documentation**: Corrected JSDoc for `generateRuntime` option
+  - Updated Vite plugin documentation to accurately reflect production defaults
+  - Clarified that `true` generates optimized output (excludes debug data)
+  - Added examples showing production vs development configurations
 
 ### Refactored
 

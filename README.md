@@ -46,8 +46,8 @@ export default defineConfig({
 
       // Optional: Control what gets generated in the runtime file
       // - false: No runtime file (types only)
-      // - true: Generate all (variants, selectors, excluding debug data)
-      // - object: Granular control
+      // - true: Generate variants and selectors (optimized for production, excludes debug data)
+      // - object: Granular control - set files/variables to true for debugging
       // Default: true
       generateRuntime: {
         variants: true, // Theme variants (default, dark, etc.)
@@ -172,7 +172,7 @@ npx tailwind-resolver -i src/styles.css
 - `-o, --output <path>` - Output directory (default: auto-detected)
 - `-r, --runtime` - Generate runtime objects (default: true)
 - `--no-runtime` - Types only
-- `-d, --debug` - Enable debug logging
+- `-d, --debug` - Enable debug mode (logging + include debug data in runtime)
 - `-h, --help` - Show help
 
 ## Theme Structure

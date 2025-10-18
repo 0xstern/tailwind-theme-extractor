@@ -45,11 +45,8 @@ npx tailwind-resolver -i src/styles.css
 - `-o, --output <path>` - Output directory for generated files (default: auto-detected)
 - `-r, --runtime` - Generate runtime objects (default: true)
 - `--no-runtime` - Generate types only, no runtime file
-- `--no-imports` - Skip resolving @import statements
-- `--no-defaults` - Exclude Tailwind CSS defaults from node_modules
-- `-d, --debug` - Enable debug logging for troubleshooting
+- `-d, --debug` - Enable debug mode (logging + include debug data in runtime)
 - `-h, --help` - Display help message
-- `-v, --version` - Display version number
 
 ## Output Directory Auto-Detection
 
@@ -153,17 +150,29 @@ export * from './theme';
 
 ## Common Workflows
 
-### Development Build (All Features)
+### Production Build (Optimized)
 
-Generate everything including debug data:
+Default behavior generates optimized runtime (variants and selectors only):
+
+```bash
+bunx tailwind-resolver -i src/styles.css
+```
+
+### Debug Mode (Full Features)
+
+Enable debug mode to get logging and include debug data in runtime:
 
 ```bash
 bunx tailwind-resolver -i src/styles.css --debug
 ```
 
-### Production Build (Minimal Bundle)
+**Debug mode enables:**
 
-Generate only types (no runtime):
+- Import resolution warnings
+- `files` array in runtime (processed file list)
+- `variables` array in runtime (raw CSS variables)
+
+### Types Only (No Runtime)
 
 ```bash
 bunx tailwind-resolver -i src/styles.css --no-runtime
