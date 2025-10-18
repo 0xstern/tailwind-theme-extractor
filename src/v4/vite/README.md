@@ -128,10 +128,18 @@ interface VitePluginOptions {
   resolveImports?: boolean;
 
   /**
-   * Generate runtime theme object (.ts file) in addition to types (.d.ts)
+   * Control what gets generated in the runtime file
+   * - false: No runtime file (types only)
+   * - true: Generate all runtime data (variants, selectors, excluding debug data)
+   * - object: Granular control over what to include
    * @default true
    */
-  generateRuntime?: boolean;
+  generateRuntime?: boolean | {
+    variants?: boolean;    // Theme variants (default: true)
+    selectors?: boolean;   // CSS selectors (default: true)
+    files?: boolean;       // Processed files (default: false)
+    variables?: boolean;   // Raw variables (default: false)
+  };
 
   /**
    * Include Tailwind CSS defaults from node_modules
@@ -393,6 +401,33 @@ tailwindResolver({
 tailwindResolver({
   input: 'src/styles.css',
   includeTailwindDefaults: false, // Don't include Tailwind CSS defaults
+});
+```
+
+### Granular Runtime Control
+
+```typescript
+// Production build: minimal bundle size
+tailwindResolver({
+  input: 'src/styles.css',
+  generateRuntime: {
+    variants: true,   // Need theme data
+    selectors: true,  // Need selectors for dynamic switching
+    files: false,     // Skip debug data
+    variables: false, // Skip debug data
+  },
+});
+
+// Development: include everything for debugging
+tailwindResolver({
+  input: 'src/styles.css',
+  generateRuntime: true, // All fields included
+});
+
+// Types only (no runtime bundle)
+tailwindResolver({
+  input: 'src/styles.css',
+  generateRuntime: false, // Only generate types.ts
 });
 ```
 

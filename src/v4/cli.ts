@@ -10,6 +10,7 @@ import {
   DEFAULT_OUTPUT_DIRS,
   generateThemeFiles,
   OUTPUT_FILES,
+  type RuntimeGenerationOptions,
 } from './vite/plugin';
 
 interface CliOptions {
@@ -135,11 +136,22 @@ async function main(): Promise<void> {
     const absoluteOutputDir = resolve(process.cwd(), outputDir);
     const basePath = dirname(absoluteInputPath);
 
+    // Convert boolean runtime option to RuntimeGenerationOptions
+    const runtimeOptions: RuntimeGenerationOptions | false =
+      options.runtime === false
+        ? false
+        : {
+            variants: true,
+            selectors: true,
+            files: false, // Production default: exclude debug data
+            variables: false, // Production default: exclude debug data
+          };
+
     await generateThemeFiles(
       absoluteInputPath,
       absoluteOutputDir,
       true, // resolveImports
-      options.runtime as boolean,
+      runtimeOptions,
       true, // includeTailwindDefaults
       options.debug as boolean,
       basePath,

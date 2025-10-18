@@ -3,6 +3,7 @@
  */
 
 import type { ParseResult, TailwindResult, Theme } from '../types';
+import type { RuntimeGenerationOptions } from './plugin';
 
 const JSON_INDENT_SPACES = 2;
 
@@ -270,19 +271,22 @@ function generateTypeDeclarationsInternal(
 
   typeDefinitions.push(`  /** CSS selectors for each variant */`);
   typeDefinitions.push('  selectors: {');
-  typeDefinitions.push('    default: string;');
-  for (const [variantName] of Object.entries(result.variants)) {
+  typeDefinitions.push(`    default: ':root';`);
+  for (const [variantName, variantData] of Object.entries(result.variants)) {
     const safeExportName = toSafeIdentifier(variantName);
-    typeDefinitions.push(`    ${safeExportName}: string;`);
+    const selectorValue = escapeStringLiteral(variantData.selector);
+    typeDefinitions.push(`    ${safeExportName}: '${selectorValue}';`);
   }
   typeDefinitions.push('  };');
 
   typeDefinitions.push(`  /** List of CSS files that were processed */`);
   typeDefinitions.push('  files: Array<string>;');
+
   typeDefinitions.push(`  /** Raw CSS variables */`);
   typeDefinitions.push(
-    '  variables: Array<{ name: string; value: string; source: string }>;',
+    '  variables: Array<{ name: string; value: string; source: string; selector?: string; variantName?: string }>;',
   );
+
   typeDefinitions.push('}');
   typeDefinitions.push('');
 
@@ -429,6 +433,7 @@ function hasKeys(obj: Record<string, unknown> | undefined): boolean {
   return obj !== undefined && Object.keys(obj).length > 0;
 }
 
+
 /**
  * Removes empty objects and arrays from a theme object
  * Returns a new object with only non-empty properties
@@ -452,6 +457,67 @@ function removeEmptyProperties(theme: Theme): Partial<Theme> {
 }
 
 /**
+ * Generates variant and selector objects for runtime export
+ *
+ * @param result - Parse result containing theme data
+ * @returns Object with variants and selectors maps
+ */
+function buildVariantsAndSelectors(result: ParseResult): {
+  variantsObj: Record<string, unknown>;
+  selectorsObj: Record<string, string>;
+} {
+  const variantsObj: Record<string, unknown> = {
+    default: result.theme,
+  };
+  const selectorsObj: Record<string, string> = {
+    default: ':root',
+  };
+
+  if (Object.keys(result.variants).length > 0) {
+    for (const [variantName, variantData] of Object.entries(result.variants)) {
+      const safeExportName = toSafeIdentifier(variantName);
+      const cleanedTheme = removeEmptyProperties(variantData.theme);
+      variantsObj[safeExportName] = cleanedTheme;
+      selectorsObj[safeExportName] = variantData.selector;
+    }
+  }
+
+  return { variantsObj, selectorsObj };
+}
+
+/**
+ * Generates individual variant exports for convenience
+ *
+ * @param result - Parse result containing variant data
+ * @param interfaceName - Name of the default theme interface
+ * @returns Array of export lines
+ */
+function generateVariantExports(
+  result: ParseResult,
+  interfaceName: string,
+): Array<string> {
+  const lines: Array<string> = [];
+
+  lines.push('/**');
+  lines.push(' * Convenience exports for individual variants');
+  lines.push(' */');
+  lines.push(
+    `export const ${interfaceName.charAt(0).toLowerCase()}${interfaceName.slice(1)} = variants.default;`,
+  );
+
+  if (Object.keys(result.variants).length > 0) {
+    for (const [variantName] of Object.entries(result.variants)) {
+      const safeExportName = toSafeIdentifier(variantName);
+      lines.push(
+        `export const ${safeExportName} = variants.${safeExportName};`,
+      );
+    }
+  }
+
+  return lines;
+}
+
+/**
  * Generate TypeScript runtime file (theme.ts)
  * This file contains the runtime theme objects matching the Tailwind interface structure
  *
@@ -459,11 +525,19 @@ function removeEmptyProperties(theme: Theme): Partial<Theme> {
  *
  * @param result - The parsed theme result
  * @param interfaceName - Name of the generated interface for type annotations
+ * @param runtimeOptions - Controls what gets exported in the runtime file
  * @returns TypeScript runtime file string
  */
+// eslint-disable-next-line complexity
 function generateRuntimeFileInternal(
   result: ParseResult,
   interfaceName: string = 'DefaultTheme',
+  runtimeOptions: RuntimeGenerationOptions = {
+    variants: true,
+    selectors: true,
+    files: false,
+    variables: false,
+  },
 ): string {
   const lines: Array<string> = [];
 
@@ -491,97 +565,92 @@ function generateRuntimeFileInternal(
   lines.push(`import type { Tailwind, ${interfaceName} } from './types';`);
   lines.push('');
 
-  // Build variants object - start with default
-  const variantsObj: Record<string, unknown> = {
-    default: result.theme,
-  };
-  const selectorsObj: Record<string, string> = {
-    default: ':root',
-  };
+  // Build variants and selectors
+  const { variantsObj, selectorsObj } = buildVariantsAndSelectors(result);
 
-  // Add other variants
-  if (Object.keys(result.variants).length > 0) {
-    for (const [variantName, variantData] of Object.entries(result.variants)) {
-      const safeExportName = toSafeIdentifier(variantName);
-      // Remove empty properties from the runtime object
-      const cleanedTheme = removeEmptyProperties(variantData.theme);
-      variantsObj[safeExportName] = cleanedTheme;
-      selectorsObj[safeExportName] = variantData.selector;
-    }
+  // Conditionally export variants
+  if (runtimeOptions.variants === true) {
+    lines.push('/**');
+    lines.push(' * Theme variants (default, dark, custom themes, etc.)');
+    lines.push(' */');
+    lines.push(
+      `export const variants = ${JSON.stringify(variantsObj, null, JSON_INDENT_SPACES)} as Tailwind['variants'];`,
+    );
+    lines.push('');
   }
 
-  // Export variants (includes default)
-  lines.push('/**');
-  lines.push(' * Theme variants (default, dark, custom themes, etc.)');
-  lines.push(' */');
-  lines.push(
-    `export const variants = ${JSON.stringify(variantsObj, null, JSON_INDENT_SPACES)} as Tailwind['variants'];`,
-  );
-  lines.push('');
-
-  // Export selectors (includes default)
-  lines.push('/**');
-  lines.push(' * CSS selectors for each theme variant');
-  lines.push(' */');
-  lines.push(
-    `export const selectors = ${JSON.stringify(selectorsObj, null, JSON_INDENT_SPACES)} as Tailwind['selectors'];`,
-  );
-  lines.push('');
-
-  // Export files (empty array since we don't track this in generated code)
-  lines.push('/**');
-  lines.push(' * List of CSS files that were processed');
-  lines.push(
-    ' * Note: This is populated at build time, not available in generated code',
-  );
-  lines.push(' */');
-  lines.push('export const files: Array<string> = [];');
-  lines.push('');
-
-  // Export variables (empty array since we don't include raw variables in generated code)
-  lines.push('/**');
-  lines.push(' * Raw CSS variables');
-  lines.push(
-    ' * Note: This is populated at runtime by resolveTheme(), not available in generated code',
-  );
-  lines.push(' */');
-  lines.push(
-    'export const variables: Array<{ name: string; value: string; source: string }> = [];',
-  );
-  lines.push('');
-
-  // Export master tailwind object matching the Tailwind interface
-  lines.push('/**');
-  lines.push(' * Master Tailwind object matching resolveTheme() structure');
-  lines.push(' * Use this for full compatibility with runtime API');
-  lines.push(' */');
-  lines.push('export const tailwind: Tailwind = {');
-  lines.push('  variants,');
-  lines.push('  selectors,');
-  lines.push('  files,');
-  lines.push('  variables,');
-  lines.push('};');
-  lines.push('');
-  lines.push('export default tailwind;');
-  lines.push('');
-
-  // Export individual variant constants for convenience
-  lines.push('/**');
-  lines.push(' * Convenience exports for individual variants');
-  lines.push(' */');
-  lines.push(
-    `export const ${interfaceName.charAt(0).toLowerCase()}${interfaceName.slice(1)} = variants.default;`,
-  );
-
-  if (Object.keys(result.variants).length > 0) {
-    for (const [variantName] of Object.entries(result.variants)) {
-      const safeExportName = toSafeIdentifier(variantName);
-      lines.push(
-        `export const ${safeExportName} = variants.${safeExportName};`,
-      );
-    }
+  // Conditionally export selectors
+  if (runtimeOptions.selectors === true) {
+    lines.push('/**');
+    lines.push(' * CSS selectors for each theme variant');
+    lines.push(' */');
+    lines.push(
+      `export const selectors = ${JSON.stringify(selectorsObj, null, JSON_INDENT_SPACES)} as Tailwind['selectors'];`,
+    );
+    lines.push('');
   }
-  lines.push('');
+
+  // Conditionally export files
+  if (runtimeOptions.files === true) {
+    lines.push('/**');
+    lines.push(' * List of CSS files that were processed');
+    lines.push(' */');
+    lines.push(
+      `export const files: Array<string> = ${JSON.stringify(result.files, null, JSON_INDENT_SPACES)};`,
+    );
+    lines.push('');
+  }
+
+  // Conditionally export variables
+  if (runtimeOptions.variables === true) {
+    lines.push('/**');
+    lines.push(' * Raw CSS variables');
+    lines.push(' */');
+    lines.push(
+      `export const variables: Array<{ name: string; value: string; source: string; selector?: string; variantName?: string }> = ${JSON.stringify(result.variables, null, JSON_INDENT_SPACES)};`,
+    );
+    lines.push('');
+  }
+
+  // Export master tailwind object if any parts are enabled
+  const hasAnyExport =
+    (runtimeOptions.variants ?? false) ||
+    (runtimeOptions.selectors ?? false) ||
+    (runtimeOptions.files ?? false) ||
+    (runtimeOptions.variables ?? false);
+
+  if (hasAnyExport) {
+    lines.push('/**');
+    lines.push(' * Master Tailwind object matching resolveTheme() structure');
+    lines.push(' * Use this for full compatibility with runtime API');
+    lines.push(' */');
+    lines.push('export const tailwind = {');
+
+    if (runtimeOptions.variants === true) {
+      lines.push('  variants,');
+    }
+    if (runtimeOptions.selectors === true) {
+      lines.push('  selectors,');
+    }
+    if (runtimeOptions.files === true) {
+      lines.push('  files,');
+    }
+    if (runtimeOptions.variables === true) {
+      lines.push('  variables,');
+    }
+
+    lines.push('} as const;');
+    lines.push('');
+    lines.push('export default tailwind;');
+    lines.push('');
+  }
+
+  // Export individual variant constants for convenience (only if variants are enabled)
+  if (runtimeOptions.variants === true) {
+    const variantExports = generateVariantExports(result, interfaceName);
+    lines.push(...variantExports);
+    lines.push('');
+  }
 
   return lines.join('\n');
 }
@@ -627,11 +696,18 @@ export function generateTypeDeclarations(
  *
  * @param result - Either TailwindResult (from resolveTheme) or ParseResult (from parseCSS)
  * @param interfaceName - Name of the generated interface for type annotations
+ * @param runtimeOptions - Controls what gets exported in the runtime file
  * @returns TypeScript runtime file string
  */
 export function generateRuntimeFile(
   result: TailwindResult | ParseResult,
   interfaceName: string = 'DefaultTheme',
+  runtimeOptions: RuntimeGenerationOptions = {
+    variants: true,
+    selectors: true,
+    files: false,
+    variables: false,
+  },
 ): string {
   // Check if it's a TailwindResult by looking for the new structure
   const isTailwindResult = 'variants' in result && 'default' in result.variants;
@@ -639,9 +715,17 @@ export function generateRuntimeFile(
   if (isTailwindResult) {
     // Convert TailwindResult to ParseResult
     const parseResult = convertToParseResult(result as TailwindResult);
-    return generateRuntimeFileInternal(parseResult, interfaceName);
+    return generateRuntimeFileInternal(
+      parseResult,
+      interfaceName,
+      runtimeOptions,
+    );
   }
 
   // It's already a ParseResult
-  return generateRuntimeFileInternal(result as ParseResult, interfaceName);
+  return generateRuntimeFileInternal(
+    result as ParseResult,
+    interfaceName,
+    runtimeOptions,
+  );
 }

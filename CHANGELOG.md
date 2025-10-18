@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking**: Removed `interfaceName` option - generated interface is always named `DefaultTheme` and `Tailwind`
   - Use TypeScript import aliasing if you need custom names: `import type { Tailwind as AppTheme } from './generated'`
   - Simplifies configuration and ensures consistency across projects
+- **Breaking**: `generateRuntime` option now supports granular control
+  - `true`: Generates variants and selectors (files and variables excluded by default for smaller bundles)
+  - `false`: No runtime file (types only)
+  - `object`: Full control over what gets generated (`variants`, `selectors`, `files`, `variables`)
+  - **Migration**: `generateRuntime: true` now excludes `files` and `variables` by default (were previously included)
+  - Production builds will have smaller bundles automatically
 - **Breaking**: Renamed Vite plugin function from `tailwindThemeResolver` to `tailwindResolver` for consistency
 - **Breaking**: API structure changed - `resolveTheme()` now returns `TailwindResult` with consistent structure:
   - `result.theme` → `result.variants.default` (base theme is now a variant)
@@ -35,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `includeTailwindDefaults` option to Vite plugin for consistency with runtime API
   - Default: `true` (matches runtime behavior)
   - Set to `false` to exclude Tailwind CSS defaults from generated types
+- Granular runtime generation control via `RuntimeGenerationOptions`
+  - Control bundle size by selectively generating only what you need
+  - Production-friendly defaults (exclude debug data like `files` and `variables`)
+  - Full flexibility for development builds (include everything for debugging)
 
 ### Fixed
 

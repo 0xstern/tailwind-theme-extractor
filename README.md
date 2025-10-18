@@ -44,9 +44,17 @@ export default defineConfig({
       // Default: true
       resolveImports: true,
 
-      // Optional: Generate runtime objects (.ts files) in addition to types
+      // Optional: Control what gets generated in the runtime file
+      // - false: No runtime file (types only)
+      // - true: Generate all (variants, selectors, excluding debug data)
+      // - object: Granular control
       // Default: true
-      generateRuntime: true,
+      generateRuntime: {
+        variants: true,    // Theme variants (default, dark, etc.)
+        selectors: true,   // CSS selectors for variants
+        files: false,      // Processed file list (debug only)
+        variables: false,  // Raw CSS variables (debug only)
+      },
 
       // Optional: Include Tailwind CSS defaults from node_modules
       // Default: true
@@ -127,10 +135,6 @@ const result = await resolveTheme({
 // With generated types for full type safety
 
 import type { Tailwind } from './generated/tailwindcss';
-
-// Without generated types (loosely typed)
-const result = await resolveTheme({ input: './styles.css' });
-console.log(result.variants.default.colors.primary);
 
 const { variants, selectors, files, variables } = await resolveTheme<Tailwind>({
   input: './styles.css',

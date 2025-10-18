@@ -37,6 +37,39 @@ export const DEFAULT_OUTPUT_DIRS = {
  */
 export const DEFAULT_INTERFACE_NAME = 'DefaultTheme';
 
+/**
+ * Options for controlling what gets generated in the runtime file
+ */
+export interface RuntimeGenerationOptions {
+  /**
+   * Generate theme variants (default, dark, custom themes)
+   * This is typically the main data you need for runtime theme access
+   * @default true
+   */
+  variants?: boolean;
+
+  /**
+   * Generate CSS selectors for each variant
+   * Useful for dynamic theme switching
+   * @default true
+   */
+  selectors?: boolean;
+
+  /**
+   * Generate list of processed CSS files
+   * Useful for debugging, rarely needed in production
+   * @default false
+   */
+  files?: boolean;
+
+  /**
+   * Generate raw CSS variables with metadata
+   * Useful for debugging, rarely needed in production
+   * @default false
+   */
+  variables?: boolean;
+}
+
 export interface VitePluginOptions {
   /**
    * Path to your CSS input file (relative to Vite project root)
@@ -56,10 +89,13 @@ export interface VitePluginOptions {
   resolveImports?: boolean;
 
   /**
-   * Whether to generate runtime theme object (not just types)
+   * Control what gets generated in the runtime file
+   * - `false`: No runtime file (types only)
+   * - `true`: Generate all runtime data (variants, selectors, files, variables)
+   * - object: Granular control over what to include
    * @default true
    */
-  generateRuntime?: boolean;
+  generateRuntime?: boolean | RuntimeGenerationOptions;
 
   /**
    * Whether to include Tailwind CSS defaults from node_modules
@@ -74,6 +110,39 @@ export interface VitePluginOptions {
   debug?: boolean;
 }
 
+/**
+ * Normalizes generateRuntime option to RuntimeGenerationOptions
+ *
+ * @param generateRuntime - The runtime generation option (boolean or object)
+ * @returns Normalized runtime generation options or false
+ */
+function normalizeRuntimeOptions(
+  generateRuntime: boolean | RuntimeGenerationOptions | undefined,
+): RuntimeGenerationOptions | false {
+  // If false, no runtime generation
+  if (generateRuntime === false) {
+    return false;
+  }
+
+  // If true or undefined, generate everything with production defaults
+  if (generateRuntime === true || generateRuntime === undefined) {
+    return {
+      variants: true,
+      selectors: true,
+      files: false,
+      variables: false,
+    };
+  }
+
+  // Object - merge with defaults
+  return {
+    variants: generateRuntime.variants ?? true,
+    selectors: generateRuntime.selectors ?? true,
+    files: generateRuntime.files ?? false,
+    variables: generateRuntime.variables ?? false,
+  };
+}
+
 export function tailwindResolver(options: VitePluginOptions): PluginOption {
   const {
     input,
@@ -82,6 +151,8 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
     includeTailwindDefaults = true,
     debug = false,
   } = options;
+
+  const runtimeOptions = normalizeRuntimeOptions(generateRuntime);
 
   let projectRoot = '';
   let watchedFiles: Set<string> = new Set();
@@ -105,7 +176,7 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
       fullInputPath,
       fullOutputDir,
       resolveImports,
-      generateRuntime,
+      runtimeOptions,
       includeTailwindDefaults,
       debug,
       basePath,
@@ -177,8 +248,8 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
  *
  * Generated Files:
  * - Always: types.ts (TypeScript interfaces including Tailwind and DefaultTheme)
- * - Conditional: theme.ts (runtime theme objects, if generateRuntime is true)
- * - Conditional: index.ts (re-exports from types.ts and theme.ts, if generateRuntime is true)
+ * - Conditional: theme.ts (runtime theme objects, if runtimeOptions is not false)
+ * - Conditional: index.ts (re-exports from types.ts and theme.ts, if runtimeOptions is not false)
  *
  * Type Safety:
  * The types.ts file generates a Tailwind interface that users pass as a generic parameter
@@ -187,7 +258,7 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
  * @param inputPath - Absolute path to the CSS input file
  * @param outputDir - Absolute path to the output directory
  * @param resolveImports - Whether to resolve `@import` statements recursively
- * @param generateRuntime - Whether to generate runtime theme object (not just types)
+ * @param runtimeOptions - Controls what gets generated in runtime file (false = no runtime file)
  * @param includeTailwindDefaults - Whether to include Tailwind CSS defaults from node_modules
  * @param debug - Enable debug logging for troubleshooting
  * @param basePath - Base path for resolving node_modules (defaults to input file's directory)
@@ -199,7 +270,7 @@ export async function generateThemeFiles(
   inputPath: string,
   outputDir: string,
   resolveImports: boolean,
-  generateRuntime: boolean,
+  runtimeOptions: RuntimeGenerationOptions | false,
   includeTailwindDefaults: boolean,
   debug: boolean = false,
   basePath?: string,
@@ -232,8 +303,12 @@ export async function generateThemeFiles(
     const writePromises = [fs.writeFile(typesPath, typeDeclarations, 'utf-8')];
 
     // Conditionally generate runtime file (theme.ts) and index
-    if (generateRuntime) {
-      const runtimeFile = generateRuntimeFile(result, DEFAULT_INTERFACE_NAME);
+    if (runtimeOptions !== false) {
+      const runtimeFile = generateRuntimeFile(
+        result,
+        DEFAULT_INTERFACE_NAME,
+        runtimeOptions,
+      );
       const themePath = path.join(outputDir, OUTPUT_FILES.THEME);
 
       // Create an index.ts that re-exports everything for clean imports
