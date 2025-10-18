@@ -1,6 +1,6 @@
 {
   "name": "tailwind-theme-extractor",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Extract Tailwind theme variables into JavaScript objects. Supports Tailwind v4 with future-proof versioning.",
   "keywords": [
     "tailwind",

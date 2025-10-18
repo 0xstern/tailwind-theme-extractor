@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2025-10-17
+
 ### Fixed
 
 - **Critical**: All CSS variables in the `variables` array are now fully resolved to their final values, fulfilling the library's core purpose of providing JavaScript-usable values where CSS `var()` references don't work
