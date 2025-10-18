@@ -1,0 +1,355 @@
+/**
+ * Complex CSS fixture for testing advanced CSS functions and variable resolution
+ * Tests: calc(), min(), max(), clamp(), nested var(), multiple variable references
+ */
+
+@theme {
+  /* Base spacing and sizing */
+  --spacing-base: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+
+  /* Font sizes with calculations */
+  --text-base: 1rem;
+  --text-sm: calc(var(--text-base) * 0.875);
+  --text-lg: calc(var(--text-base) * 1.125);
+  --text-xl: calc(var(--text-base) * 1.25);
+  --text-2xl: calc(var(--text-base) * 1.5);
+
+  /* Responsive sizing with min/max */
+  --container-min: 20rem;
+  --container-max: 80rem;
+  --container-fluid: min(100% - var(--spacing-xl), var(--container-max));
+  --container-responsive: max(var(--container-min), 50vw);
+
+  /* Clamp for fluid typography */
+  --fluid-min: 1rem;
+  --fluid-max: 2rem;
+  --fluid-preferred: 2.5vw;
+  --text-fluid: clamp(
+    var(--fluid-min),
+    var(--fluid-preferred),
+    var(--fluid-max)
+  );
+
+  /* Complex nested calculations */
+  --radius-base: 0.5rem;
+  --radius-sm: calc(var(--radius-base) - var(--spacing-base));
+  --radius-lg: calc(var(--radius-base) + var(--spacing-sm));
+  --radius-dynamic: calc(var(--radius-base) * 1.5 + var(--spacing-base));
+
+  /* Multiple operations in one calc */
+  --spacing-complex: calc(
+    (var(--spacing-base) + var(--spacing-sm)) * 2 - var(--spacing-base)
+  );
+  --size-computed: calc(100% / 3 - var(--spacing-md) * 2);
+
+  /* Min/max with multiple variables */
+  --width-constrained: min(
+    var(--container-max),
+    max(var(--container-min), 75vw)
+  );
+  --height-flexible: max(var(--spacing-lg), min(50vh, var(--spacing-xl) * 10));
+
+  /* Clamp with calc inside */
+  --padding-responsive: clamp(
+    var(--spacing-sm),
+    calc(var(--spacing-base) * 4 + 1vw),
+    var(--spacing-xl)
+  );
+
+  /* Color definitions for testing */
+  --color-primary-500: oklch(0.6 0.2 250);
+  --color-secondary-500: oklch(0.7 0.15 180);
+  --color-accent: oklch(0.75 0.25 30);
+
+  /* Shadow with multiple variables */
+  --shadow-offset-x: 2px;
+  --shadow-offset-y: 4px;
+  --shadow-blur: 8px;
+  --shadow-spread: 0px;
+  --shadow-complex: var(--shadow-offset-x) var(--shadow-offset-y)
+    var(--shadow-blur) var(--shadow-spread) rgba(0, 0, 0, 0.1);
+
+  /* Perspective calculations */
+  --perspective-base: 1000px;
+  --perspective-close: calc(var(--perspective-base) / 2);
+  --perspective-far: calc(var(--perspective-base) * 1.5);
+
+  /* Animation timing with calculations */
+  --duration-base: 300ms;
+  --duration-slow: calc(var(--duration-base) * 2);
+  --duration-fast: calc(var(--duration-base) / 2);
+
+  /* Grid calculations */
+  --grid-columns: 12;
+  --grid-gap: var(--spacing-md);
+  --grid-column-width: calc(
+    (100% - (var(--grid-columns) - 1) * var(--grid-gap)) / var(--grid-columns)
+  );
+
+  /* Aspect ratio calculations */
+  --aspect-16-9: calc(9 / 16);
+  --aspect-4-3: calc(3 / 4);
+  --aspect-dynamic: calc(var(--aspect-16-9) * 100%);
+
+  /* Font weight with fallbacks */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* Line height calculations */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-loose: 2;
+  --leading-computed: calc(var(--leading-normal) * var(--text-base));
+
+  /* Border width calculations */
+  --border-thin: 1px;
+  --border-medium: 2px;
+  --border-thick: 4px;
+  --border-dynamic: calc(var(--border-thin) + var(--spacing-base) / 4);
+
+  /* Opacity with calculations (though not typical) */
+  --opacity-light: 0.1;
+  --opacity-medium: 0.5;
+  --opacity-heavy: 0.9;
+
+  /* Transform origin calculations */
+  --transform-origin-x: 50%;
+  --transform-origin-y: 50%;
+
+  /* Z-index layering */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-modal: 1000;
+  --z-tooltip: 10000;
+}
+
+:root {
+  /* Semantic color mappings */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.2 0 0);
+  --muted: oklch(0.95 0 0);
+  --border: oklch(0.9 0 0);
+
+  /* Spacing overrides */
+  --content-padding: var(--spacing-lg);
+  --section-gap: calc(var(--spacing-xl) * 2);
+
+  /* Typography scales */
+  --heading-scale: 1.2;
+  --heading-1: calc(
+    var(--text-base) * var(--heading-scale) * var(--heading-scale) *
+      var(--heading-scale)
+  );
+  --heading-2: calc(
+    var(--text-base) * var(--heading-scale) * var(--heading-scale)
+  );
+  --heading-3: calc(var(--text-base) * var(--heading-scale));
+
+  /* Container queries (using CSS var syntax) */
+  --container-padding: clamp(var(--spacing-sm), 5vw, var(--spacing-xl));
+
+  /* Complex shadow composition */
+  --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-elevation-2: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-elevation-3: 0 10px 15px rgba(0, 0, 0, 0.15);
+
+  /* Blend calculations */
+  --blend-amount: 0.5;
+  --blend-multiply: calc(var(--blend-amount) * 2);
+}
+
+/* Dark theme variant */
+.dark {
+  --background: oklch(0.15 0 0);
+  --foreground: oklch(0.95 0 0);
+  --muted: oklch(0.25 0 0);
+  --border: oklch(0.3 0 0);
+
+  /* Adjusted spacing for dark mode */
+  --content-padding: calc(var(--spacing-lg) * 1.1);
+  --section-gap: calc(var(--spacing-xl) * 2.5);
+}
+
+/* Compact theme - reduces all spacing */
+[data-theme='compact'] {
+  --spacing-base: 0.125rem;
+  --spacing-sm: 0.25rem;
+  --spacing-md: 0.5rem;
+  --spacing-lg: 0.75rem;
+  --spacing-xl: 1rem;
+
+  /* Recalculate dependent values */
+  --content-padding: var(--spacing-md);
+  --section-gap: var(--spacing-lg);
+  --container-padding: clamp(var(--spacing-base), 3vw, var(--spacing-md));
+}
+
+/* Large theme - increases all spacing */
+[data-theme='large'] {
+  --spacing-base: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 2rem;
+  --spacing-lg: 3rem;
+  --spacing-xl: 4rem;
+
+  /* Typography scale increase */
+  --text-base: 1.25rem;
+
+  /* Recalculate borders */
+  --border-thin: 2px;
+  --border-medium: 3px;
+  --border-thick: 6px;
+}
+
+/* High contrast theme */
+[data-theme='high-contrast'] {
+  --color-primary-500: oklch(0.5 0.3 250);
+  --color-secondary-500: oklch(0.6 0.25 180);
+  --background: oklch(0 0 0);
+  --foreground: oklch(1 0 0);
+  --border: oklch(1 0 0);
+
+  /* Stronger shadows */
+  --shadow-offset-x: 4px;
+  --shadow-offset-y: 8px;
+  --shadow-blur: 16px;
+  --shadow-spread: 2px;
+}
+
+/* Responsive theme with media queries */
+.responsive {
+  --base-unit: 1rem;
+
+  @media (min-width: 640px) {
+    --base-unit: 1.1rem;
+    --spacing-base: calc(var(--base-unit) * 0.25);
+    --text-base: var(--base-unit);
+  }
+
+  @media (min-width: 1024px) {
+    --base-unit: 1.25rem;
+    --container-max: 90rem;
+    --grid-columns: 16;
+  }
+
+  @media (min-width: 1536px) {
+    --base-unit: 1.5rem;
+    --container-max: 100rem;
+    --spacing-xl: calc(var(--base-unit) * 3);
+  }
+}
+
+/* Nested theme combination */
+[data-theme='compact'].dark {
+  /* Compact dark mode - combines both themes */
+  --background: oklch(0.1 0 0);
+  --section-gap: calc(var(--spacing-md) * 2);
+}
+
+/* Theme with custom properties for gradients */
+[data-theme='gradient'] {
+  --gradient-start: var(--color-primary-500);
+  --gradient-end: var(--color-secondary-500);
+  --gradient-angle: 135deg;
+
+  /* Complex gradient stops with calculations */
+  --gradient-stop-1: 0%;
+  --gradient-stop-2: calc(var(--gradient-stop-1) + 50%);
+  --gradient-stop-3: 100%;
+}
+
+/* Mathematical operations theme */
+[data-theme='math-heavy'] {
+  /* Multiple nested calculations */
+  --scale-factor: 1.618;
+  --golden-ratio: var(--scale-factor);
+  --size-1: calc(var(--text-base) * var(--golden-ratio));
+  --size-2: calc(var(--size-1) * var(--golden-ratio));
+  --size-3: calc(var(--size-2) * var(--golden-ratio));
+
+  /* Complex min/max/clamp combinations */
+  --dynamic-width: clamp(
+    min(20rem, 50vw),
+    calc(
+      var(--container-min) + (var(--container-max) - var(--container-min)) * 0.5
+    ),
+    max(var(--container-max), 90vw)
+  );
+
+  /* Nested calc with divisions and multiplications */
+  --complex-spacing: calc(
+    (var(--spacing-base) * var(--golden-ratio) + var(--spacing-sm)) / 2 *
+      var(--scale-factor)
+  );
+
+  /* Multiple variable references in single calc */
+  --combined-offset: calc(
+    var(--shadow-offset-x) + var(--shadow-offset-y) + var(--spacing-base) * 2
+  );
+}
+
+/* Extreme edge cases */
+[data-theme='edge-cases'] {
+  /* Calc with percentages and rem units */
+  --mixed-units: calc(50% - var(--spacing-md) + 10vw);
+
+  /* Multiple mins and maxes */
+  --multi-constraint: min(
+    max(var(--spacing-sm), 10px),
+    max(var(--spacing-lg), 50px),
+    var(--spacing-xl)
+  );
+
+  /* Clamp with all calc expressions */
+  --triple-calc: clamp(
+    calc(var(--spacing-base) * 2),
+    calc(var(--spacing-md) + 1vw),
+    calc(var(--spacing-xl) - var(--spacing-sm))
+  );
+
+  /* Deeply nested var() references */
+  --level-1: var(--spacing-base);
+  --level-2: var(--level-1);
+  --level-3: calc(var(--level-2) * 2);
+  --level-4: min(var(--level-3), var(--spacing-xl));
+
+  /* Calc with negative values */
+  --negative-spacing: calc(var(--spacing-base) * -1);
+  --offset-negative: calc(var(--spacing-md) - var(--spacing-xl));
+
+  /* Multiple operations in sequence */
+  --chain-calc: calc(
+    var(--spacing-base) + var(--spacing-sm) - var(--border-thin) * 2 +
+      var(--spacing-md) / 4
+  );
+
+  /* Extremely complex nested function - calc containing clamp containing min/max/calc */
+  --ultra-complex-width: calc(
+    clamp(
+      min(var(--container-min), calc(100% - var(--spacing-xl))),
+      calc(var(--spacing-base) * var(--grid-columns) + max(2rem, 5%)),
+      max(var(--container-max), 600px)
+    )
+  );
+
+  /* Multi-level nesting with all functions */
+  --hyper-nested: clamp(
+    calc(var(--spacing-sm) + min(var(--spacing-base), 10px)),
+    max(
+      calc(var(--spacing-md) * 2),
+      min(var(--spacing-lg), calc(var(--spacing-xl) - var(--spacing-sm)))
+    ),
+    calc(max(var(--spacing-xl), 4rem) + var(--spacing-base))
+  );
+
+  /* Calc with nested clamp and multiple variable operations */
+  --calculated-clamp: calc(
+    clamp(var(--spacing-sm), var(--spacing-md), var(--spacing-lg)) *
+      max(var(--grid-columns), 8) / min(var(--aspect-16-9), 1)
+  );
+}

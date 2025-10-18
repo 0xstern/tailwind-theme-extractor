@@ -1,0 +1,39 @@
+/* Test file combining shadcn patterns */
+
+@theme inline {
+  --color-blue-300: oklch(80.9% 0.105 251.813);
+  --color-blue-500: oklch(62.3% 0.214 259.815);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+}
+
+:root {
+  --radius: 0.625rem;
+}
+
+/* Theme variant with valid class name */
+.theme-default .theme-container {
+  --chart-1: var(--color-blue-300);
+  --chart-2: var(--color-blue-500);
+}
+
+/* Theme variant with kebab-case (should become camelCase export) */
+.theme-mono {
+  --font-sans: var(--font-mono);
+  --primary: var(--color-stone-600);
+}
+
+/* Data attribute selector */
+[data-slot='select-trigger'] {
+  --spacing-base: 0.2rem;
+}
+
+/* Nested media query inside variant */
+.theme-responsive {
+  --font-sans: var(--font-default);
+
+  @media (min-width: 1024px) {
+    --font-sans: var(--font-mono);
+    --radius-default: 0.45em;
+  }
+}

@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Critical**: All CSS variables in the `variables` array are now fully resolved to their final values, fulfilling the library's core purpose of providing JavaScript-usable values where CSS `var()` references don't work
+- CLI now correctly resolves Tailwind default theme colors and fonts by passing `basePath` from input file's directory
+- Variable resolution now includes Tailwind defaults for `var()` references (e.g., `var(--color-blue-300)` resolves to `oklch(80.9% 0.105 251.813)`)
+- Self-referential variables like `--font-sans: var(--font-sans)` are now skipped to allow Tailwind defaults to be used
+- Reduced cyclomatic complexity in `theme-builder.ts` by extracting helper functions (`buildReferenceMap`, `groupVariantVariables`, `processReferencedVariable`, `processNamespacedVariable`)
+- Variant variables now correctly resolve with their own variant context (e.g., `.dark` variant's `--spacing-lg: 1.5rem` correctly resolves in dark-specific calculations)
+- Variant variables can now reference each other (e.g., `--level-2: var(--level-1)` within the same variant)
+
+### Changed
+
+- Added `basePath` parameter to `generateThemeFiles()` function for proper node_modules resolution
+- CLI now derives `basePath` from input file's directory instead of `process.cwd()`
+- Variable resolution now uses context-aware maps: base variables use base context, variant variables use variant-specific context (base + variant overrides)
+
+### Added
+
+- Comprehensive test suite for complex CSS functions with 37 new tests covering:
+  - Ultra-complex nested functions: `calc(clamp(min(...), calc(...), max(...)))`
+  - Multi-level nesting with all CSS functions at various depths
+  - Deeply nested `var()` reference chains (4+ levels deep)
+  - Negative values, mixed units (%, rem, vw, vh, px), and chained arithmetic operations
+  - Multiple theme variants with proper variable resolution in each context
+
 ## [0.1.3] - 2025-10-17
 
 ### Fixed

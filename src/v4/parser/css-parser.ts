@@ -11,6 +11,7 @@ import { dirname, resolve } from 'node:path';
 import postcss from 'postcss';
 
 import { resolveImports } from './import-resolver';
+import { loadTailwindDefaults } from './tailwind-defaults';
 import { buildThemes } from './theme-builder';
 import { extractVariables } from './variable-extractor';
 
@@ -86,24 +87,30 @@ export async function parseCSS(options: ParseOptions): Promise<ParseResult> {
   // Parse CSS with PostCSS
   const root = postcss.parse(cssContent);
 
-  // Resolve imports if requested
+  // Run independent async operations in parallel for better performance
+  const [importedFiles, defaultTheme] = await Promise.all([
+    shouldResolveImports
+      ? resolveImports(root, baseDir, new Set(processedFiles), debug)
+      : Promise.resolve([]),
+    // Load Tailwind defaults for var() resolution
+    // Use basePath if provided, otherwise fall back to process.cwd()
+    // (baseDir is the CSS file's directory, not the project root)
+    loadTailwindDefaults(basePath ?? process.cwd()),
+  ]);
+
+  // Track imported files
   if (shouldResolveImports) {
-    const importedFiles = await resolveImports(
-      root,
-      baseDir,
-      new Set(processedFiles),
-      debug,
-    );
     processedFiles.push(...importedFiles);
   }
 
-  // Extract variables and keyframes from `@theme`, :root, and variant selectors
-  const { variables, keyframes } = extractVariables(root);
+  // Extract variables and keyframes from @theme, :root, and variant selectors
+  const { variables: rawVariables, keyframes } = extractVariables(root);
 
-  // Build structured theme objects (base + variants)
-  const { theme, variants, deprecationWarnings } = buildThemes(
-    variables,
+  // Build structured theme objects (base + variants) and resolve all variables
+  const { theme, variants, deprecationWarnings, variables } = buildThemes(
+    rawVariables,
     keyframes,
+    defaultTheme,
   );
 
   return {

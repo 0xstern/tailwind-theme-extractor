@@ -53,11 +53,35 @@ export async function loadTailwindDefaults(
         // Cache is still valid
         return cached.theme;
       }
+
+      // Cache is stale - read file and reuse stats we just got
+      const themeCSS = await readFile(themePath, 'utf-8');
+
+      // Parse it
+      const root = postcss.parse(themeCSS);
+
+      // Extract variables and keyframes
+      const { variables, keyframes } = extractVariables(root);
+
+      // Build theme (only use base theme, ignore variants and deprecation warnings)
+      // Note: No defaultTheme parameter here - we ARE the defaults
+      const { theme } = buildThemes(variables, keyframes, null);
+
+      // Cache the result with timestamp we already have
+      defaultThemeCache.set(basePath, {
+        theme,
+        timestamp: stats.mtimeMs,
+        path: themePath,
+      });
+
+      return theme;
     }
 
-    // Cache miss or invalidated - read and parse the theme file
-    const themeCSS = await readFile(themePath, 'utf-8');
-    const stats = await stat(themePath);
+    // No cache - read file and get stats in parallel
+    const [themeCSS, stats] = await Promise.all([
+      readFile(themePath, 'utf-8'),
+      stat(themePath),
+    ]);
 
     // Parse it
     const root = postcss.parse(themeCSS);
@@ -66,7 +90,8 @@ export async function loadTailwindDefaults(
     const { variables, keyframes } = extractVariables(root);
 
     // Build theme (only use base theme, ignore variants and deprecation warnings)
-    const { theme } = buildThemes(variables, keyframes);
+    // Note: No defaultTheme parameter here - we ARE the defaults
+    const { theme } = buildThemes(variables, keyframes, null);
 
     // Cache the result with timestamp
     defaultThemeCache.set(basePath, {

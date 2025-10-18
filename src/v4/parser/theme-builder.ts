@@ -21,6 +21,150 @@ import {
 } from './variable-extractor';
 
 /**
+ * Represents a reference from a Tailwind theme variable to a raw CSS variable
+ * Used to resolve var() references from @theme to :root/:dark values
+ */
+interface VariableReference {
+  sourceVar: string; // e.g., '--background'
+  targetNamespace: string; // e.g., 'color'
+  targetKey: string; // e.g., 'background'
+  targetProperty: keyof Theme; // e.g., 'colors'
+}
+
+/**
+ * Extracts CSS variable name from var() function
+ * @param value - CSS value that may contain var()
+ * @returns Variable name without -- prefix, or null if no var() found
+ *
+ * @example
+ * extractVarReference('var(--background)') // 'background'
+ * extractVarReference('oklch(1 0 0)') // null
+ */
+function extractVarReference(value: string): string | null {
+  const match = value.match(/var\((--[\w-]+)\)/);
+  return match?.[1] ?? null;
+}
+
+/**
+ * Recursively resolves var() references to their actual values
+ * Preserves CSS functions like calc(), min(), max(), clamp() with substituted values
+ * @param value - CSS value that may contain var() references
+ * @param variablesMap - Map of variable names to their values for O(1) lookup
+ * @param visited - Set of variable names already visited (prevents infinite loops)
+ * @returns Resolved value with all var() replaced, or original if can't resolve
+ *
+ * @example
+ * resolveVarReferences('var(--background)', variablesMap) // 'oklch(1 0 0)'
+ * resolveVarReferences('calc(var(--radius) - 4px)', variablesMap) // 'calc(0.625rem - 4px)'
+ * resolveVarReferences('oklch(1 0 0)', variablesMap) // 'oklch(1 0 0)'
+ */
+function resolveVarReferences(
+  value: string,
+  variablesMap: Map<string, string>,
+  visited = new Set<string>(),
+): string {
+  // Check if value contains any CSS function (calc, min, max, clamp, etc.)
+  const hasCSSFunction =
+    /(?:calc|min|max|clamp|abs|sign|round|mod|rem|sin|cos|tan|asin|acos|atan|atan2|pow|sqrt|hypot|log|exp)\s*\(/.test(
+      value,
+    );
+
+  // If it has a CSS function, replace all var() references within it
+  if (hasCSSFunction) {
+    return resolveCSSFunctionVars(value, variablesMap, visited);
+  }
+
+  // No CSS function - check if it's a simple var() reference
+  return resolveSimpleVarReference(value, variablesMap, visited);
+}
+
+/**
+ * Resolves var() references within CSS functions like calc()
+ * @param value - CSS value containing functions
+ * @param variablesMap - Map of variables for resolution
+ * @param visited - Set of visited variables to prevent loops
+ * @returns Resolved value with var() replaced
+ */
+function resolveCSSFunctionVars(
+  value: string,
+  variablesMap: Map<string, string>,
+  visited: Set<string>,
+): string {
+  const MAX_ITERATIONS = 100;
+  let result = value;
+
+  // Keep replacing until no more var() references or we hit iteration limit
+  while (visited.size < MAX_ITERATIONS) {
+    const varMatch = result.match(/var\((--[\w-]+)\)/);
+    if (varMatch === null) {
+      break;
+    }
+
+    const varRef = varMatch[1];
+    if (varRef === undefined || visited.has(varRef)) {
+      break;
+    }
+
+    const referencedValue = variablesMap.get(varRef);
+    if (referencedValue === undefined) {
+      break;
+    }
+
+    visited.add(varRef);
+    const resolvedRef = resolveVarReferences(
+      referencedValue,
+      variablesMap,
+      new Set(visited),
+    );
+    result = result.replace(`var(${varRef})`, resolvedRef);
+  }
+
+  return result;
+}
+
+/**
+ * Resolves a simple var() reference without CSS functions
+ * @param value - CSS value
+ * @param variablesMap - Map of variables for resolution
+ * @param visited - Set of visited variables to prevent loops
+ * @returns Resolved value
+ */
+function resolveSimpleVarReference(
+  value: string,
+  variablesMap: Map<string, string>,
+  visited: Set<string>,
+): string {
+  const varRef = extractVarReference(value);
+  if (varRef === null || visited.has(varRef)) {
+    return value;
+  }
+
+  const referencedValue = variablesMap.get(varRef);
+  if (referencedValue === undefined) {
+    return value;
+  }
+
+  visited.add(varRef);
+  return resolveVarReferences(referencedValue, variablesMap, visited);
+}
+
+/**
+ * Converts an array of CSS variables to a Map for O(1) lookups
+ * Later variables in the array override earlier ones (user vars override defaults)
+ * @param variables - Array of CSS variables (defaults first, user vars last)
+ * @returns Map of variable name to value
+ */
+function createVariablesMap(
+  variables: Array<CSSVariable>,
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const variable of variables) {
+    map.set(variable.name, variable.value);
+  }
+  return map;
+}
+
+/**
  * Helper type for namespace processors that need additional context
  */
 interface ProcessorHelpers {
@@ -120,38 +264,157 @@ function createEmptyTheme(): Theme {
 }
 
 /**
- * Builds structured Theme objects from raw CSS variables and keyframes
+ * Converts a Theme object back into an array of CSSVariable objects
+ * Used to make Tailwind default theme variables available for var() resolution
  *
- * Separates base theme from variants (e.g., dark mode, custom themes)
- *
- * @param variables - Array of CSS variables extracted from parsing
- * @param keyframes - Map of keyframe name to CSS string
- * @returns Object with base theme, variants, and deprecation warnings
+ * @param theme - Theme object to convert
+ * @returns Array of CSSVariable objects with source='theme'
  */
-export function buildThemes(
-  variables: Array<CSSVariable>,
-  keyframes: Map<string, string>,
-): {
-  theme: Theme;
-  variants: Record<string, ThemeVariant>;
-  deprecationWarnings: Array<DeprecationWarning>;
-} {
-  // Separate variables by source
-  const baseVariables = variables.filter(
-    (v) => v.source === 'theme' || v.source === 'root',
-  );
-  const variantVariables = variables.filter((v) => v.source === 'variant');
+function themeToVariables(theme: Theme): Array<CSSVariable> {
+  const variables: Array<CSSVariable> = [];
 
-  // Collect deprecation warnings
-  const deprecationWarnings: Array<DeprecationWarning> = [];
+  // Convert colors
+  for (const [key, value] of Object.entries(theme.colors)) {
+    if (typeof value === 'string') {
+      // Flat color
+      variables.push({
+        name: `--color-${key}`,
+        value,
+        source: 'theme',
+      });
+    } else {
+      // Color scale
+      for (const [variant, colorValue] of Object.entries(value)) {
+        variables.push({
+          name: `--color-${key}-${variant}`,
+          value: colorValue as string,
+          source: 'theme',
+        });
+      }
+    }
+  }
 
-  // Build base theme
-  const theme = buildTheme(baseVariables, keyframes, deprecationWarnings);
+  // Convert other theme properties with their namespaces
+  const namespaceMap: Array<{
+    property: keyof Theme;
+    namespace: string;
+  }> = [
+    { property: 'spacing', namespace: 'spacing' },
+    { property: 'fonts', namespace: 'font' },
+    { property: 'fontSize', namespace: 'text' },
+    { property: 'fontWeight', namespace: 'font-weight' },
+    { property: 'tracking', namespace: 'tracking' },
+    { property: 'leading', namespace: 'leading' },
+    { property: 'breakpoints', namespace: 'breakpoint' },
+    { property: 'containers', namespace: 'container' },
+    { property: 'radius', namespace: 'radius' },
+    { property: 'shadows', namespace: 'shadow' },
+    { property: 'insetShadows', namespace: 'inset-shadow' },
+    { property: 'dropShadows', namespace: 'drop-shadow' },
+    { property: 'textShadows', namespace: 'text-shadow' },
+    { property: 'blur', namespace: 'blur' },
+    { property: 'perspective', namespace: 'perspective' },
+    { property: 'aspect', namespace: 'aspect' },
+    { property: 'ease', namespace: 'ease' },
+    { property: 'animations', namespace: 'animate' },
+    { property: 'defaults', namespace: 'default' },
+  ];
 
-  // Build variants
-  const variants: Record<string, ThemeVariant> = {};
+  for (const { property, namespace } of namespaceMap) {
+    const values = theme[property] as Record<string, unknown>;
+    for (const [key, value] of Object.entries(values)) {
+      if (typeof value === 'string') {
+        variables.push({
+          name: `--${namespace}-${key}`,
+          value,
+          source: 'theme',
+        });
+      } else if (property === 'fontSize' && typeof value === 'object') {
+        // Handle font size objects with size and lineHeight
+        const fontSize = value as { size: string; lineHeight?: string };
+        variables.push({
+          name: `--${namespace}-${key}`,
+          value: fontSize.size,
+          source: 'theme',
+        });
+        if (fontSize.lineHeight !== undefined) {
+          variables.push({
+            name: `--${namespace}-${key}--line-height`,
+            value: fontSize.lineHeight,
+            source: 'theme',
+          });
+        }
+      }
+    }
+  }
 
-  // Group variant variables by variant name
+  return variables;
+}
+
+/**
+ * Builds reference map from @theme variables with var() values
+ *
+ * @param themeVariables - Variables from @theme blocks
+ * @returns Map of variable references for resolution
+ */
+function buildReferenceMap(
+  themeVariables: Array<CSSVariable>,
+): Map<string, VariableReference> {
+  const referenceMap = new Map<string, VariableReference>();
+
+  for (const variable of themeVariables) {
+    const varRef = extractVarReference(variable.value);
+    if (varRef === null) {
+      continue;
+    }
+
+    // Parse the @theme variable's name (e.g., --color-background)
+    const parsed = parseVariableName(variable.name);
+    if (parsed === null) {
+      continue;
+    }
+
+    const mapping = NAMESPACE_MAP[parsed.namespace];
+    if (mapping === undefined) {
+      continue;
+    }
+
+    // Check if the referenced variable itself has a valid namespace
+    // If it does, don't create a reference mapping - let it be processed normally
+    // Example: --radius-lg: var(--radius) should NOT create a reference
+    // because --radius itself is a valid variable (maps to radius.base via singular mapping)
+    const referencedParsed = parseVariableName(varRef);
+    if (
+      referencedParsed !== null &&
+      NAMESPACE_MAP[referencedParsed.namespace] !== undefined
+    ) {
+      // The referenced variable has a valid namespace, skip creating reference
+      continue;
+    }
+
+    // Only create reference for variables without valid namespaces
+    // Example: --color-background: var(--background) creates reference
+    // because --background has no valid namespace
+    referenceMap.set(varRef, {
+      sourceVar: varRef,
+      targetNamespace: parsed.namespace,
+      targetKey: parsed.key,
+      targetProperty: mapping.property,
+    });
+  }
+
+  return referenceMap;
+}
+
+/**
+ * Groups variant variables by variant name
+ *
+ * @param variantVariables - Variables from variant selectors
+ * @returns Map of variant name to selector and variables
+ */
+function groupVariantVariables(
+  variantVariables: Array<CSSVariable>,
+): Map<string, { selector: string; variables: Array<CSSVariable> }> {
   const variantGroups = new Map<
     string,
     { selector: string; variables: Array<CSSVariable> }
@@ -172,65 +435,281 @@ export function buildThemes(
     variantGroups.get(variable.variantName)?.variables.push(variable);
   }
 
+  return variantGroups;
+}
+
+/**
+ * Builds structured Theme objects from raw CSS variables and keyframes
+ *
+ * Separates base theme from variants (e.g., dark mode, custom themes)
+ * Resolves var() references from @theme to :root/:variant values
+ *
+ * @param variables - Array of CSS variables extracted from parsing
+ * @param keyframes - Map of keyframe name to CSS string
+ * @param defaultTheme - Optional Tailwind default theme for var() resolution
+ * @returns Object with base theme, variants, and deprecation warnings
+ */
+export function buildThemes(
+  variables: Array<CSSVariable>,
+  keyframes: Map<string, string>,
+  defaultTheme?: Theme | null,
+): {
+  theme: Theme;
+  variants: Record<string, ThemeVariant>;
+  deprecationWarnings: Array<DeprecationWarning>;
+  variables: Array<CSSVariable>;
+} {
+  // Separate variables by source in a single pass
+  const themeVariables: Array<CSSVariable> = [];
+  const rootVariables: Array<CSSVariable> = [];
+  const variantVariables: Array<CSSVariable> = [];
+
+  for (const variable of variables) {
+    if (variable.source === 'theme') {
+      themeVariables.push(variable);
+    } else if (variable.source === 'root') {
+      rootVariables.push(variable);
+    } else {
+      // Must be 'variant' - the only remaining option
+      variantVariables.push(variable);
+    }
+  }
+
+  // Deduplicate within each source category, keeping last occurrence
+  // This handles cases where the same file is imported multiple times
+  const deduplicateByName = (vars: Array<CSSVariable>): Array<CSSVariable> => {
+    const map = new Map<string, CSSVariable>();
+    for (const v of vars) {
+      map.set(v.name, v);
+    }
+    return Array.from(map.values());
+  };
+
+  const dedupedThemeVars = deduplicateByName(themeVariables);
+  const dedupedRootVars = deduplicateByName(rootVariables);
+
+  // Convert default theme to variables if provided
+  const defaultVariables =
+    defaultTheme !== undefined && defaultTheme !== null
+      ? themeToVariables(defaultTheme)
+      : [];
+
+  // Combine all variables for resolution (defaults first, then user variables override)
+  const allVariables = [
+    ...defaultVariables,
+    ...dedupedThemeVars,
+    ...dedupedRootVars,
+  ];
+
+  // Create variable map for O(1) lookups during resolution
+  // User variables will overwrite defaults due to order
+  const allVariablesMap = createVariablesMap(allVariables);
+
+  // Step 1: Build reference map from @theme variables with var() values
+  const referenceMap = buildReferenceMap(dedupedThemeVars);
+
+  // Collect deprecation warnings
+  const deprecationWarnings: Array<DeprecationWarning> = [];
+
+  // Step 2: Build base theme from @theme + :root, resolving references
+  const baseVariables = [...dedupedThemeVars, ...dedupedRootVars];
+
+  const theme = buildTheme(
+    baseVariables,
+    keyframes,
+    deprecationWarnings,
+    referenceMap,
+    allVariablesMap,
+  );
+
+  // Step 3: Build variants, resolving references
+  const variants: Record<string, ThemeVariant> = {};
+  const variantGroups = groupVariantVariables(variantVariables);
+
   // Build theme for each variant (variants don't get separate keyframes)
   const emptyKeyframes = new Map<string, string>();
   for (const [variantName, { selector, variables: varVars }] of variantGroups) {
+    // Create variant-specific variable map that includes the variant's values
+    // This allows @theme variables with var() to be re-resolved with variant values
+    // Example: @theme has --radius-lg: var(--radius), variant has --radius: 0
+    //          Result: variant.radius.lg should be 0
+    const variantVariablesMap = createVariablesMap([
+      ...defaultVariables,
+      ...dedupedThemeVars,
+      ...dedupedRootVars,
+      ...varVars,
+    ]);
+
+    // Include @theme variables when building variant themes so they can be
+    // re-resolved with the variant's var() values
+    const variantThemeVariables = [...dedupedThemeVars, ...varVars];
+
     variants[variantName] = {
       selector,
-      theme: buildTheme(varVars, emptyKeyframes, deprecationWarnings),
+      theme: buildTheme(
+        variantThemeVariables,
+        emptyKeyframes,
+        deprecationWarnings,
+        referenceMap,
+        variantVariablesMap,
+      ),
     };
   }
 
-  return { theme, variants, deprecationWarnings };
+  // Deduplicate deprecation warnings (same variable may be processed multiple times)
+  const uniqueWarnings = Array.from(
+    new Map(deprecationWarnings.map((w) => [w.variable, w])).values(),
+  );
+
+  // Resolve ALL variables for return (including those not in theme structure)
+  // This ensures the library returns fully resolved values for use in JavaScript
+  // Each variable needs to be resolved with the appropriate context:
+  // - Base variables (theme/root): Use allVariablesMap
+  // - Variant variables: Use variant-specific map (base + variant)
+  const resolvedVariables = variables.map((variable) => {
+    let resolveMap: Map<string, string>;
+
+    if (variable.source === 'variant' && variable.variantName !== undefined) {
+      // For variant variables, create a map with base + this specific variant's variables
+      const variantGroup = variantGroups.get(variable.variantName);
+      const variantVars = variantGroup?.variables ?? [];
+      const variantSpecificVariables = [
+        ...defaultVariables,
+        ...dedupedThemeVars,
+        ...dedupedRootVars,
+        ...variantVars,
+      ];
+      resolveMap = createVariablesMap(variantSpecificVariables);
+    } else {
+      // For base variables, use the base variable map
+      resolveMap = allVariablesMap;
+    }
+
+    const resolvedValue = resolveVarReferences(variable.value, resolveMap);
+    return {
+      ...variable,
+      value: resolvedValue,
+    };
+  });
+
+  return {
+    theme,
+    variants,
+    deprecationWarnings: uniqueWarnings,
+    variables: resolvedVariables,
+  };
+}
+
+/**
+ * Processes a variable through a reference mapping
+ *
+ * @param theme - Theme object to update
+ * @param reference - Variable reference with target info
+ * @param resolvedValue - Resolved CSS value
+ * @param helpers - Helper context for processors
+ */
+function processReferencedVariable(
+  theme: Theme,
+  reference: VariableReference,
+  resolvedValue: string,
+  helpers: ProcessorHelpers,
+): void {
+  const mapping = NAMESPACE_MAP[reference.targetNamespace];
+  if (mapping === undefined) {
+    return;
+  }
+
+  if (mapping.processor !== undefined) {
+    mapping.processor(theme, reference.targetKey, resolvedValue, helpers);
+  } else {
+    (theme[reference.targetProperty] as Record<string, string>)[
+      reference.targetKey
+    ] = resolvedValue;
+  }
+}
+
+/**
+ * Processes a normal namespaced variable
+ *
+ * @param theme - Theme object to update
+ * @param variable - CSS variable to process
+ * @param resolvedValue - Resolved CSS value
+ * @param helpers - Helper context for processors
+ * @param deprecationWarnings - Array to collect warnings
+ */
+function processNamespacedVariable(
+  theme: Theme,
+  variable: CSSVariable,
+  resolvedValue: string,
+  helpers: ProcessorHelpers,
+  deprecationWarnings: Array<DeprecationWarning>,
+): void {
+  const parsed = parseVariableName(variable.name);
+  if (parsed === null) {
+    return;
+  }
+
+  const { namespace, key, deprecationWarning } = parsed;
+
+  // Collect deprecation warning if present
+  if (deprecationWarning !== undefined) {
+    deprecationWarnings.push(deprecationWarning);
+  }
+
+  // Look up namespace mapping
+  const mapping = NAMESPACE_MAP[namespace];
+  if (mapping === undefined) {
+    return;
+  }
+
+  if (mapping.processor !== undefined) {
+    mapping.processor(theme, key, resolvedValue, helpers);
+  } else {
+    (theme[mapping.property] as Record<string, string>)[key] = resolvedValue;
+  }
 }
 
 /**
  * Builds a structured Theme object from raw CSS variables
  *
- * @param variables - Array of CSS variables extracted from parsing
+ * @param variables - Array of CSS variables to build theme from
  * @param keyframes - Map of keyframe name to CSS string
  * @param deprecationWarnings - Array to collect deprecation warnings
+ * @param referenceMap - Map of var() references to resolve
+ * @param allVariablesMap - Map of all variables for O(1) recursive resolution
  * @returns Structured theme object matching Tailwind v4 namespaces
  */
 function buildTheme(
   variables: Array<CSSVariable>,
   keyframes: Map<string, string>,
   deprecationWarnings: Array<DeprecationWarning>,
+  referenceMap: Map<string, VariableReference>,
+  allVariablesMap: Map<string, string>,
 ): Theme {
   const theme = createEmptyTheme();
-
-  // Temporary storage for font size line heights
   const fontSizeLineHeights = new Map<string, string>();
   const helpers: ProcessorHelpers = { fontSizeLineHeights };
 
   for (const variable of variables) {
-    const parsed = parseVariableName(variable.name);
+    const resolvedValue = resolveVarReferences(variable.value, allVariablesMap);
+    const reference = referenceMap.get(variable.name);
 
-    if (parsed === null) {
+    // If this variable name exists in the reference map, use the mapping
+    // to determine where it should be placed in the theme structure.
+    // For example: --background (from :root or .dark) maps to colors.background
+    // because @theme had: --color-background: var(--background)
+    if (reference !== undefined) {
+      processReferencedVariable(theme, reference, resolvedValue, helpers);
       continue;
     }
 
-    const { namespace, key, deprecationWarning } = parsed;
-
-    // Collect deprecation warning if present
-    if (deprecationWarning !== undefined) {
-      deprecationWarnings.push(deprecationWarning);
-    }
-
-    // Look up namespace mapping
-    const mapping = NAMESPACE_MAP[namespace];
-
-    if (mapping !== undefined) {
-      if (mapping.processor !== undefined) {
-        // Use custom processor for complex cases
-        mapping.processor(theme, key, variable.value, helpers);
-      } else {
-        // Simple assignment for standard properties
-        (theme[mapping.property] as Record<string, string>)[key] =
-          variable.value;
-      }
-    }
-    // Unknown namespaces are silently skipped
+    processNamespacedVariable(
+      theme,
+      variable,
+      resolvedValue,
+      helpers,
+      deprecationWarnings,
+    );
   }
 
   // Merge line heights into font sizes

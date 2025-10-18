@@ -3,7 +3,7 @@
  * CLI tool for generating Tailwind theme types and runtime objects
  */
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import {
@@ -115,10 +115,10 @@ function logConfiguration(options: CliOptions, outputDir: string): void {
 function logSuccess(outputDir: string, generateRuntime: boolean): void {
   console.log('✓ Theme types generated successfully\n');
   console.log('Generated files:');
-  console.log(`  - ${outputDir}/${OUTPUT_FILES.TYPES}`);
+  console.log(`  - ${join(outputDir, OUTPUT_FILES.TYPES)}`);
   if (generateRuntime) {
-    console.log(`  - ${outputDir}/${OUTPUT_FILES.RUNTIME}`);
-    console.log(`  - ${outputDir}/${OUTPUT_FILES.INDEX_TS}`);
+    console.log(`  - ${join(outputDir, OUTPUT_FILES.RUNTIME)}`);
+    console.log(`  - ${join(outputDir, OUTPUT_FILES.INDEX_TS)}`);
   }
 }
 
@@ -130,16 +130,23 @@ async function main(): Promise<void> {
     const outputDir = options.output ?? autoDetectOutputDir(process.cwd());
     logConfiguration(options, outputDir);
 
+    // Derive basePath from input file's directory for resolving node_modules
+    const inputPath = options.input as string;
+    const absoluteInputPath = resolve(process.cwd(), inputPath);
+    const absoluteOutputDir = resolve(process.cwd(), outputDir);
+    const basePath = dirname(absoluteInputPath);
+
     await generateThemeFiles(
-      options.input as string,
-      outputDir,
+      absoluteInputPath,
+      absoluteOutputDir,
       true, // resolveImports
-      options.runtime ?? true,
+      options.runtime as boolean,
       DEFAULT_INTERFACE_NAME,
-      options.debug ?? false,
+      options.debug as boolean,
+      basePath,
     );
 
-    logSuccess(outputDir, options.runtime ?? true);
+    logSuccess(outputDir, options.runtime as boolean);
   } catch (error) {
     if (error instanceof Error) {
       console.error(`Error: ${error.message}`);

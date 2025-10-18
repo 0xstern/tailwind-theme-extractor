@@ -4,7 +4,6 @@ import { extractTheme } from '../../src/v4/index';
 
 // Test constants
 const EXPECTED_DEPRECATION_WARNING_COUNT_FOUR = 4;
-const EXPECTED_DEPRECATION_WARNING_COUNT_TWO = 2;
 
 describe('Singular Variables (Deprecated Format)', () => {
   test('handles --spacing (singular) as spacing.base', async () => {
@@ -199,11 +198,9 @@ describe('Singular Variables (Deprecated Format)', () => {
       includeTailwindDefaults: false,
     });
 
-    // Should have 2 warnings (base + variant)
-    expect(result.deprecationWarnings).toHaveLength(
-      EXPECTED_DEPRECATION_WARNING_COUNT_TWO,
-    );
+    // Should have 1 warning (deduplicated across base + variant)
+    expect(result.deprecationWarnings).toHaveLength(1);
     expect(result.deprecationWarnings[0]?.variable).toBe('--blur');
-    expect(result.deprecationWarnings[1]?.variable).toBe('--blur');
+    expect(result.deprecationWarnings[0]?.message).toContain('deprecated');
   });
 });

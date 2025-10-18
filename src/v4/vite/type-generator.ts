@@ -114,6 +114,11 @@ const THEME_PROPERTY_CONFIGS: Array<PropertyConfig> = [
  * @returns Escaped string safe for use in TypeScript code
  */
 function escapeStringLiteral(value: string): string {
+  // Early return if no escaping needed (most common case for CSS values)
+  if (!/[\\'\n]/.test(value)) {
+    return value;
+  }
+
   return value
     .replace(/\\/g, '\\\\') // Escape backslashes first
     .replace(/'/g, "\\'") // Escape single quotes
@@ -195,8 +200,11 @@ export function generateTypeDeclarations(
       // Generate inline type for this variant based on its actual structure
       const variantType = generateThemeTypeInline(variantData.theme);
 
+      // Sanitize variant name for JavaScript export
+      const safeExportName = toSafeIdentifier(variantName);
+
       typeDefinitions.push(
-        `export declare const ${variantName}: ${variantType};`,
+        `export declare const ${safeExportName}: ${variantType};`,
       );
     }
     typeDefinitions.push('');
@@ -209,10 +217,8 @@ export function generateTypeDeclarations(
     // Generate selectors type
     const selectorTypes = Object.keys(result.variants)
       .map((variantName) => {
-        const safeKey = isValidIdentifier(variantName)
-          ? variantName
-          : `'${variantName}'`;
-        return `${safeKey}: string`;
+        const safeExportName = toSafeIdentifier(variantName);
+        return `${safeExportName}: string`;
       })
       .join('; ');
 
@@ -319,6 +325,40 @@ function generateRecordType(obj: Record<string, string>): string {
 function isValidIdentifier(str: string): boolean {
   // Check if string is a valid JavaScript identifier
   return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(str);
+}
+
+/**
+ * Converts a string to a safe JavaScript identifier
+ * Handles kebab-case by converting to camelCase
+ * Ensures the result is a valid JavaScript identifier
+ *
+ * @param str - The string to convert
+ * @returns A safe JavaScript identifier
+ */
+function toSafeIdentifier(str: string): string {
+  // If already valid, return as-is
+  if (isValidIdentifier(str)) {
+    return str;
+  }
+
+  // Convert kebab-case to camelCase
+  const camelCase = str.replace(/-([a-z])/g, (_, letter: string) =>
+    letter.toUpperCase(),
+  );
+
+  // If now valid, return
+  if (isValidIdentifier(camelCase)) {
+    return camelCase;
+  }
+
+  // Handle edge cases: starts with number, contains special chars, etc.
+  // Prefix with underscore if starts with number
+  let safe = camelCase.replace(/^(\d)/, '_$1');
+
+  // Replace any remaining invalid characters with underscore
+  safe = safe.replace(/[^a-zA-Z0-9_$]/g, '_');
+
+  return safe;
 }
 
 /**
@@ -433,8 +473,11 @@ export function generateRuntimeFile(
       // Remove empty properties from the runtime object
       const cleanedTheme = removeEmptyProperties(variantData.theme);
 
+      // Sanitize variant name for JavaScript export
+      const safeExportName = toSafeIdentifier(variantName);
+
       lines.push(
-        `export const ${variantName} = ${JSON.stringify(cleanedTheme, null, JSON_INDENT_SPACES)} as const;`,
+        `export const ${safeExportName} = ${JSON.stringify(cleanedTheme, null, JSON_INDENT_SPACES)} as const;`,
       );
       lines.push('');
     }
@@ -447,7 +490,8 @@ export function generateRuntimeFile(
 
     const selectorEntries = Object.entries(result.variants)
       .map(([variantName, variantData]) => {
-        return `  ${variantName}: '${escapeStringLiteral(variantData.selector)}'`;
+        const safeExportName = toSafeIdentifier(variantName);
+        return `  ${safeExportName}: '${escapeStringLiteral(variantData.selector)}'`;
       })
       .join(',\n');
 

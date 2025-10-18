@@ -31,11 +31,37 @@ const MULTI_WORD_NAMESPACES = [
 ] as const;
 
 /**
+ * Checks if a CSS variable is self-referential (e.g., --font-sans: var(--font-sans))
+ *
+ * Self-referential variables create circular dependencies and should be ignored
+ * to allow Tailwind default values to be used instead.
+ *
+ * @param name - The variable name (e.g., '--font-sans')
+ * @param value - The variable value
+ * @returns true if the variable references itself
+ *
+ * @example
+ * isSelfReferential('--font-sans', 'var(--font-sans)') // true
+ * isSelfReferential('--color-primary', 'var(--background)') // false
+ */
+function isSelfReferential(name: string, value: string): boolean {
+  // Match var(--variable-name) pattern
+  const varMatch = value.match(/^var\((--[\w-]+)\)$/);
+  if (varMatch === null) {
+    return false;
+  }
+
+  const referencedVar = varMatch[1];
+  return referencedVar === name;
+}
+
+/**
  * Extracts variant name from CSS selector
  *
  * Patterns supported:
  * - [data-theme='dark'] → 'dark'
  * - [data-theme="blue"] → 'blue'
+ * - [data-slot='select-trigger'] → 'select-trigger'
  * - .midnight → 'midnight'
  * - .dark → 'dark'
  * - `@media` (prefers-color-scheme: dark) → 'dark'
@@ -44,7 +70,7 @@ const MULTI_WORD_NAMESPACES = [
  * @returns The variant name or null if not a recognized pattern
  */
 export function extractVariantName(selector: string): string | null {
-  // Match [data-theme='value'] or [data-theme="value"]
+  // Match [data-theme='value'] or [data-theme="value"] (highest priority)
   const dataThemeMatch = selector.match(
     /\[data-theme\s*=\s*['"]([^'"]+)['"]\]/,
   );
@@ -52,13 +78,15 @@ export function extractVariantName(selector: string): string | null {
     return dataThemeMatch[1];
   }
 
-  // Match [data-mode='value'] or similar
-  const dataModeMatch = selector.match(/\[data-\w+\s*=\s*['"]([^'"]+)['"]\]/);
-  if (dataModeMatch?.[1] !== undefined) {
-    return dataModeMatch[1];
+  // Match any [data-*='value'] attribute selector (e.g., [data-slot='select-trigger'])
+  const dataAttrMatch = selector.match(
+    /\[data-[\w-]+\s*=\s*['"]([^'"]+)['"]\]/,
+  );
+  if (dataAttrMatch?.[1] !== undefined) {
+    return dataAttrMatch[1];
   }
 
-  // Match .classname (like .dark, .midnight)
+  // Match .classname (like .dark, .midnight, .theme-default)
   const classMatch = selector.match(/\.([a-z][\w-]*)/i);
   if (classMatch?.[1] !== undefined) {
     return classMatch[1];
@@ -90,95 +118,114 @@ export function extractVariables(root: Root): {
 } {
   const variables: Array<CSSVariable> = [];
   const keyframes = new Map<string, string>();
+  const processedMediaInRules = new Set<AtRule>();
 
-  // Extract variables from `@theme` blocks
-  root.walkAtRules('theme', (atRule: AtRule) => {
-    atRule.walkDecls((decl) => {
-      if (decl.prop.startsWith('--')) {
-        variables.push({
-          name: decl.prop,
-          value: decl.value,
-          source: 'theme',
+  // Single pass through all top-level nodes
+  root.each((node) => {
+    if (node.type === 'atrule') {
+      const atRule = node as AtRule;
+
+      if (atRule.name === 'theme') {
+        // Extract variables from @theme blocks
+        atRule.walkDecls((decl) => {
+          if (decl.prop.startsWith('--')) {
+            if (!isSelfReferential(decl.prop, decl.value)) {
+              variables.push({
+                name: decl.prop,
+                value: decl.value,
+                source: 'theme',
+              });
+            }
+          }
         });
-      }
-    });
-  });
 
-  // Extract variables from :root blocks
-  root.walkRules(':root', (rule) => {
-    rule.walkDecls((decl) => {
-      if (decl.prop.startsWith('--')) {
-        variables.push({
-          name: decl.prop,
-          value: decl.value,
-          source: 'root',
+        // Extract keyframes nested inside @theme blocks
+        atRule.walkAtRules('keyframes', (keyframesRule) => {
+          if (keyframesRule.params !== '') {
+            keyframes.set(keyframesRule.params, keyframesRule.toString());
+          }
         });
+      } else if (atRule.name === 'media') {
+        // Extract variables from @media blocks
+        const variantName = extractVariantName(atRule.params);
+
+        if (variantName !== null) {
+          atRule.walkDecls((decl) => {
+            if (decl.prop.startsWith('--')) {
+              if (!isSelfReferential(decl.prop, decl.value)) {
+                variables.push({
+                  name: decl.prop,
+                  value: decl.value,
+                  source: 'variant',
+                  selector: `@media ${atRule.params}`,
+                  variantName,
+                });
+              }
+            }
+          });
+        }
+      } else if (atRule.name === 'keyframes') {
+        // Extract @keyframes rules
+        if (atRule.params !== '') {
+          keyframes.set(atRule.params, atRule.toString());
+        }
       }
-    });
-  });
+    } else if (node.type === 'rule') {
+      const rule = node;
 
-  // Extract variables from variant selectors (not :root)
-  root.walkRules((rule) => {
-    // Skip :root (already processed)
-    if (rule.selector === ':root') {
-      return;
-    }
-
-    // Collect variables in single pass
-    const ruleVariables: Array<Omit<CSSVariable, 'variantName'>> = [];
-
-    rule.walkDecls((decl) => {
-      if (decl.prop.startsWith('--')) {
-        ruleVariables.push({
-          name: decl.prop,
-          value: decl.value,
-          source: 'variant',
-          selector: rule.selector,
+      if (rule.selector === ':root') {
+        // Extract variables from :root blocks
+        rule.walkDecls((decl) => {
+          if (decl.prop.startsWith('--')) {
+            if (!isSelfReferential(decl.prop, decl.value)) {
+              variables.push({
+                name: decl.prop,
+                value: decl.value,
+                source: 'root',
+              });
+            }
+          }
         });
-      }
-    });
+      } else {
+        // Extract variables from variant selectors
+        const variantName = extractVariantName(rule.selector);
 
-    // Only process if we found variables
-    if (ruleVariables.length > 0) {
-      const variantName = extractVariantName(rule.selector);
+        if (variantName !== null) {
+          // Walk declarations directly in this rule
+          rule.walkDecls((decl) => {
+            if (decl.prop.startsWith('--')) {
+              if (!isSelfReferential(decl.prop, decl.value)) {
+                variables.push({
+                  name: decl.prop,
+                  value: decl.value,
+                  source: 'variant',
+                  selector: rule.selector,
+                  variantName,
+                });
+              }
+            }
+          });
 
-      if (variantName !== null) {
-        // Add variant name and push to main array
-        for (const variable of ruleVariables) {
-          variables.push({
-            ...variable,
-            variantName,
+          // Check for media queries nested inside this rule
+          rule.walkAtRules('media', (mediaRule) => {
+            processedMediaInRules.add(mediaRule);
+
+            mediaRule.walkDecls((decl) => {
+              if (decl.prop.startsWith('--')) {
+                if (!isSelfReferential(decl.prop, decl.value)) {
+                  variables.push({
+                    name: decl.prop,
+                    value: decl.value,
+                    source: 'variant',
+                    selector: `${rule.selector} @media ${mediaRule.params}`,
+                    variantName,
+                  });
+                }
+              }
+            });
           });
         }
       }
-    }
-  });
-
-  // Also check for variants inside media queries
-  root.walkAtRules('media', (atRule) => {
-    const variantName = extractVariantName(atRule.params);
-
-    if (variantName !== null) {
-      atRule.walkDecls((decl) => {
-        if (decl.prop.startsWith('--')) {
-          variables.push({
-            name: decl.prop,
-            value: decl.value,
-            source: 'variant',
-            selector: `@media ${atRule.params}`,
-            variantName,
-          });
-        }
-      });
-    }
-  });
-
-  // Extract `@keyframes` rules
-  root.walkAtRules('keyframes', (atRule) => {
-    const name = atRule.params;
-    if (name !== '') {
-      // Convert the keyframe rule to CSS string
-      keyframes.set(name, atRule.toString());
     }
   });
 

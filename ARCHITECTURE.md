@@ -142,7 +142,7 @@ console.warn('  Error: ENOENT: no such file or directory');
 
 ### 4. Theme Builder (`src/v4/parser/theme-builder.ts`)
 
-**Purpose** - Transform flat CSS variables into structured Theme object.
+**Purpose** - Transform flat CSS variables into structured Theme object with var() resolution.
 
 **Architecture Pattern:**
 
@@ -164,24 +164,47 @@ const NAMESPACE_MAP: Record<string, NamespaceMapping> = {
 
 **Complexity Metrics:**
 
-- Before refactor: Cyclomatic complexity = 10
-- After refactor: Cyclomatic complexity = 3
-- Reduced from 95 lines to modular configuration
+- Main function (`buildThemes`): Cyclomatic complexity < 10 (after extracting helpers)
+- Helper function (`buildTheme`): Cyclomatic complexity < 10 (after extracting processors)
+- Modular design with 4 extracted helper functions:
+  - `buildReferenceMap()` - Builds var() reference mappings
+  - `groupVariantVariables()` - Groups variant variables by name
+  - `processReferencedVariable()` - Handles referenced variables
+  - `processNamespacedVariable()` - Handles namespaced variables
+
+**Variable Resolution System:**
+
+The theme builder implements a two-phase resolution system for `var()` references:
+
+1. **Phase 1: Build Reference Map**
+   - Scans `@theme` variables for `var()` references
+   - Maps raw CSS variables to their target theme properties
+   - Example: `--color-background: var(--background)` → maps `--background` to `colors.background`
+
+2. **Phase 2: Resolve Variables**
+   - Recursively resolves `var()` references to actual values
+   - Includes Tailwind default theme in resolution pool
+   - Handles self-referential variables (skips them to use defaults)
+   - Example: `var(--color-blue-300)` → `oklch(80.9% 0.105 251.813)`
 
 **Processing Steps:**
 
 1. Group variables by source (theme/root vs variants)
-2. For each variable:
+2. Convert Tailwind default theme to variables (if provided)
+3. Build reference map from `@theme` variables with `var()` values
+4. For each variable:
+   - Resolve any `var()` references recursively
+   - Check if referenced by `@theme` variable (use reference mapping)
    - Parse namespace from variable name
    - Look up mapping in NAMESPACE_MAP
    - Apply processor if defined (color scales, font sizes)
    - Build nested structure (e.g., `colors.primary.500`)
-3. Separate base theme from variant overrides
-4. Generate deprecation warnings for legacy patterns
+5. Separate base theme from variant overrides
+6. Generate deprecation warnings for legacy patterns
 
 ### 5. Tailwind Defaults Loader (`src/v4/parser/tailwind-defaults.ts`)
 
-**Purpose** - Load and merge Tailwind's default theme from node_modules.
+**Purpose** - Load and merge Tailwind's default theme from node_modules for var() resolution.
 
 **Caching Strategy:**
 
@@ -203,6 +226,20 @@ interface ThemeCache {
 
 - If `tailwindcss` not installed → Return null, no error
 - User theme still works independently
+
+**basePath Resolution:**
+
+- Accepts `basePath` parameter to locate node_modules
+- CLI derives `basePath` from input file's directory
+- Vite plugin uses project root automatically
+- Critical for resolving Tailwind defaults when processing files in subdirectories
+
+**Variable Resolution Integration:**
+
+- Default theme is converted back to CSS variables via `themeToVariables()`
+- Combined with user variables for comprehensive `var()` resolution
+- Enables references like `var(--color-blue-300)` to resolve to actual oklch values
+- Self-referential variables (`--font-sans: var(--font-sans)`) are skipped to prefer defaults
 
 ## Integration Points
 
@@ -232,12 +269,25 @@ handleHotUpdate → Regenerate on CSS changes
 tailwind-theme-extractor -i src/styles.css --debug
 ```
 
+**basePath Handling:**
+
+The CLI automatically derives `basePath` from the input file's directory:
+
+```typescript
+const inputPath = options.input as string;
+const absoluteInputPath = resolve(process.cwd(), inputPath);
+const basePath = dirname(absoluteInputPath);
+```
+
+This ensures Tailwind defaults are resolved from the correct `node_modules` location, even when processing files in different projects.
+
 Useful for:
 
 - CI/CD pipelines
 - Build scripts
 - Non-Vite projects
 - SSR environments
+- Cross-project theme generation
 
 ### Type Generator (`src/v4/vite/type-generator.ts`)
 
@@ -276,11 +326,16 @@ declare module 'tailwind-theme-extractor' {
 ```css
 @theme {
   --color-primary-500: oklch(0.65 0.2 250);
+  --color-chart-1: var(--color-blue-300);
   --spacing-4: 1rem;
 }
 
+:root {
+  --background: oklch(1 0 0);
+}
+
 [data-theme='dark'] {
-  --color-background: #1f2937;
+  --background: #1f2937;
 }
 ```
 
@@ -289,16 +344,25 @@ declare module 'tailwind-theme-extractor' {
 ```
 1. CSS Parser
    ├─ Reads file
+   ├─ Loads Tailwind defaults from node_modules
    └─ Creates PostCSS AST
 
 2. Variable Extractor
    ├─ Finds: --color-primary-500 (source: 'theme')
+   ├─ Finds: --color-chart-1 (source: 'theme', value: 'var(--color-blue-300)')
    ├─ Finds: --spacing-4 (source: 'theme')
-   └─ Finds: --color-background (source: 'variant', selector: '[data-theme="dark"]')
+   ├─ Finds: --background (source: 'root')
+   └─ Finds: --background (source: 'variant', selector: '[data-theme="dark"]')
 
 3. Theme Builder
+   ├─ Converts Tailwind defaults to variables
+   ├─ Builds reference map: --background → colors.background
+   ├─ Resolves var() references:
+   │  └─ var(--color-blue-300) → oklch(80.9% 0.105 251.813)
    ├─ Base theme:
    │  ├─ colors.primary[500] = "oklch(0.65 0.20 250)"
+   │  ├─ colors.chart[1] = "oklch(80.9% 0.105 251.813)" [RESOLVED]
+   │  ├─ colors.background = "oklch(1 0 0)" [FROM :root via reference]
    │  └─ spacing[4] = "1rem"
    └─ Variants:
       └─ dark:
@@ -311,7 +375,16 @@ declare module 'tailwind-theme-extractor' {
 ```typescript
 {
   theme: {
-    colors: { primary: { 500: "oklch(0.65 0.20 250)" } },
+    colors: {
+      primary: { 500: "oklch(0.65 0.20 250)" },
+      chart: { 1: "oklch(80.9% 0.105 251.813)" }, // Resolved from Tailwind defaults
+      background: "oklch(1 0 0)", // Resolved from :root via reference map
+      // ... all Tailwind default colors (red, blue, violet, etc.)
+    },
+    fonts: {
+      sans: "ui-sans-serif, system-ui, sans-serif, ...", // From Tailwind defaults
+      // ... other fonts
+    },
     spacing: { 4: "1rem" },
     // ... other namespaces
   },

@@ -101,6 +101,7 @@ export function tailwindThemeExtractor(
   ): Promise<void> {
     const fullInputPath = path.resolve(projectRoot, input);
     const fullOutputDir = path.resolve(projectRoot, resolvedOutputDir);
+    const basePath = path.dirname(fullInputPath);
 
     const result = await generateThemeFiles(
       fullInputPath,
@@ -109,6 +110,7 @@ export function tailwindThemeExtractor(
       generateRuntime,
       interfaceName,
       debug,
+      basePath,
     );
 
     // Update watched files set
@@ -191,6 +193,7 @@ export function tailwindThemeExtractor(
  * @param generateRuntime - Whether to generate runtime theme object (not just types)
  * @param interfaceName - Name of the generated TypeScript interface
  * @param debug - Enable debug logging for troubleshooting
+ * @param basePath - Base path for resolving node_modules (defaults to input file's directory)
  * @returns Promise resolving to object containing list of processed files
  * @throws Error if input file cannot be read or parsed
  * @throws Error if output files cannot be written
@@ -202,12 +205,14 @@ export async function generateThemeFiles(
   generateRuntime: boolean,
   interfaceName: string,
   debug: boolean = false,
+  basePath?: string,
 ): Promise<{ files: Array<string> }> {
   try {
     const result = await extractTheme({
       input: inputPath,
       resolveImports,
       debug,
+      basePath,
     });
 
     // Calculate relative path from output directory to source file
@@ -224,24 +229,31 @@ export async function generateThemeFiles(
     );
 
     const dtsPath = path.join(outputDir, OUTPUT_FILES.TYPES);
-    await fs.writeFile(dtsPath, typeDeclarations, 'utf-8');
+
+    // Prepare all file writes
+    const writePromises = [fs.writeFile(dtsPath, typeDeclarations, 'utf-8')];
 
     // Conditionally generate runtime file (.ts)
     if (generateRuntime) {
       const runtimeFile = generateRuntimeFile(result, interfaceName);
-
       const tsPath = path.join(outputDir, OUTPUT_FILES.RUNTIME);
-      await fs.writeFile(tsPath, runtimeFile, 'utf-8');
 
       // Create an index.ts that re-exports everything for clean imports
       const runtimeModuleName = path.basename(OUTPUT_FILES.RUNTIME, '.ts');
       const indexTs = `export * from './${runtimeModuleName}';\n`;
-      await fs.writeFile(
-        path.join(outputDir, OUTPUT_FILES.INDEX_TS),
-        indexTs,
-        'utf-8',
+
+      writePromises.push(
+        fs.writeFile(tsPath, runtimeFile, 'utf-8'),
+        fs.writeFile(
+          path.join(outputDir, OUTPUT_FILES.INDEX_TS),
+          indexTs,
+          'utf-8',
+        ),
       );
     }
+
+    // Write all files in parallel
+    await Promise.all(writePromises);
 
     // Return the list of files that were processed (for Vite to watch)
     return { files: result.files };
