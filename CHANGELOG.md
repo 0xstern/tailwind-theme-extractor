@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2025-01-18
+
 ### Added
 
 - **CSS Conflict Detection and Resolution**: Automatically detect and resolve conflicts between CSS rules and CSS variables
