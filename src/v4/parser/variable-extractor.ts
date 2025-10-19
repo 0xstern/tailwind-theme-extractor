@@ -171,6 +171,51 @@ export function extractVariantName(selector: string): string | null {
 }
 
 /**
+ * Applies a variant modifier to a CSS selector by appending it as a class
+ *
+ * For selectors with comma-separated parts or descendant combinators,
+ * applies the variant to the first part of each comma-separated selector.
+ *
+ * @param selector - The base selector
+ * @param variantName - The variant name to apply (e.g., 'dark', 'hover')
+ * @returns The selector with the variant applied as a class
+ *
+ * @example
+ * applyVariantToSelector('.theme-purple', 'dark') // '.theme-purple.dark'
+ * applyVariantToSelector('.theme-purple .container', 'dark') // '.theme-purple.dark .container'
+ * applyVariantToSelector('.a, .b', 'dark') // '.a.dark, .b.dark'
+ * applyVariantToSelector('.theme-purple .container, .theme-purple [data-popper]', 'dark')
+ * // '.theme-purple.dark .container, .theme-purple.dark [data-popper]'
+ */
+function applyVariantToSelector(selector: string, variantName: string): string {
+  // Split by comma for multi-selector strings
+  const selectors = selector.split(',').map((s) => s.trim());
+
+  // For each selector, apply the variant to the first part
+  const modifiedSelectors = selectors.map((sel) => {
+    // Split by whitespace to find the first part (before descendant combinators)
+    const parts = sel.split(/\s+/);
+    const firstPart = parts[0];
+
+    if (firstPart === undefined || firstPart === '') {
+      return sel;
+    }
+
+    // Apply variant as a class (e.g., .theme-purple + dark = .theme-purple.dark)
+    const modifiedFirstPart = `${firstPart}.${variantName}`;
+
+    // Reconstruct the selector with the modified first part
+    if (parts.length === 1) {
+      return modifiedFirstPart;
+    }
+
+    return [modifiedFirstPart, ...parts.slice(1)].join(' ');
+  });
+
+  return modifiedSelectors.join(', ');
+}
+
+/**
  * Recursively processes nested @variant at-rules to create compound variants
  *
  * @param container - The PostCSS container to process (Rule or AtRule)
@@ -190,7 +235,13 @@ function processNestedVariants(
     if (nestedVariantName !== '') {
       // Create compound variant name (e.g., "theme-mono.dark" or "theme-mono.dark.hover")
       const compoundVariantName = `${baseVariantName}.${nestedVariantName}`;
-      const compoundSelector = `${baseSelector} @variant ${nestedVariantName}`;
+
+      // Create valid CSS selector by applying the variant as a class
+      // Example: .theme-purple .container + dark = .theme-purple.dark .container
+      const compoundSelector = applyVariantToSelector(
+        baseSelector,
+        nestedVariantName,
+      );
 
       // Extract direct declarations in this @variant (not in nested @variant blocks)
       variantRule.each((child) => {

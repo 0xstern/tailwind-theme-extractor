@@ -35,8 +35,8 @@ describe('Nested @variant Extraction', () => {
   });
 
   test('compound variant has correct selector', () => {
-    expect(result.selectors.themeTestDark).toBe('.theme-test @variant dark');
-    expect(result.selectors.themeMultiDark).toBe('.theme-multi @variant dark');
+    expect(result.selectors.themeTestDark).toBe('.theme-test.dark');
+    expect(result.selectors.themeMultiDark).toBe('.theme-multi.dark');
   });
 });
 

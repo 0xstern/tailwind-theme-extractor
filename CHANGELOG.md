@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Nested @variant Selectors**: Nested `@variant` directives now generate valid CSS selectors instead of invalid `@variant` strings
+  - Selectors like `.theme-purple { @variant dark { } }` now produce `.theme-purple.dark` instead of `.theme-purple @variant dark`
+  - Multi-selector strings are handled correctly (e.g., `.theme-purple .container, .theme-purple [data-popper]` becomes `.theme-purple.dark .container, .theme-purple.dark [data-popper]`)
+  - Selectors can now be used with `querySelector` and other DOM APIs without errors
+  - Improves developer experience with valid, usable CSS selectors in runtime theme objects
+
 ## [0.1.9] - 2025-01-18
 
 ### Added
