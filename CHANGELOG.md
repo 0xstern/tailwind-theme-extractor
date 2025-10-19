@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-01-19
+
 ### Fixed
 
 - **Nested @variant Selectors**: Nested `@variant` directives now generate valid CSS selectors instead of invalid `@variant` strings
