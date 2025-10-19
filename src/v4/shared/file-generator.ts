@@ -10,11 +10,11 @@ import path from 'node:path';
 
 import { resolveTheme } from '../index';
 import { writeConflictReports } from '../parser/conflict-reporter';
+import { DEFAULT_INTERFACE_NAME, OUTPUT_FILES } from './constants';
 import {
   generateRuntimeFile,
   generateTypeDeclarations,
-} from '../vite/type-generator';
-import { DEFAULT_INTERFACE_NAME, OUTPUT_FILES } from './constants';
+} from './type-generator';
 
 /**
  * Prepares runtime file write promises

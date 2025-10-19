@@ -28,6 +28,15 @@ interface ThemeCache {
 const defaultThemeCache = new Map<string, ThemeCache>();
 
 /**
+ * Clears the default theme cache
+ * Exported for testing purposes only
+ * @internal
+ */
+export function clearDefaultThemeCache(): void {
+  defaultThemeCache.clear();
+}
+
+/**
  * Attempts to load Tailwind's default theme from node_modules
  *
  * Results are cached per base path with timestamp validation to detect package updates.

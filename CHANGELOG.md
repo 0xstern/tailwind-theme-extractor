@@ -7,17 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Testing Documentation**: New `TESTING.md` guide with comprehensive testing guidelines, patterns, and workflows
+- **Test Coverage**: Added 98 enterprise-grade tests (24% increase: 405→503 tests)
+  - Vite plugin unit tests (31): configuration, lifecycle hooks, HMR, edge cases
+  - Vite plugin integration tests (5): full pipeline, HMR workflow, import chains, CLI/Vite consistency
+  - Shared module tests (51): file generation, type generation, utils, CLI integration
+  - Parser tests (11): cache behavior, conflict detection edge cases
+
 ### Performance
 
-- Extract regex patterns to module-level constants across parser modules (import-resolver, css-rule-extractor, conflict-resolver)
-- 1-4% performance improvement in CSS rule extraction
-- Eliminates regex recompilation in hot paths
+- Extract regex patterns to module-level constants for 1-4% improvement in CSS rule extraction
 
 ### Refactored
 
-- Extract shared code into `src/v4/shared/` module (constants, utils, file-generator)
-- Fix improper cross-module dependencies between CLI and Vite plugin
-- Improve separation of concerns and tree-shaking
+- Move type-generator to `src/v4/shared/` and extract shared code (constants, utils, file-generator)
+- Fix cross-module dependencies between CLI and Vite plugin for better separation of concerns
 
 ## [0.1.8] - 2025-01-18
 

@@ -49,7 +49,7 @@ const entryPoints = [
   },
   {
     name: 'v4-type-generator',
-    path: 'src/v4/vite/type-generator.ts',
+    path: 'src/v4/shared/type-generator.ts',
     outputName: 'v4/type-generator',
   },
 ];

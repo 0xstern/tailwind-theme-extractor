@@ -3,10 +3,11 @@
  * Tests both integration via resolveTheme and direct function testing
  */
 
-import { describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 
 import { resolveTheme } from '../../../../src/v4/index';
 import {
+  clearDefaultThemeCache,
   loadTailwindDefaults,
   mergeThemes,
 } from '../../../../src/v4/parser/tailwind-defaults';
@@ -168,6 +169,97 @@ describe('loadTailwindDefaults - Direct function tests', () => {
     // Verify all properties are objects
     expect(typeof result.colors).toBe('object');
     expect(typeof result.spacing).toBe('object');
+  });
+});
+
+describe('loadTailwindDefaults - Cache behavior', () => {
+  // Clean up cache before each test to ensure isolation
+  beforeEach(() => {
+    clearDefaultThemeCache();
+  });
+
+  afterEach(() => {
+    clearDefaultThemeCache();
+  });
+
+  test('returns cached theme on subsequent calls with same base path', async () => {
+    const basePath = process.cwd();
+
+    // First call - will hit no-cache path (lines 81-101)
+    const firstResult = await loadTailwindDefaults(basePath);
+    // Second call - will hit cache-valid path (lines 52-54)
+    const secondResult = await loadTailwindDefaults(basePath);
+
+    // Should return exact same reference (cached)
+    expect(firstResult).toBe(secondResult);
+  });
+
+  test('caches null result when Tailwind is not installed', async () => {
+    const nonExistentPath = '/tmp/definitely-nonexistent-tailwind-project';
+
+    // First call - will attempt to load and cache null (catch block lines 65-70)
+    const firstResult = await loadTailwindDefaults(nonExistentPath);
+    // Second call - should return cached null
+    const secondResult = await loadTailwindDefaults(nonExistentPath);
+
+    expect(firstResult).toBeNull();
+    expect(secondResult).toBeNull();
+    expect(firstResult).toBe(secondResult);
+  });
+
+  test('loads theme when no cache exists (cold start)', async () => {
+    const basePath = process.cwd();
+
+    // With cleared cache, this hits the no-cache path (lines 81-101)
+    const result = await loadTailwindDefaults(basePath);
+
+    // Should either return null (not installed) or Theme object
+    if (result === null) {
+      expect(result).toBeNull();
+    } else {
+      expect(result).toHaveProperty('colors');
+      expect(result).toHaveProperty('spacing');
+      expect(result).toHaveProperty('fonts');
+    }
+  });
+
+  test('validates cached theme is still fresh on subsequent call', async () => {
+    const basePath = process.cwd();
+
+    // First call - populates cache
+    const firstResult = await loadTailwindDefaults(basePath);
+
+    // Skip test if Tailwind not installed
+    if (firstResult === null) {
+      expect(firstResult).toBeNull();
+      return;
+    }
+
+    // Second call - validates timestamp hasn't changed (lines 51-54)
+    const secondResult = await loadTailwindDefaults(basePath);
+
+    // Should return exact same cached instance
+    expect(secondResult).toBe(firstResult);
+  });
+
+  test('handles multiple different base paths independently', async () => {
+    const path1 = process.cwd();
+    const path2 = '/tmp/nonexistent-path-1';
+    const path3 = '/tmp/nonexistent-path-2';
+
+    // Load from all three paths
+    await loadTailwindDefaults(path1); // May return theme or null
+    const result2 = await loadTailwindDefaults(path2);
+    const result3 = await loadTailwindDefaults(path3);
+
+    // Different paths should have independent cache entries
+    // path2 and path3 will be null (not installed)
+    expect(result2).toBeNull();
+    expect(result3).toBeNull();
+
+    // Subsequent calls should return cached values
+    expect(await loadTailwindDefaults(path2)).toBe(result2);
+    expect(await loadTailwindDefaults(path3)).toBe(result3);
   });
 });
 

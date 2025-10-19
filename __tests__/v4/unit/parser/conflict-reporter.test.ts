@@ -709,4 +709,265 @@ describe('Edge Cases', () => {
 
     expect(markdown).toContain('Review 1 conflict'); // Singular
   });
+
+  test('handles multiple conflicts in same variant', () => {
+    const CONFLICTS_COUNT = 3;
+    const conflicts: Array<CSSRuleConflict> = [
+      {
+        variantName: 'themeMono',
+        themeProperty: 'radius' as keyof Theme,
+        themeKey: 'lg',
+        variableValue: '1rem',
+        ruleValue: '0',
+        ruleSelector: '.rounded-lg',
+        canResolve: true,
+        confidence: 'high',
+        cssRule: {
+          selector: '.rounded-lg',
+          property: 'border-radius',
+          value: '0',
+          variantName: 'themeMono',
+          originalSelector: '.theme-mono',
+          complexity: 'simple',
+        },
+      },
+      {
+        variantName: 'themeMono',
+        themeProperty: 'radius' as keyof Theme,
+        themeKey: 'md',
+        variableValue: '0.5rem',
+        ruleValue: '0',
+        ruleSelector: '.rounded-md',
+        canResolve: true,
+        confidence: 'high',
+        cssRule: {
+          selector: '.rounded-md',
+          property: 'border-radius',
+          value: '0',
+          variantName: 'themeMono',
+          originalSelector: '.theme-mono',
+          complexity: 'simple',
+        },
+      },
+      {
+        variantName: 'themeMono',
+        themeProperty: 'shadows' as keyof Theme,
+        themeKey: 'lg',
+        variableValue: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        ruleValue: 'none',
+        ruleSelector: '.shadow-lg',
+        canResolve: true,
+        confidence: 'high',
+        cssRule: {
+          selector: '.shadow-lg',
+          property: 'box-shadow',
+          value: 'none',
+          variantName: 'themeMono',
+          originalSelector: '.theme-mono',
+          complexity: 'simple',
+        },
+      },
+    ];
+
+    const metadata = {
+      generatedAt: '2025-01-18T00:00:00Z',
+      source: 'src/styles.css',
+    };
+
+    const markdown = generateMarkdownReport(conflicts, metadata);
+
+    // Should group all three conflicts under same variant
+    expect(markdown).toContain('### Variant: `themeMono`');
+    expect(markdown).toContain('#### `radius.lg`');
+    expect(markdown).toContain('#### `radius.md`');
+    expect(markdown).toContain('#### `shadows.lg`');
+
+    const json = generateJSONReport(conflicts, metadata);
+    const parsed = JSON.parse(json);
+    expect(parsed.summary.total).toBe(CONFLICTS_COUNT);
+  });
+});
+
+describe('Suggested Actions - Edge Cases', () => {
+  test('suggests action for pseudo-element conflicts', () => {
+    const conflicts: Array<CSSRuleConflict> = [
+      {
+        variantName: 'themeMono',
+        themeProperty: 'radius' as keyof Theme,
+        themeKey: 'lg',
+        variableValue: '1rem',
+        ruleValue: '0',
+        ruleSelector: '.rounded-lg::before',
+        canResolve: false,
+        confidence: 'low',
+        cssRule: {
+          selector: '.rounded-lg::before',
+          property: 'border-radius',
+          value: '0',
+          variantName: 'themeMono',
+          originalSelector: '.theme-mono',
+          complexity: 'complex',
+          reason: 'Pseudo-element selectors',
+        },
+      },
+    ];
+
+    const metadata = {
+      generatedAt: '2025-01-18T00:00:00Z',
+      source: 'src/styles.css',
+    };
+
+    const markdown = generateMarkdownReport(conflicts, metadata);
+
+    expect(markdown).toContain('- **Reason:** Pseudo-element selectors');
+    expect(markdown).toContain(
+      'Consider extracting pseudo-element styles to separate theme',
+    );
+  });
+
+  test('suggests action for @apply directive conflicts', () => {
+    const conflicts: Array<CSSRuleConflict> = [
+      {
+        variantName: 'themeMono',
+        themeProperty: 'radius' as keyof Theme,
+        themeKey: 'lg',
+        variableValue: '1rem',
+        ruleValue: '@apply rounded-lg',
+        ruleSelector: '.card',
+        canResolve: false,
+        confidence: 'low',
+        cssRule: {
+          selector: '.card',
+          property: 'border-radius',
+          value: '@apply rounded-lg',
+          variantName: 'themeMono',
+          originalSelector: '.theme-mono',
+          complexity: 'complex',
+          reason: '@apply directive requires Tailwind processing',
+        },
+      },
+    ];
+
+    const metadata = {
+      generatedAt: '2025-01-18T00:00:00Z',
+      source: 'src/styles.css',
+    };
+
+    const markdown = generateMarkdownReport(conflicts, metadata);
+
+    expect(markdown).toContain('- **Reason:** @apply directive');
+    expect(markdown).toContain(
+      'Expand @apply directive to explicit CSS properties',
+    );
+  });
+
+  test('suggests action for combinator selector conflicts', () => {
+    const conflicts: Array<CSSRuleConflict> = [
+      {
+        variantName: 'themeMono',
+        themeProperty: 'radius' as keyof Theme,
+        themeKey: 'lg',
+        variableValue: '1rem',
+        ruleValue: '0',
+        ruleSelector: '.container > .rounded-lg',
+        canResolve: false,
+        confidence: 'low',
+        cssRule: {
+          selector: '.container > .rounded-lg',
+          property: 'border-radius',
+          value: '0',
+          variantName: 'themeMono',
+          originalSelector: '.theme-mono',
+          complexity: 'complex',
+          reason: 'Child combinator',
+        },
+      },
+    ];
+
+    const metadata = {
+      generatedAt: '2025-01-18T00:00:00Z',
+      source: 'src/styles.css',
+    };
+
+    const markdown = generateMarkdownReport(conflicts, metadata);
+
+    expect(markdown).toContain('- **Reason:** Child combinator');
+    expect(markdown).toContain(
+      'Consider simplifying selector or using separate theme key',
+    );
+  });
+
+  test('suggests action for descendant selector conflicts', () => {
+    const conflicts: Array<CSSRuleConflict> = [
+      {
+        variantName: 'themeMono',
+        themeProperty: 'radius' as keyof Theme,
+        themeKey: 'lg',
+        variableValue: '1rem',
+        ruleValue: '0',
+        ruleSelector: '.container .rounded-lg',
+        canResolve: false,
+        confidence: 'low',
+        cssRule: {
+          selector: '.container .rounded-lg',
+          property: 'border-radius',
+          value: '0',
+          variantName: 'themeMono',
+          originalSelector: '.theme-mono',
+          complexity: 'complex',
+          reason: 'Descendant selector',
+        },
+      },
+    ];
+
+    const metadata = {
+      generatedAt: '2025-01-18T00:00:00Z',
+      source: 'src/styles.css',
+    };
+
+    const markdown = generateMarkdownReport(conflicts, metadata);
+
+    expect(markdown).toContain('- **Reason:** Descendant selector');
+    expect(markdown).toContain(
+      'Consider simplifying selector or using separate theme key',
+    );
+  });
+
+  test('suggests action for media query conflicts', () => {
+    const conflicts: Array<CSSRuleConflict> = [
+      {
+        variantName: 'themeMono',
+        themeProperty: 'radius' as keyof Theme,
+        themeKey: 'lg',
+        variableValue: '1rem',
+        ruleValue: '0',
+        ruleSelector: '.rounded-lg',
+        canResolve: false,
+        confidence: 'low',
+        cssRule: {
+          selector: '.rounded-lg',
+          property: 'border-radius',
+          value: '0',
+          variantName: 'themeMono',
+          originalSelector: '.theme-mono',
+          complexity: 'complex',
+          reason: 'Nested in media query',
+          inMediaQuery: true,
+          mediaQuery: '(min-width: 768px)',
+        },
+      },
+    ];
+
+    const metadata = {
+      generatedAt: '2025-01-18T00:00:00Z',
+      source: 'src/styles.css',
+    };
+
+    const markdown = generateMarkdownReport(conflicts, metadata);
+
+    expect(markdown).toContain('- **Reason:** Nested in media query');
+    expect(markdown).toContain(
+      'Consider extracting to separate media-query-specific variable',
+    );
+  });
 });

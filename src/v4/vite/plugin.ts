@@ -16,7 +16,6 @@ import { normalizeRuntimeOptions } from '../shared/utils';
 
 /**
  * Re-export RuntimeGenerationOptions for convenience
- * (Defined in ../types.ts)
  */
 export type { RuntimeGenerationOptions };
 
