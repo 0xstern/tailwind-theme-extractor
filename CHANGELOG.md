@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Dynamic Spacing Helper**: Callable `spacing()` function for runtime dynamic spacing calculations
+  - Replicates Tailwind's `calc(var(--spacing) * N)` behavior at runtime for programmatic spacing
+  - Hybrid callable object using `Object.assign` for dual behavior (properties + function)
+  - Static named values with autocomplete: `theme.spacing.md`, `theme.spacing.lg`
+  - Dynamic calculations: `theme.spacing(4)` → `"calc(0.25rem * 4)"`
+  - Supports negative values: `theme.spacing(-2)` → `"calc(0.25rem * -2)"`
+  - Only generated when spacing is defined in theme (explicit behavior, no silent defaults)
+  - Variant themes use local `--spacing` base, falling back to default theme if not defined
+  - TypeScript intersection types: `Record<string, string> & ((n: number) => string)`
+  - Supports Tailwind utilities using spacing: `m-<number>`, `p-<number>`, `gap-<number>`, `w-<number>`, `h-<number>`, `inset-<number>`, `indent-<number>`, `border-spacing-<number>`, `scroll-m-<number>`
+  - New module: `src/v4/shared/spacing-helper.ts` with `createSpacingHelper()` function
+  - Exported via package.json: `@0xstern/tailwind-resolver/v4/shared/spacing-helper`
+  - Comprehensive test coverage: 17 tests in `__tests__/v4/unit/shared/spacing-helper.test.ts`
+
 ## [0.2.0] - 2025-01-19
 
 ### Fixed

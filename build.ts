@@ -52,6 +52,11 @@ const entryPoints = [
     path: 'src/v4/shared/type-generator.ts',
     outputName: 'v4/type-generator',
   },
+  {
+    name: 'v4-spacing-helper',
+    path: 'src/v4/shared/spacing-helper.ts',
+    outputName: 'v4/shared/spacing-helper',
+  },
 ];
 
 async function cleanOutputDirectory(): Promise<void> {

@@ -53,6 +53,11 @@
       "types": "./dist/v4/vite-plugin.d.ts",
       "import": "./dist/v4/vite-plugin.mjs",
       "require": "./dist/v4/vite-plugin.js"
+    },
+    "./v4/shared/spacing-helper": {
+      "types": "./dist/v4/shared/spacing-helper.d.ts",
+      "import": "./dist/v4/shared/spacing-helper.mjs",
+      "require": "./dist/v4/shared/spacing-helper.js"
     }
   },
   "files": [

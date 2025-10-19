@@ -182,7 +182,7 @@ npx tailwind-resolver -i src/styles.css
 ```typescript
 {
   colors: {},           // --color-*
-  spacing: {},          // --spacing-*
+  spacing: {},          // --spacing-* (callable: spacing(4) → 'calc(0.25rem * 4)')
   fonts: {},            // --font-*
   fontSize: {},         // --text-*
   fontWeight: {},       // --font-weight-*
@@ -204,6 +204,52 @@ npx tailwind-resolver -i src/styles.css
   keyframes: {}         // @keyframes
 }
 ```
+
+### Dynamic Spacing Helper
+
+The `spacing` property is special - it's both an object with static values AND a callable function for dynamic calculations:
+
+```typescript
+import { defaultTheme, dark } from './generated/tailwindcss';
+
+// Static spacing values (defined in your CSS)
+defaultTheme.spacing.xs;      // '0.75rem'
+defaultTheme.spacing.base;    // '0.25rem'
+
+// Dynamic spacing calculations (matches Tailwind's behavior)
+defaultTheme.spacing(4);      // 'calc(0.25rem * 4)' → 1rem
+defaultTheme.spacing(16);     // 'calc(0.25rem * 16)' → 4rem
+defaultTheme.spacing(-2);     // 'calc(0.25rem * -2)' → -0.5rem
+
+// Use in styles
+<div style={{
+  padding: defaultTheme.spacing(4),        // Same as Tailwind's p-4
+  margin: defaultTheme.spacing(-2),        // Same as Tailwind's -m-2
+  width: defaultTheme.spacing(64),         // Same as Tailwind's w-64
+  gap: defaultTheme.spacing(2),            // Same as Tailwind's gap-2
+}} />
+
+// Works with all variants
+dark.spacing(8);              // Uses dark theme's spacing base (or falls back to default)
+```
+
+**Why this exists:** Tailwind generates utilities like `p-4`, `m-8`, `w-16` using `calc(var(--spacing) * N)`. This helper replicates that behavior for runtime use.
+
+**Tailwind utilities that use spacing calculations:**
+
+- `inset-<n>`, `m-<n>`, `p-<n>`, `gap-<n>`
+- `w-<n>`, `h-<n>`, `min-w-<n>`, `max-w-<n>`, `min-h-<n>`, `max-h-<n>`
+- `indent-<n>`, `border-spacing-<n>`, `scroll-m-<n>`
+
+**Note:** If your theme doesn't define `--spacing-base`, the spacing helper won't be generated. Define spacing in your CSS to enable this feature.
+
+> **Other CSS variables:** Tailwind uses different CSS variables for different utilities:
+>
+> - Layout properties like `columns` and `flex-basis` use `--container-*` values
+> - Transform properties like `translate-x` and `translate-y` use `--tw-translate-*` variables
+> - Animation properties use `--default-*` meta variables
+>
+> For a complete list of which CSS variables Tailwind uses for each utility, refer to the [Tailwind CSS documentation](https://tailwindcss.com/docs).
 
 ## Theme Variants
 

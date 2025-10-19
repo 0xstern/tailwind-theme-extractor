@@ -645,7 +645,7 @@ Useful for:
 - SSR environments
 - Cross-project theme generation
 
-### Type Generator (`src/v4/vite/type-generator.ts`)
+### Type Generator (`src/v4/shared/type-generator.ts`)
 
 **Output:**
 
@@ -699,6 +699,99 @@ result.variants.default.colors.primary[500]; // Fully typed!
 - Centralized `THEME_PROPERTY_CONFIGS` for all 22 namespaces
 - Shared escaping logic via `escapeStringLiteral()`
 - Reduced from 516 to 460 lines (11% improvement)
+
+### Dynamic Spacing Helper (`src/v4/shared/spacing-helper.ts`)
+
+**Purpose** - Provide a callable helper function that replicates Tailwind's `calc(var(--spacing) * N)` behavior for runtime dynamic spacing calculations.
+
+**Architecture:**
+
+The spacing helper is implemented using `Object.assign` to create a hybrid callable object:
+
+```typescript
+export function createSpacingHelper(
+  spacingValues: Record<string, string>,
+  fallbackBase: string,
+): Record<string, string> & ((n: number) => string) {
+  const baseUnit = spacingValues.base ?? fallbackBase;
+  const spacingFn = (n: number): string => {
+    return `calc(${baseUnit} * ${n})`;
+  };
+  return Object.assign(spacingFn, spacingValues);
+}
+```
+
+**Type System:**
+
+Uses TypeScript intersection types for dual behavior:
+
+```typescript
+// Generated type for spacing helper
+{
+  base: '0.25rem';
+  sm: '0.5rem';
+  md: '1rem';
+  // ... other named spacing values
+} & ((n: number) => string)
+```
+
+**Usage Patterns:**
+
+```typescript
+// Static named values (autocomplete)
+theme.spacing.md; // "1rem"
+theme.spacing.lg; // "1.5rem"
+
+// Dynamic calculations
+theme.spacing(4); // "calc(0.25rem * 4)" → "1rem" at runtime
+theme.spacing(10); // "calc(0.25rem * 10)" → "2.5rem" at runtime
+theme.spacing(-2); // "calc(0.25rem * -2)" → "-0.5rem" at runtime
+```
+
+**Conditional Generation:**
+
+The type generator only generates the spacing helper when spacing is defined in the theme:
+
+```typescript
+// In generateRuntimeFileInternal()
+const hasDefaultSpacing =
+  defaultTheme.spacing !== undefined &&
+  Object.keys(defaultTheme.spacing).length > 0;
+
+if (hasDefaultSpacing) {
+  // Import spacing helper
+  imports.push(
+    "import { createSpacingHelper } from '@0xstern/tailwind-resolver/v4/shared/spacing-helper';",
+  );
+
+  // Apply to default theme and all variants
+  defaultSpacingCode = `spacing: createSpacingHelper(${spacingObj}, ${fallback}),`;
+}
+```
+
+**Fallback Behavior:**
+
+- Variant themes use their local `--spacing` base if defined
+- Falls back to default theme's `spacing.base` if variant doesn't define it
+- If no spacing is defined in theme at all, helper is not generated
+
+**Design Philosophy:**
+
+- **Explicit over implicit**: No silent defaults - if no spacing exists, no helper is generated
+- **Natural semantics**: Properties for static values, function calls for dynamic calculations
+- **Performance-aware**: Uses `Object.assign` instead of Proxy for better performance
+- **Type-safe**: Full TypeScript support with intersection types
+
+**Use Cases:**
+
+Supports Tailwind v4 utilities that use spacing calculations:
+
+- Spacing: `m-<number>`, `p-<number>`, `gap-<number>`
+- Sizing: `w-<number>`, `h-<number>`, `min-w-<number>`, `max-w-<number>`, `min-h-<number>`, `max-h-<number>`
+- Layout: `inset-<number>`, `-inset-<number>`
+- Typography: `indent-<number>`, `-indent-<number>`
+- Tables: `border-spacing-<number>`
+- Scrolling: `scroll-m-<number>`, `-scroll-m-<number>`, `scroll-p-<number>`
 
 ## Data Flow Example
 

@@ -78,7 +78,7 @@ const THEME_PROPERTY_CONFIGS: Array<PropertyConfig> = [
   },
   {
     key: 'spacing',
-    generator: (v) => generateRecordType(v as Record<string, string>),
+    generator: (v) => generateSpacingType(v as Record<string, string>),
   },
   {
     key: 'breakpoints',
@@ -388,6 +388,31 @@ function generateRecordType(obj: Record<string, string>): string {
   return `{\n  ${props}\n}`;
 }
 
+/**
+ * Generates a type for spacing that is both a record and a callable function
+ * This allows spacing.xs to access static values and spacing(4) to generate calc() expressions
+ *
+ * @param obj - The spacing object with keys like base, xs, sm, etc.
+ * @returns Type string for spacing
+ */
+function generateSpacingType(obj: Record<string, string>): string {
+  const entries = Object.entries(obj);
+
+  if (entries.length === 0) {
+    return '((n: number) => string)';
+  }
+
+  const props = entries
+    .map(([key, value]) => {
+      const safeKey = isValidIdentifier(key) ? key : `'${key}'`;
+      return `${safeKey}: '${escapeStringLiteral(value)}'`;
+    })
+    .join(';\n  ');
+
+  // Intersection type: callable function & record of static values
+  return `{\n  ${props}\n} & ((n: number) => string)`;
+}
+
 function isValidIdentifier(str: string): boolean {
   // Check if string is a valid JavaScript identifier
   return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(str);
@@ -568,8 +593,26 @@ function generateRuntimeFileInternal(
   lines.push(`import type { Tailwind, ${interfaceName} } from './types';`);
   lines.push('');
 
+  // Check if spacing helper is needed
+  const hasDefaultSpacing = hasKeys(
+    result.theme.spacing as Record<string, unknown> | undefined,
+  );
+
+  // Import spacing helper if variants are enabled AND spacing exists
+  if (runtimeOptions.variants === true && hasDefaultSpacing) {
+    lines.push(
+      `import { createSpacingHelper } from 'tailwind-resolver/v4/shared/spacing-helper';`,
+    );
+    lines.push('');
+  }
+
   // Build variants and selectors
   const { variantsObj, selectorsObj } = buildVariantsAndSelectors(result);
+
+  // Get default spacing base for fallback
+  const defaultSpacingBase =
+    (result.theme.spacing as Record<string, string> | undefined)?.base ??
+    '0.25rem';
 
   // Conditionally export variants
   if (runtimeOptions.variants === true) {
@@ -577,8 +620,41 @@ function generateRuntimeFileInternal(
     lines.push(' * Theme variants (default, dark, custom themes, etc.)');
     lines.push(' */');
     lines.push(
-      `export const variants = ${JSON.stringify(variantsObj, null, JSON_INDENT_SPACES)} as Tailwind['variants'];`,
+      `const variantsData = ${JSON.stringify(variantsObj, null, JSON_INDENT_SPACES)};`,
     );
+    lines.push('');
+
+    // Only wrap spacing if default theme has spacing defined
+    if (hasDefaultSpacing) {
+      lines.push('// Wrap spacing properties with callable helpers');
+      lines.push(
+        `const defaultSpacingBase = ${JSON.stringify(defaultSpacingBase)};`,
+      );
+      lines.push('');
+
+      // Handle default variant
+      lines.push('if (variantsData.default.spacing) {');
+      lines.push(
+        '  variantsData.default.spacing = createSpacingHelper(variantsData.default.spacing, defaultSpacingBase);',
+      );
+      lines.push('}');
+      lines.push('');
+
+      // Handle other variants
+      if (Object.keys(result.variants).length > 0) {
+        for (const [variantName] of Object.entries(result.variants)) {
+          const safeExportName = toSafeIdentifier(variantName);
+          lines.push(`if (variantsData.${safeExportName}?.spacing) {`);
+          lines.push(
+            `  variantsData.${safeExportName}.spacing = createSpacingHelper(variantsData.${safeExportName}.spacing, defaultSpacingBase);`,
+          );
+          lines.push('}');
+          lines.push('');
+        }
+      }
+    }
+
+    lines.push(`export const variants = variantsData as Tailwind['variants'];`);
     lines.push('');
   }
 
