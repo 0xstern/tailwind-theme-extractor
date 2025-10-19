@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **CSS Conflict Detection and Resolution**: Automatically detect and resolve conflicts between CSS rules and CSS variables
+  - Detects when direct CSS rules (e.g., `.rounded-lg { border-radius: 0; }`) override CSS variables
+  - Classifies conflicts by complexity: simple (static values) vs complex (pseudo-classes, media queries, dynamic values)
+  - Automatically applies high-confidence overrides to variant themes for accurate runtime representation
+  - Reports all conflicts in human-readable (`conflicts.md`) and machine-readable (`conflicts.json`) formats
+  - Ensures runtime theme objects match actual rendered styles in the browser
+  - New modules:
+    - `css-rule-extractor.ts` - Extracts CSS rules from variant selectors with complexity analysis
+    - `conflict-resolver.ts` - Detects conflicts, calculates confidence levels, and applies safe overrides
+    - `conflict-reporter.ts` - Generates comprehensive Markdown and JSON conflict reports
+  - Non-intrusive terminal output with single-line conflict notification
+  - Context-specific recommendations for complex conflicts requiring manual review
+  - Full type safety with `cssConflicts` added to `ParseResult` and `TailwindResult` interfaces
+
+### Improved
+
+- **Variable Extractor**: Now extracts both CSS variables and CSS rules in a single AST traversal
+  - Returns `{ variables, keyframes, cssRules }` for comprehensive theme analysis
+  - Maintains performance through parallel extraction during existing traversal
+- **Theme Builder**: Integrated conflict detection and resolution into theme building process
+  - Detects conflicts between CSS rules and resolved theme variables
+  - Applies high-confidence overrides to ensure theme accuracy
+  - Returns `cssConflicts` array alongside theme data
+- **Plugin Integration**: Both Vite plugin and CLI now automatically generate conflict reports
+  - Reports written to same output directory as generated theme files
+  - Includes package version and timestamp in reports
+  - Dynamic version detection works in both ESM and CJS environments
+- **Documentation**: Comprehensive updates across all documentation files
+  - ARCHITECTURE.md: Added detailed sections on CSS rule extraction, conflict resolution, and reporting
+  - README.md: New "CSS Conflict Detection" section explaining the feature
+  - Vite Plugin README: Added conflict detection explanation with usage examples
+  - CLI README: Added conflict detection section with example output
+  - Updated data flow examples and pipeline diagrams to include conflict detection
+
+### Performance
+
+- **Single-pass extraction**: CSS rules extracted during existing variable extraction pass
+- **Minimal overhead**: Conflict detection only runs when CSS rules are found
+- **Efficient reporting**: Report generation only occurs when conflicts are detected
+
 ## [0.1.7] - 2025-01-18
 
 ### Added

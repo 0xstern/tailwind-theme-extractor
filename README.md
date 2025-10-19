@@ -73,6 +73,8 @@ This generates files in `src/generated/tailwindcss/`:
 - `types.ts` - TypeScript interfaces
 - `theme.ts` - Runtime theme objects (if `generateRuntime: true`)
 - `index.ts` - Re-exports (if `generateRuntime: true`)
+- `conflicts.md` - Human-readable conflict report (if CSS conflicts detected)
+- `conflicts.json` - Machine-readable conflict report (if CSS conflicts detected)
 
 **2. Use the generated theme in your code:**
 
@@ -261,6 +263,79 @@ result.selectors.dark; // ✓ Type-safe
 ```
 
 Autocomplete works automatically when the output directory is in `tsconfig.json` includes.
+
+## CSS Conflict Detection
+
+The resolver automatically detects when CSS rules override CSS variables and ensures the runtime theme object matches actual rendered styles.
+
+### Problem
+
+Real-world CSS files often contain both CSS variables AND direct CSS rules:
+
+```css
+.theme-mono {
+  --radius-lg: 0.45em; /* CSS variable */
+
+  .rounded-lg {
+    border-radius: 0; /* CSS rule - overrides the variable! */
+  }
+}
+```
+
+Without detection, the runtime theme would incorrectly report `radius.lg: "0.45em"` when the actual rendered value is `"0"`.
+
+### Solution
+
+The resolver:
+
+1. **Detects all conflicts** between CSS rules and variables
+2. **Applies high-confidence overrides** automatically for simple cases
+3. **Reports complex cases** in `conflicts.md` for manual review
+
+### Conflict Reports
+
+When conflicts are detected, two report files are generated:
+
+**`conflicts.md`** - Human-readable report with:
+
+- Summary of total/resolved/pending conflicts
+- Auto-resolved conflicts (applied to theme)
+- Conflicts requiring manual review
+- Context-specific recommendations
+
+**`conflicts.json`** - Machine-readable format for CI/CD integration
+
+### Terminal Output
+
+Non-intrusive single-line notification:
+
+```
+✓ Theme types generated successfully
+
+Generated files:
+  - src/generated/tailwindcss/types.ts
+  - src/generated/tailwindcss/theme.ts
+  - src/generated/tailwindcss/index.ts
+
+⚠  12 CSS conflicts detected (see src/generated/tailwindcss/conflicts.md)
+```
+
+### Confidence Levels
+
+**High Confidence** (auto-applied):
+
+- Static values (e.g., `border-radius: 0`)
+- No pseudo-classes or media queries
+- Simple selectors
+
+**Medium/Low Confidence** (manual review):
+
+- Dynamic values (e.g., `calc()`, `var()`)
+- Pseudo-classes (`:hover`, `:focus`)
+- Media query nesting
+- Complex selectors
+
+High-confidence overrides ensure your runtime theme matches actual rendered styles.
 
 ## Debugging
 

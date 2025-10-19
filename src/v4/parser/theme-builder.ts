@@ -12,7 +12,14 @@ import type {
   ThemeFontSizes,
   ThemeVariant,
 } from '../types';
+import type { CSSRuleConflict } from './conflict-resolver';
+import type { CSSRuleOverride } from './css-rule-extractor';
 
+import {
+  applyOverride,
+  detectConflicts,
+  filterResolvableConflicts,
+} from './conflict-resolver';
 import {
   kebabToCamelCase,
   parseColorScale,
@@ -441,27 +448,16 @@ function groupVariantVariables(
 }
 
 /**
- * Builds structured Theme objects from raw CSS variables and keyframes
+ * Separates variables by source in a single pass
  *
- * Separates base theme from variants (e.g., dark mode, custom themes)
- * Resolves var() references from @theme to :root/:variant values
- *
- * @param variables - Array of CSS variables resolved from parsing
- * @param keyframes - Map of keyframe name to CSS string
- * @param defaultTheme - Optional Tailwind default theme for var() resolution
- * @returns Object with base theme, variants, and deprecation warnings
+ * @param variables - Array of CSS variables
+ * @returns Object with theme, root, and variant variables separated
  */
-export function buildThemes(
-  variables: Array<CSSVariable>,
-  keyframes: Map<string, string>,
-  defaultTheme?: Theme | null,
-): {
-  theme: Theme;
-  variants: Record<string, ThemeVariant>;
-  deprecationWarnings: Array<DeprecationWarning>;
-  variables: Array<CSSVariable>;
+function separateVariablesBySource(variables: Array<CSSVariable>): {
+  themeVariables: Array<CSSVariable>;
+  rootVariables: Array<CSSVariable>;
+  variantVariables: Array<CSSVariable>;
 } {
-  // Separate variables by source in a single pass
   const themeVariables: Array<CSSVariable> = [];
   const rootVariables: Array<CSSVariable> = [];
   const variantVariables: Array<CSSVariable> = [];
@@ -477,45 +473,213 @@ export function buildThemes(
     }
   }
 
-  // Deduplicate within each source category, keeping last occurrence
-  // This handles cases where the same file is imported multiple times
-  const deduplicateByName = (vars: Array<CSSVariable>): Array<CSSVariable> => {
-    const map = new Map<string, CSSVariable>();
-    for (const v of vars) {
-      map.set(v.name, v);
+  return { themeVariables, rootVariables, variantVariables };
+}
+
+/**
+ * Deduplicates variables by name, keeping last occurrence
+ *
+ * @param vars - Array of CSS variables
+ * @returns Deduplicated array
+ */
+function deduplicateByName(vars: Array<CSSVariable>): Array<CSSVariable> {
+  const map = new Map<string, CSSVariable>();
+  for (const v of vars) {
+    map.set(v.name, v);
+  }
+  return Array.from(map.values());
+}
+
+/**
+ * Collects parent variant variables for nested variants
+ *
+ * @param variantName - Variant name (may be nested like "compact.dark")
+ * @param variantGroups - Map of variant groups
+ * @returns Array of parent variant variables
+ */
+function collectParentVariantVariables(
+  variantName: string,
+  variantGroups: Map<
+    string,
+    { selector: string; variables: Array<CSSVariable> }
+  >,
+): Array<CSSVariable> {
+  const parentVariantVars: Array<CSSVariable> = [];
+
+  if (!variantName.includes('.')) {
+    return parentVariantVars;
+  }
+
+  const parts = variantName.split('.');
+  for (const part of parts) {
+    const parentGroup = variantGroups.get(part);
+    if (parentGroup !== undefined) {
+      parentVariantVars.push(...parentGroup.variables);
     }
-    return Array.from(map.values());
+  }
+
+  return parentVariantVars;
+}
+
+/**
+ * Builds a single variant theme
+ *
+ * @param variantName - Name of the variant
+ * @param selector - CSS selector for the variant
+ * @param varVars - Variables specific to this variant
+ * @param variantGroups - Map of all variant groups
+ * @param dedupedThemeVars - Deduplicated theme variables
+ * @param dedupedRootVars - Deduplicated root variables
+ * @param defaultVariables - Variables from default theme
+ * @param emptyKeyframes - Empty keyframes map
+ * @param deprecationWarnings - Array to collect warnings
+ * @param referenceMap - Reference map for variable resolution
+ * @returns Theme variant object
+ */
+function buildVariantTheme(
+  variantName: string,
+  selector: string,
+  varVars: Array<CSSVariable>,
+  variantGroups: Map<
+    string,
+    { selector: string; variables: Array<CSSVariable> }
+  >,
+  dedupedThemeVars: Array<CSSVariable>,
+  dedupedRootVars: Array<CSSVariable>,
+  defaultVariables: Array<CSSVariable>,
+  emptyKeyframes: Map<string, string>,
+  deprecationWarnings: Array<DeprecationWarning>,
+  referenceMap: Map<string, VariableReference>,
+): ThemeVariant {
+  const parentVariantVars = collectParentVariantVariables(
+    variantName,
+    variantGroups,
+  );
+
+  const variantVariablesMap = createVariablesMap([
+    ...defaultVariables,
+    ...dedupedThemeVars,
+    ...dedupedRootVars,
+    ...parentVariantVars,
+    ...varVars,
+  ]);
+
+  const variantThemeVariables = [
+    ...dedupedThemeVars,
+    ...parentVariantVars,
+    ...varVars,
+  ];
+
+  return {
+    selector,
+    theme: buildTheme(
+      variantThemeVariables,
+      emptyKeyframes,
+      deprecationWarnings,
+      referenceMap,
+      variantVariablesMap,
+    ),
   };
+}
+
+/**
+ * Resolves a single variable value with appropriate context
+ *
+ * @param variable - Variable to resolve
+ * @param variantGroups - Map of variant groups
+ * @param defaultVariables - Variables from default theme
+ * @param dedupedThemeVars - Deduplicated theme variables
+ * @param dedupedRootVars - Deduplicated root variables
+ * @param allVariablesMap - Map of all base variables
+ * @returns Resolved CSS variable
+ */
+function resolveVariable(
+  variable: CSSVariable,
+  variantGroups: Map<
+    string,
+    { selector: string; variables: Array<CSSVariable> }
+  >,
+  defaultVariables: Array<CSSVariable>,
+  dedupedThemeVars: Array<CSSVariable>,
+  dedupedRootVars: Array<CSSVariable>,
+  allVariablesMap: Map<string, string>,
+): CSSVariable {
+  let resolveMap: Map<string, string>;
+
+  if (variable.source === 'variant' && variable.variantName !== undefined) {
+    const variantGroup = variantGroups.get(variable.variantName);
+    const variantVars = variantGroup?.variables ?? [];
+    const parentVariantVars = collectParentVariantVariables(
+      variable.variantName,
+      variantGroups,
+    );
+
+    const variantSpecificVariables = [
+      ...defaultVariables,
+      ...dedupedThemeVars,
+      ...dedupedRootVars,
+      ...parentVariantVars,
+      ...variantVars,
+    ];
+    resolveMap = createVariablesMap(variantSpecificVariables);
+  } else {
+    resolveMap = allVariablesMap;
+  }
+
+  const resolvedValue = resolveVarReferences(variable.value, resolveMap);
+  return {
+    ...variable,
+    value: resolvedValue,
+  };
+}
+
+/**
+ * Builds structured Theme objects from raw CSS variables and keyframes
+ *
+ * Separates base theme from variants (e.g., dark mode, custom themes)
+ * Resolves var() references from @theme to :root/:variant values
+ * Detects and applies CSS rule overrides when safe to do so
+ *
+ * @param variables - Array of CSS variables resolved from parsing
+ * @param keyframes - Map of keyframe name to CSS string
+ * @param cssRules - Array of CSS rule overrides from variant selectors
+ * @param defaultTheme - Optional Tailwind default theme for var() resolution
+ * @returns Object with base theme, variants, deprecation warnings, and conflicts
+ */
+export function buildThemes(
+  variables: Array<CSSVariable>,
+  keyframes: Map<string, string>,
+  cssRules: Array<CSSRuleOverride>,
+  defaultTheme?: Theme | null,
+): {
+  theme: Theme;
+  variants: Record<string, ThemeVariant>;
+  deprecationWarnings: Array<DeprecationWarning>;
+  cssConflicts: Array<CSSRuleConflict>;
+  variables: Array<CSSVariable>;
+} {
+  const { themeVariables, rootVariables, variantVariables } =
+    separateVariablesBySource(variables);
 
   const dedupedThemeVars = deduplicateByName(themeVariables);
   const dedupedRootVars = deduplicateByName(rootVariables);
 
-  // Convert default theme to variables if provided
   const defaultVariables =
     defaultTheme !== undefined && defaultTheme !== null
       ? themeToVariables(defaultTheme)
       : [];
 
-  // Combine all variables for resolution (defaults first, then user variables override)
   const allVariables = [
     ...defaultVariables,
     ...dedupedThemeVars,
     ...dedupedRootVars,
   ];
 
-  // Create variable map for O(1) lookups during resolution
-  // User variables will overwrite defaults due to order
   const allVariablesMap = createVariablesMap(allVariables);
-
-  // Step 1: Build reference map from @theme variables with var() values
   const referenceMap = buildReferenceMap(dedupedThemeVars);
-
-  // Collect deprecation warnings
   const deprecationWarnings: Array<DeprecationWarning> = [];
 
-  // Step 2: Build base theme from @theme + :root, resolving references
   const baseVariables = [...dedupedThemeVars, ...dedupedRootVars];
-
   const theme = buildTheme(
     baseVariables,
     keyframes,
@@ -524,121 +688,57 @@ export function buildThemes(
     allVariablesMap,
   );
 
-  // Step 3: Build variants, resolving references
   const variants: Record<string, ThemeVariant> = {};
   const variantGroups = groupVariantVariables(variantVariables);
-
-  // Build theme for each variant (variants don't get separate keyframes)
   const emptyKeyframes = new Map<string, string>();
+
   for (const [variantName, { selector, variables: varVars }] of variantGroups) {
-    // For nested variants (e.g., "compact.dark"), include variables from parent variants
-    // This ensures proper CSS cascade behavior where nested selectors can reference
-    // variables defined in their parent selectors
-    const parentVariantVars: Array<CSSVariable> = [];
-
-    // Check if this is a compound variant (contains a dot)
-    if (variantName.includes('.')) {
-      const parts = variantName.split('.');
-      // Include variables from each parent variant
-      for (const part of parts) {
-        const parentGroup = variantGroups.get(part);
-        if (parentGroup !== undefined) {
-          parentVariantVars.push(...parentGroup.variables);
-        }
-      }
-    }
-
-    // Create variant-specific variable map that includes the variant's values
-    // This allows @theme variables with var() to be re-resolved with variant values
-    // Example: @theme has --radius-lg: var(--radius), variant has --radius: 0
-    //          Result: variant.radius.lg should be 0
-    // For nested variants: compact.dark gets variables from [compact, dark, compact.dark]
-    const variantVariablesMap = createVariablesMap([
-      ...defaultVariables,
-      ...dedupedThemeVars,
-      ...dedupedRootVars,
-      ...parentVariantVars,
-      ...varVars,
-    ]);
-
-    // Include @theme variables when building variant themes so they can be
-    // re-resolved with the variant's var() values
-    const variantThemeVariables = [
-      ...dedupedThemeVars,
-      ...parentVariantVars,
-      ...varVars,
-    ];
-
-    // Convert variant name to camelCase for use as object key
-    // e.g., "theme-mono.dark" → "themeMonoDark"
     const camelVariantName = variantNameToCamelCase(variantName);
-
-    variants[camelVariantName] = {
+    variants[camelVariantName] = buildVariantTheme(
+      variantName,
       selector,
-      theme: buildTheme(
-        variantThemeVariables,
-        emptyKeyframes,
-        deprecationWarnings,
-        referenceMap,
-        variantVariablesMap,
-      ),
-    };
+      varVars,
+      variantGroups,
+      dedupedThemeVars,
+      dedupedRootVars,
+      defaultVariables,
+      emptyKeyframes,
+      deprecationWarnings,
+      referenceMap,
+    );
   }
 
-  // Deduplicate deprecation warnings (same variable may be processed multiple times)
   const uniqueWarnings = Array.from(
     new Map(deprecationWarnings.map((w) => [w.variable, w])).values(),
   );
 
-  // Resolve ALL variables for return (including those not in theme structure)
-  // This ensures the library returns fully resolved values for use in JavaScript
-  // Each variable needs to be resolved with the appropriate context:
-  // - Base variables (theme/root): Use allVariablesMap
-  // - Variant variables: Use variant-specific map (base + parent variants + variant)
-  const resolvedVariables = variables.map((variable) => {
-    let resolveMap: Map<string, string>;
+  const cssConflicts = detectConflicts(cssRules, variants);
+  const resolvableConflicts = filterResolvableConflicts(cssConflicts);
 
-    if (variable.source === 'variant' && variable.variantName !== undefined) {
-      // For variant variables, create a map with base + this specific variant's variables
-      const variantGroup = variantGroups.get(variable.variantName);
-      const variantVars = variantGroup?.variables ?? [];
-
-      // For nested variants, include parent variant variables
-      const parentVariantVars: Array<CSSVariable> = [];
-      if (variable.variantName.includes('.')) {
-        const parts = variable.variantName.split('.');
-        for (const part of parts) {
-          const parentGroup = variantGroups.get(part);
-          if (parentGroup !== undefined) {
-            parentVariantVars.push(...parentGroup.variables);
-          }
-        }
-      }
-
-      const variantSpecificVariables = [
-        ...defaultVariables,
-        ...dedupedThemeVars,
-        ...dedupedRootVars,
-        ...parentVariantVars,
-        ...variantVars,
-      ];
-      resolveMap = createVariablesMap(variantSpecificVariables);
-    } else {
-      // For base variables, use the base variable map
-      resolveMap = allVariablesMap;
+  for (const conflict of resolvableConflicts) {
+    const camelVariantName = variantNameToCamelCase(conflict.variantName);
+    const variant = variants[camelVariantName];
+    if (variant !== undefined) {
+      applyOverride(variant.theme, conflict);
     }
+  }
 
-    const resolvedValue = resolveVarReferences(variable.value, resolveMap);
-    return {
-      ...variable,
-      value: resolvedValue,
-    };
-  });
+  const resolvedVariables = variables.map((variable) =>
+    resolveVariable(
+      variable,
+      variantGroups,
+      defaultVariables,
+      dedupedThemeVars,
+      dedupedRootVars,
+      allVariablesMap,
+    ),
+  );
 
   return {
     theme,
     variants,
     deprecationWarnings: uniqueWarnings,
+    cssConflicts,
     variables: resolvedVariables,
   };
 }

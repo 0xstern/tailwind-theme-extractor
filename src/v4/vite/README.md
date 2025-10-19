@@ -42,7 +42,15 @@ The plugin generates files in your specified `outputDir`.
 - `src/generated/tailwindcss/` if your project has a `src/` folder
 - `generated/tailwindcss/` otherwise
 
-### `themes.d.ts` (Always Generated)
+**Generated files:**
+
+- `types.ts` - TypeScript type declarations (always)
+- `theme.ts` - Runtime theme objects (if `generateRuntime` enabled)
+- `index.ts` - Re-exports (if `generateRuntime` enabled)
+- `conflicts.md` - Human-readable conflict report (if CSS conflicts detected)
+- `conflicts.json` - Machine-readable conflict report (if CSS conflicts detected)
+
+### `types.ts` (Always Generated)
 
 TypeScript type declarations for your theme:
 
@@ -104,6 +112,62 @@ export const selectors = {
 
 export default base;
 ```
+
+## CSS Conflict Detection
+
+The plugin automatically detects when CSS rules override CSS variables to ensure your runtime theme object matches actual rendered styles.
+
+### The Problem
+
+Real-world CSS files often contain both CSS variables AND direct CSS rules:
+
+```css
+.theme-mono {
+  --radius-lg: 0.45em; /* CSS variable */
+
+  .rounded-lg {
+    border-radius: 0; /* CSS rule - overrides the variable! */
+  }
+}
+```
+
+Without detection, your runtime theme would show `radius.lg: "0.45em"` when the browser renders `"0"`.
+
+### Automatic Resolution
+
+The plugin:
+
+1. Detects conflicts between CSS rules and variables
+2. Automatically applies high-confidence overrides to the theme
+3. Generates `conflicts.md` with full details and recommendations
+
+### Example Output
+
+```
+  ℹ  Tailwind theme updated from styles.css
+⚠  3 CSS conflicts detected (see src/generated/tailwindcss/conflicts.md)
+```
+
+**`conflicts.md`** includes:
+
+- Summary of auto-resolved vs manual-review conflicts
+- Detailed information about each conflict
+- Suggested actions for complex cases
+- Recommendations based on conflict patterns
+
+**High-confidence overrides** (auto-applied):
+
+- Static values without pseudo-classes
+- Simple selectors
+- No media query nesting
+
+**Manual review** (reported only):
+
+- Dynamic values (`calc()`, `var()`)
+- Pseudo-classes (`:hover`, `:focus`)
+- Complex selectors or media queries
+
+This ensures your Chart.js charts, Canvas rendering, and other runtime theme usage always use the correct values.
 
 ## Plugin Options
 

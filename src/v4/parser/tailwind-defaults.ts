@@ -60,12 +60,12 @@ export async function loadTailwindDefaults(
       // Parse it
       const root = postcss.parse(themeCSS);
 
-      // Extract variables and keyframes
-      const { variables, keyframes } = extractVariables(root);
+      // Extract variables, keyframes, and CSS rules
+      const { variables, keyframes, cssRules } = extractVariables(root);
 
       // Build theme (only use base theme, ignore variants and deprecation warnings)
       // Note: No defaultTheme parameter here - we ARE the defaults
-      const { theme } = buildThemes(variables, keyframes, null);
+      const { theme } = buildThemes(variables, keyframes, cssRules, null);
 
       // Cache the result with timestamp we already have
       defaultThemeCache.set(basePath, {
@@ -86,12 +86,12 @@ export async function loadTailwindDefaults(
     // Parse it
     const root = postcss.parse(themeCSS);
 
-    // Extract variables and keyframes
-    const { variables, keyframes } = extractVariables(root);
+    // Extract variables, keyframes, and CSS rules
+    const { variables, keyframes, cssRules } = extractVariables(root);
 
     // Build theme (only use base theme, ignore variants and deprecation warnings)
     // Note: No defaultTheme parameter here - we ARE the defaults
-    const { theme } = buildThemes(variables, keyframes, null);
+    const { theme } = buildThemes(variables, keyframes, cssRules, null);
 
     // Cache the result with timestamp
     defaultThemeCache.set(basePath, {

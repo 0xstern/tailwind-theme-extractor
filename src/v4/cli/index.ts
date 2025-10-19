@@ -117,14 +117,29 @@ function logConfiguration(options: CliOptions, outputDir: string): void {
  *
  * @param outputDir - Output directory path
  * @param generateRuntime - Whether runtime files were generated
+ * @param conflictCount - Number of CSS conflicts detected (optional)
+ * @param conflictReportPath - Path to conflict report (optional)
  */
-function logSuccess(outputDir: string, generateRuntime: boolean): void {
+function logSuccess(
+  outputDir: string,
+  generateRuntime: boolean,
+  conflictCount?: number,
+  conflictReportPath?: string,
+): void {
   console.log('✓ Theme types generated successfully\n');
   console.log('Generated files:');
   console.log(`  - ${join(outputDir, OUTPUT_FILES.TYPES)}`);
   if (generateRuntime) {
     console.log(`  - ${join(outputDir, OUTPUT_FILES.THEME)}`);
     console.log(`  - ${join(outputDir, OUTPUT_FILES.INDEX)}`);
+  }
+
+  // Display conflict info if present
+  if (conflictCount !== undefined && conflictReportPath !== undefined) {
+    console.log('');
+    console.log(
+      `⚠  ${conflictCount} CSS conflict${conflictCount === 1 ? '' : 's'} detected (see ${conflictReportPath})`,
+    );
   }
 }
 
@@ -154,7 +169,7 @@ async function main(): Promise<void> {
             variables: options.debug as boolean, // Include when debug mode is on
           };
 
-    await generateThemeFiles(
+    const result = await generateThemeFiles(
       absoluteInputPath,
       absoluteOutputDir,
       true, // resolveImports
@@ -164,7 +179,12 @@ async function main(): Promise<void> {
       basePath,
     );
 
-    logSuccess(outputDir, options.runtime as boolean);
+    logSuccess(
+      outputDir,
+      options.runtime as boolean,
+      result.conflictCount,
+      result.conflictReportPath,
+    );
   } catch (error) {
     if (error instanceof Error) {
       console.error(`Error: ${error.message}`);

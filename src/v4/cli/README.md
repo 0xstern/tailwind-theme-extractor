@@ -65,6 +65,14 @@ bunx tailwind-resolver -i styles.css -o custom/output/path
 
 The CLI generates the same files as the Vite plugin:
 
+**Generated files:**
+
+- `types.ts` - TypeScript type declarations (always)
+- `theme.ts` - Runtime theme objects (if `--runtime` enabled)
+- `index.ts` - Re-exports (if `--runtime` enabled)
+- `conflicts.md` - Human-readable conflict report (if CSS conflicts detected)
+- `conflicts.json` - Machine-readable conflict report (if CSS conflicts detected)
+
 ### Always Generated
 
 **`types.ts`** - TypeScript type declarations:
@@ -177,6 +185,84 @@ bunx tailwind-resolver -i src/styles.css --debug
 ```bash
 bunx tailwind-resolver -i src/styles.css --no-runtime
 ```
+
+## CSS Conflict Detection
+
+The CLI automatically detects when CSS rules override CSS variables, ensuring your runtime theme object matches actual rendered styles.
+
+### Problem
+
+CSS files often mix variables with direct style rules:
+
+```css
+.theme-mono {
+  --radius-lg: 0.45em; /* CSS variable */
+
+  .rounded-lg {
+    border-radius: 0; /* CSS rule - overrides variable! */
+  }
+}
+```
+
+Without detection, the runtime theme would incorrectly show `radius.lg: "0.45em"` instead of `"0"`.
+
+### Solution
+
+The CLI:
+
+1. **Detects all conflicts** between CSS rules and variables
+2. **Applies high-confidence overrides** automatically
+3. **Reports complex cases** in `conflicts.md` for manual review
+
+### Example Output
+
+```bash
+bunx tailwind-resolver -i src/styles.css
+
+Tailwind Theme Resolver
+
+  Input:   src/styles.css
+  Output:  src/generated/tailwindcss
+  Runtime: enabled
+  Debug:   disabled
+
+✓ Theme types generated successfully
+
+Generated files:
+  - src/generated/tailwindcss/types.ts
+  - src/generated/tailwindcss/theme.ts
+  - src/generated/tailwindcss/index.ts
+
+⚠  3 CSS conflicts detected (see src/generated/tailwindcss/conflicts.md)
+```
+
+### Conflict Reports
+
+**`conflicts.md`** - Human-readable report:
+
+- Summary of auto-resolved vs pending conflicts
+- Detailed conflict information
+- Suggested actions for complex cases
+- Context-specific recommendations
+
+**`conflicts.json`** - Machine-readable format for CI/CD integration
+
+### Confidence Levels
+
+**High Confidence** (auto-applied):
+
+- Static values (e.g., `border-radius: 0`)
+- Simple selectors
+- No pseudo-classes or media queries
+
+**Medium/Low Confidence** (manual review):
+
+- Dynamic values (`calc()`, `var()`)
+- Pseudo-classes (`:hover`, `:focus`)
+- Media query nesting
+- Complex selectors
+
+High-confidence overrides ensure your Chart.js, Canvas, and other runtime uses get correct values.
 
 ### CI/CD Pipeline
 

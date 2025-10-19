@@ -345,6 +345,10 @@ export interface ParseResult<TTheme extends Theme = Theme> {
    * Deprecation warnings for legacy CSS variables
    */
   deprecationWarnings: Array<DeprecationWarning>;
+  /**
+   * CSS rule conflicts detected (optional for backward compatibility)
+   */
+  cssConflicts?: Array<unknown>;
 }
 
 /**
@@ -395,6 +399,10 @@ export interface TailwindResult<TTailwind = UnknownTailwind> {
    * Deprecation warnings for legacy CSS variables
    */
   deprecationWarnings: Array<DeprecationWarning>;
+  /**
+   * CSS rule conflicts detected (optional for backward compatibility)
+   */
+  cssConflicts?: Array<unknown>;
 }
 
 /**

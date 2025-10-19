@@ -114,15 +114,17 @@ export async function parseCSS<TTheme extends Theme = Theme>(
     processedFiles.push(...importedFiles);
   }
 
-  // Extract variables and keyframes from @theme, :root, and variant selectors
-  const { variables: rawVariables, keyframes } = extractVariables(root);
+  // Extract variables, keyframes, and CSS rules from @theme, :root, and variant selectors
+  const {
+    variables: rawVariables,
+    keyframes,
+    cssRules,
+  } = extractVariables(root);
 
   // Build structured theme objects (base + variants) and resolve all variables
-  const { theme, variants, deprecationWarnings, variables } = buildThemes(
-    rawVariables,
-    keyframes,
-    defaultTheme,
-  );
+  // Detects and applies CSS rule overrides
+  const { theme, variants, deprecationWarnings, cssConflicts, variables } =
+    buildThemes(rawVariables, keyframes, cssRules, defaultTheme);
 
   // Assemble the result with base Theme typing
   const baseResult: ParseResult<Theme> = {
@@ -131,6 +133,7 @@ export async function parseCSS<TTheme extends Theme = Theme>(
     variables,
     files: processedFiles,
     deprecationWarnings,
+    cssConflicts,
   };
 
   // Type-safe narrowing to TTheme (runtime structure is identical)

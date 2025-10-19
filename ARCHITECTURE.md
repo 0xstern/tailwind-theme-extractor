@@ -31,38 +31,62 @@ CSS Input
                         ▼
                 ┌───────────────┐
                 │   Variable    │
-                │  Resolver    │
-                │(@theme,:root) │
-                └───────┬───────┘
-                        │
-                        ▼
-                ┌───────────────┐
-                │     Theme     │
-                │    Builder    │
-                │  (structured) │
+                │   Extractor   │
+                │ (@theme,:root │
+                │  + CSS rules) │
                 └───────┬───────┘
                         │
            ┌────────────┴────────────┐
            │                         │
            ▼                         ▼
     ┌────────────┐           ┌──────────────┐
-    │ Base Theme │           │   Variants   │
-    │  (Theme)   │           │ (dark, etc.) │
+    │ Variables  │           │  CSS Rules   │
+    │            │           │  (overrides) │
     └──────┬─────┘           └──────┬───────┘
            │                        │
            └───────────┬────────────┘
                        │
                        ▼
                 ┌──────────────┐
-                │ParseResult   │
-                │(internal)    │
+                │    Theme     │
+                │   Builder    │
+                │ (structured) │
                 └──────┬───────┘
                        │
-                       ▼
-                ┌──────────────┐
-                │TailwindResult│
-                │  (public)    │
-                └──────────────┘
+          ┌────────────┼────────────┐
+          │            │            │
+          ▼            ▼            ▼
+    ┌─────────┐  ┌─────────┐  ┌──────────┐
+    │  Base   │  │Variants │  │Conflict  │
+    │  Theme  │  │ (dark,  │  │Detector  │
+    │         │  │  etc.)  │  │          │
+    └────┬────┘  └────┬────┘  └────┬─────┘
+         │            │            │
+         └────────────┼────────────┘
+                      │
+                      ▼
+              ┌───────────────┐
+              │ ParseResult   │
+              │  (internal)   │
+              │+ cssConflicts │
+              └───────┬───────┘
+                      │
+                      ▼
+              ┌───────────────┐
+              │TailwindResult │
+              │   (public)    │
+              │+ cssConflicts │
+              └───────┬───────┘
+                      │
+         ┌────────────┴────────────┐
+         │                         │
+         ▼                         ▼
+  ┌─────────────┐          ┌────────────────┐
+  │  Generated  │          │   Conflict     │
+  │    Types    │          │   Reports      │
+  │  & Runtime  │          │(conflicts.md)  │
+  │             │          │(conflicts.json)│
+  └─────────────┘          └────────────────┘
 ```
 
 ## Public API
@@ -84,6 +108,7 @@ export interface TailwindResult<TTailwind = UnknownTailwind> {
   files: Array<string>;
   variables: Array<CSSVariable>;
   deprecationWarnings: Array<DeprecationWarning>;
+  cssConflicts?: Array<unknown>; // CSS rule conflicts (optional)
 }
 ```
 
@@ -104,6 +129,7 @@ export interface ParseResult<TTheme extends Theme = Theme> {
   files: Array<string>;
   variables: Array<CSSVariable>;
   deprecationWarnings: Array<DeprecationWarning>;
+  cssConflicts?: Array<unknown>; // CSS rule conflicts (optional)
 }
 ```
 
@@ -224,21 +250,33 @@ console.warn('  Resolved path: /absolute/path/to/missing.css');
 console.warn('  Error: ENOENT: no such file or directory');
 ```
 
-### 3. Variable Resolver (`src/v4/parser/variable-extractor.ts`)
+### 3. Variable Extractor (`src/v4/parser/variable-extractor.ts`)
 
-**Purpose** - Resolve CSS variables from @theme, :root, and variant selectors.
+**Purpose** - Extract CSS variables and CSS rules from @theme, :root, and variant selectors.
 
-**Three Sources:**
+**Extraction Sources:**
 
 1. **@theme blocks** - Tailwind v4 namespace declarations
 2. **:root blocks** - Global CSS variables
 3. **Variant selectors** - Dark mode, custom themes, nested combinations
+4. **CSS rules** - Direct style rules that override variables (NEW)
+
+**Output:**
+
+```typescript
+{
+  variables: Array<CSSVariable>,     // CSS custom properties
+  keyframes: Map<string, string>,    // @keyframes definitions
+  cssRules: Array<CSSRuleOverride>   // Direct CSS rules (NEW)
+}
+```
 
 **Optimization:**
 
 - Single-pass AST traversal (no double walking)
 - Module-level constants for namespace mappings
 - Efficient variant detection via selector parsing
+- Parallel extraction of variables and CSS rules
 
 **Special Handling:**
 
@@ -260,6 +298,187 @@ The `extractVariantName()` function intelligently handles different selector pat
   - Example: `.dark > .content` → `'dark'`
 
 This ensures proper CSS cascade behavior where nested selectors can reference variables from their parent selectors.
+
+### 3a. CSS Rule Extractor (`src/v4/parser/css-rule-extractor.ts`)
+
+**Purpose** - Extract and classify CSS rules within variant selectors that may conflict with CSS variables.
+
+**Problem Context:**
+
+Real-world CSS files often contain both CSS variables AND direct CSS rules:
+
+```css
+.theme-mono {
+  --radius-lg: 0.45em; /* CSS variable */
+
+  .rounded-lg {
+    border-radius: 0; /* Direct CSS rule - overrides the variable! */
+  }
+}
+```
+
+Without detection, the runtime theme object would incorrectly report `radius.lg: "0.45em"` when the actual rendered value is `"0"`.
+
+**Complexity Classification:**
+
+Rules are classified as **simple** (safe to apply) or **complex** (requires manual review):
+
+**Simple Rules:**
+
+- Static values (no `var()`, `calc()`, etc.)
+- No pseudo-classes (`:hover`, `:focus`)
+- No pseudo-elements (`::before`, `::after`)
+- Not nested in media queries
+- ≤3 property declarations
+- No complex combinators (descendant, child, sibling)
+
+**Complex Rules:**
+
+- Dynamic CSS functions (`var()`, `calc()`, `min()`, `max()`, `clamp()`)
+- Pseudo-classes or pseudo-elements
+- Media query nesting
+- `@apply` directives
+- Multiple declarations (>3)
+- Complex selectors
+
+**Property Mappings:**
+
+Maps CSS properties to theme namespaces:
+
+```typescript
+{
+  'border-radius': {
+    themeProperty: 'radius',
+    keyExtractor: extractRoundedUtilityKey  // .rounded-lg → "lg"
+  },
+  'box-shadow': {
+    themeProperty: 'shadows',
+    keyExtractor: extractShadowUtilityKey   // .shadow-lg → "lg"
+  },
+  // ... other mappings
+}
+```
+
+### 3b. Conflict Resolver (`src/v4/parser/conflict-resolver.ts`)
+
+**Purpose** - Detect and resolve conflicts between CSS rules and theme variables.
+
+**Conflict Detection:**
+
+Compares extracted CSS rules against resolved theme variables:
+
+```typescript
+interface CSSRuleConflict {
+  variantName: string; // e.g., "themeMono"
+  themeProperty: keyof Theme; // e.g., "radius"
+  themeKey: string; // e.g., "lg"
+  variableValue: string; // e.g., "0.45em" (from CSS variable)
+  ruleValue: string; // e.g., "0" (from CSS rule)
+  ruleSelector: string; // e.g., ".rounded-lg"
+  canResolve: boolean; // true if simple rule
+  confidence: 'high' | 'medium' | 'low';
+  cssRule: CSSRuleOverride; // Original rule details
+}
+```
+
+**Confidence Calculation:**
+
+- **High**: Simple static value, no unit mismatches
+- **Medium**: Simple but different unit types (e.g., `px` vs `rem`)
+- **Low**: Complex rule requiring manual review
+
+**Resolution Strategy:**
+
+1. **Detect all conflicts** - Complete awareness of discrepancies
+2. **Apply high-confidence overrides** - Safe automation for simple cases
+3. **Report complex cases** - Inform user for manual review
+
+**Override Application:**
+
+Only high-confidence, simple conflicts are automatically applied to variant themes:
+
+```typescript
+if (conflict.canResolve && conflict.confidence === 'high') {
+  theme[conflict.themeProperty][conflict.themeKey] = conflict.ruleValue;
+}
+```
+
+This ensures the runtime theme object matches actual rendered styles.
+
+### 3c. Conflict Reporter (`src/v4/parser/conflict-reporter.ts`)
+
+**Purpose** - Generate human-readable and machine-readable conflict reports.
+
+**Output Files:**
+
+Generated in the same output directory as theme files:
+
+1. **`conflicts.md`** - Human-readable Markdown report
+2. **`conflicts.json`** - Machine-readable JSON for tooling integration
+
+**Markdown Report Structure:**
+
+```markdown
+# CSS Rule Conflicts
+
+**Generated:** 2025-10-19T02:55:12.930Z
+**Source:** src/theme.css
+**Version:** 0.1.7
+
+## Summary
+
+- **Total conflicts:** 12
+- **Auto-resolved:** 8 (high confidence)
+- **Manual review needed:** 4 (medium/low confidence)
+
+## Auto-Resolved Conflicts
+
+[List of conflicts automatically applied to themes]
+
+## Manual Review Required
+
+[List of conflicts requiring user attention with suggested actions]
+
+## Recommendations
+
+[Context-specific recommendations based on conflict types]
+```
+
+**JSON Report Structure:**
+
+```json
+{
+  "generatedAt": "2025-10-19T02:55:12.930Z",
+  "source": "src/theme.css",
+  "version": "0.1.7",
+  "summary": {
+    "total": 12,
+    "autoResolved": 8,
+    "manualReview": 4
+  },
+  "conflicts": [
+    {
+      "variantName": "themeMono",
+      "themeProperty": "radius",
+      "themeKey": "lg",
+      "selector": ".rounded-lg",
+      "variableValue": "0.45em",
+      "ruleValue": "0",
+      "confidence": "high",
+      "canResolve": true,
+      "applied": true
+    }
+  ]
+}
+```
+
+**Terminal Output:**
+
+Non-intrusive single-line notification:
+
+```
+⚠  12 CSS conflicts detected (see src/generated/tailwindcss/conflicts.md)
+```
 
 ### 4. Theme Builder (`src/v4/parser/theme-builder.ts`)
 
@@ -321,7 +540,8 @@ The theme builder implements a two-phase resolution system for `var()` reference
    - Apply processor if defined (color scales, font sizes)
    - Build nested structure (e.g., `colors.primary.500`)
 5. Separate base theme from variant overrides
-6. Generate deprecation warnings for legacy patterns
+6. Detect CSS rule conflicts and apply high-confidence overrides (NEW)
+7. Generate deprecation warnings for legacy patterns
 
 **Nested Variant Resolution:**
 
@@ -489,6 +709,7 @@ result.variants.default.colors.primary[500]; // Fully typed!
   --color-primary-500: oklch(0.65 0.2 250);
   --color-chart-1: var(--color-blue-300);
   --spacing-4: 1rem;
+  --radius-lg: 0.5rem;
 }
 
 :root {
@@ -497,6 +718,10 @@ result.variants.default.colors.primary[500]; // Fully typed!
 
 [data-theme='dark'] {
   --background: #1f2937;
+
+  .rounded-lg {
+    border-radius: 0; /* CSS rule override */
+  }
 }
 ```
 
@@ -508,12 +733,16 @@ result.variants.default.colors.primary[500]; // Fully typed!
    ├─ Loads Tailwind defaults from node_modules
    └─ Creates PostCSS AST
 
-2. Variable Resolver
-   ├─ Finds: --color-primary-500 (source: 'theme')
-   ├─ Finds: --color-chart-1 (source: 'theme', value: 'var(--color-blue-300)')
-   ├─ Finds: --spacing-4 (source: 'theme')
-   ├─ Finds: --background (source: 'root')
-   └─ Finds: --background (source: 'variant', selector: '[data-theme="dark"]')
+2. Variable Extractor
+   ├─ Variables:
+   │  ├─ Finds: --color-primary-500 (source: 'theme')
+   │  ├─ Finds: --color-chart-1 (source: 'theme', value: 'var(--color-blue-300)')
+   │  ├─ Finds: --spacing-4 (source: 'theme')
+   │  ├─ Finds: --radius-lg (source: 'theme')
+   │  ├─ Finds: --background (source: 'root')
+   │  └─ Finds: --background (source: 'variant', selector: '[data-theme="dark"]')
+   └─ CSS Rules:
+      └─ Finds: .rounded-lg { border-radius: 0; } (variant: 'dark')
 
 3. Theme Builder
    ├─ Converts Tailwind defaults to variables
@@ -524,11 +753,17 @@ result.variants.default.colors.primary[500]; // Fully typed!
    │  ├─ colors.primary[500] = "oklch(0.65 0.20 250)"
    │  ├─ colors.chart[1] = "oklch(80.9% 0.105 251.813)" [RESOLVED]
    │  ├─ colors.background = "oklch(1 0 0)" [FROM :root via reference]
-   │  └─ spacing[4] = "1rem"
-   └─ Variants:
-      └─ dark:
-         ├─ selector: "[data-theme='dark']"
-         └─ theme.colors.background = "#1f2937"
+   │  ├─ spacing[4] = "1rem"
+   │  └─ radius.lg = "0.5rem"
+   ├─ Variants (before conflict resolution):
+   │  └─ dark:
+   │     ├─ selector: "[data-theme='dark']"
+   │     ├─ theme.colors.background = "#1f2937"
+   │     └─ theme.radius.lg = "0.5rem" [inherited from base]
+   └─ Conflict Resolution:
+      ├─ Detects: .rounded-lg overrides radius.lg in dark variant
+      ├─ Confidence: High (simple static value)
+      └─ Applies: dark.theme.radius.lg = "0" [OVERRIDDEN]
 ```
 
 **Output (TailwindResult):**
@@ -551,7 +786,8 @@ result.variants.default.colors.primary[500]; // Fully typed!
       // ... other namespaces
     },
     dark: {
-      colors: { background: "#1f2937" }
+      colors: { background: "#1f2937" },
+      radius: { lg: "0" }  // Overridden by CSS rule
       // ... only properties that differ from default
     }
   },
@@ -561,7 +797,20 @@ result.variants.default.colors.primary[500]; // Fully typed!
   },
   variables: [/* raw CSSVariable array */],
   files: ['/absolute/path/to/styles.css'],
-  deprecationWarnings: []
+  deprecationWarnings: [],
+  cssConflicts: [
+    {
+      variantName: "dark",
+      themeProperty: "radius",
+      themeKey: "lg",
+      variableValue: "0.5rem",
+      ruleValue: "0",
+      ruleSelector: ".rounded-lg",
+      canResolve: true,
+      confidence: "high",
+      applied: true
+    }
+  ]
 }
 ```
 
@@ -715,12 +964,13 @@ That's it! The pipeline will automatically handle resolution, building, and type
 
 ### Test Coverage
 
-- 198 passing tests (100% pass rate)
-- 733 expect() assertions
+- 214 passing tests (100% pass rate)
+- 825 expect() assertions
 - All core paths covered
 - Updated to use new `TailwindResult` API structure
 - Tests verify both runtime API and generated code consistency
 - Comprehensive coverage of nested variant combinations and variable resolution
+- CSS rule extraction and conflict detection test coverage (integration tests pending)
 
 ## Related Documentation
 

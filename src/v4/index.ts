@@ -125,6 +125,7 @@ export async function resolveTheme<TTailwind = UnknownTailwind>(
     files: userResult.files,
     variables: userResult.variables,
     deprecationWarnings: userResult.deprecationWarnings,
+    cssConflicts: userResult.cssConflicts,
   } as TailwindResult<TTailwind>;
 }
 

@@ -6,6 +6,9 @@
 import type { AtRule, ChildNode, Container, Root } from 'postcss';
 
 import type { CSSVariable, DeprecationWarning } from '../types';
+import type { CSSRuleOverride } from './css-rule-extractor';
+
+import { extractCSSRules } from './css-rule-extractor';
 
 /**
  * Singular variable mappings for deprecated Tailwind v4 variables
@@ -207,7 +210,7 @@ function processNestedVariants(
 }
 
 /**
- * Extracts CSS variables and keyframes from `@theme,` :root, and variant blocks in a PostCSS AST
+ * Extracts CSS variables, keyframes, and CSS rules from a PostCSS AST
  *
  * Supports:
  * - Base theme: `@theme` and :root
@@ -215,16 +218,19 @@ function processNestedVariants(
  * - Keyframes: `@keyframes` rules
  * - Nested @variant blocks: creates compound variants with recursive support
  *   (e.g., .theme-mono @variant dark @variant hover → theme-mono.dark.hover)
+ * - CSS Rules: Direct style rules within variants (e.g., .rounded-lg { border-radius: 0; })
  *
  * @param root - The PostCSS root node to extract variables from
- * @returns Object with extracted CSS variables and keyframes
+ * @returns Object with extracted CSS variables, keyframes, and CSS rules
  */
 export function extractVariables(root: Root): {
   variables: Array<CSSVariable>;
   keyframes: Map<string, string>;
+  cssRules: Array<CSSRuleOverride>;
 } {
   const variables: Array<CSSVariable> = [];
   const keyframes = new Map<string, string>();
+  const cssRules: Array<CSSRuleOverride> = [];
   const processedMediaInRules = new Set<AtRule>();
 
   // Single pass through all top-level nodes
@@ -317,6 +323,10 @@ export function extractVariables(root: Root): {
             }
           });
 
+          // Extract CSS rules from this variant
+          const rules = extractCSSRules(rule, variantName);
+          cssRules.push(...rules);
+
           // Process nested @variant at-rules recursively
           processNestedVariants(rule, variantName, rule.selector, variables);
 
@@ -343,7 +353,7 @@ export function extractVariables(root: Root): {
     }
   });
 
-  return { variables, keyframes };
+  return { variables, keyframes, cssRules };
 }
 
 /**
