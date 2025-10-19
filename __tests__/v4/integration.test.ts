@@ -49,9 +49,9 @@ describe('Import Resolution', () => {
 
   test('handles 3-level deep nested imports', () => {
     // Variants from level-1, level-2, level-3 files
-    expect(result.variants['level-1']).toBeDefined();
-    expect(result.variants['level-2']).toBeDefined();
-    expect(result.variants['level-3']).toBeDefined();
+    expect(result.variants.level1).toBeDefined();
+    expect(result.variants.level2).toBeDefined();
+    expect(result.variants.level3).toBeDefined();
   });
 });
 
@@ -200,13 +200,13 @@ describe('Theme Variants', () => {
 
   test('merges multiple definitions of same variant', () => {
     // dark-merge variant has two separate [data-theme='dark-merge'] blocks
-    expect(result.variants['dark-merge']).toBeDefined();
+    expect(result.variants.darkMerge).toBeDefined();
 
-    if (result.variants['dark-merge'] === undefined) {
+    if (result.variants.darkMerge === undefined) {
       throw new Error('Dark-merge variant should be defined');
     }
     // Both color variables from different blocks should be merged
-    const darkMerge = result.variants['dark-merge'];
+    const darkMerge = result.variants.darkMerge;
     expect(Object.keys(darkMerge.colors).length).toBeGreaterThan(0);
   });
 
@@ -349,18 +349,18 @@ describe('Animations & Transforms', () => {
 describe('Edge Cases', () => {
   test('handles special characters in values', () => {
     // Special chars variant exists
-    expect(result.variants['special-chars']).toBeDefined();
+    expect(result.variants.specialChars).toBeDefined();
   });
 
   test('handles very long variable values', () => {
-    expect(result.variants['long-values']).toBeDefined();
+    expect(result.variants.longValues).toBeDefined();
 
-    if (result.variants['long-values'] === undefined) {
+    if (result.variants.longValues === undefined) {
       throw new Error('Long-values variant should be defined');
     }
-    expect(result.variants['long-values'].shadows.complex).toBeDefined();
+    expect(result.variants.longValues.shadows.complex).toBeDefined();
 
-    const complexShadow = result.variants['long-values'].shadows.complex;
+    const complexShadow = result.variants.longValues.shadows.complex;
     if (complexShadow === undefined) {
       throw new Error('Complex shadow should be defined');
     }

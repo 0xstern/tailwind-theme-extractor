@@ -18,6 +18,7 @@ import {
   parseColorScale,
   parseFontSizeLineHeight,
   parseVariableName,
+  variantNameToCamelCase,
 } from './variable-extractor';
 
 /**
@@ -568,7 +569,11 @@ export function buildThemes(
       ...varVars,
     ];
 
-    variants[variantName] = {
+    // Convert variant name to camelCase for use as object key
+    // e.g., "theme-mono.dark" → "themeMonoDark"
+    const camelVariantName = variantNameToCamelCase(variantName);
+
+    variants[camelVariantName] = {
       selector,
       theme: buildTheme(
         variantThemeVariables,

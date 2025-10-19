@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Nested @variant Support**: CSS parser now fully supports nested `@variant` at-rules for compound variant creation
+  - Processes `@variant` blocks nested inside variant selectors (e.g., `.theme-mono { @variant dark { ... } }`)
+  - Creates compound variant names in proper camelCase (e.g., `theme-mono.dark` → `themeMonoDark`)
+  - Supports unlimited nesting depth with recursive parsing (e.g., `theme.dark.hover` → `themeDarkHover`)
+  - Base variants now correctly contain only direct declarations, not nested `@variant` values
+  - Each nesting level creates a separate variant with proper CSS cascade matching
+  - Comprehensive test suite with 16 tests covering edge cases and deeply nested scenarios
+- **Variant Name Conversion**: All variant names now use consistent camelCase naming
+  - Kebab-case variant names automatically converted to camelCase (e.g., `theme-mono` → `themeMono`)
+  - Handles digits in variant names correctly (e.g., `level-1` → `level1`, `theme-2xl` → `theme2xl`)
+  - Nested variants use compound camelCase (e.g., `theme-blue.dark` → `themeBlueDark`)
+  - Better developer experience with consistent JavaScript naming conventions
+
 ### Performance
 
 - **Import Resolution**: Parallelized CSS `@import` processing for 3-5x faster builds with multiple imports
@@ -20,14 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Changed from `visited.size < MAX_ITERATIONS` to explicit iteration counter
   - Prevents edge case where exactly 100 unique variables would exit prematurely
 
-### Added
-
-- **CLI**: Added `--dev` flag for development mode
-  - Includes debug data (`files` and `variables` arrays) in runtime output
-  - Production mode (default) excludes debug data for smaller bundle sizes
-  - Clear visual comparison in help text showing what gets generated in each mode
-
 ### Improved
+
+- **CLI**: Unified `--debug` flag behavior across all interfaces
+  - Now controls both logging and runtime debug data generation
+  - Includes `files` and `variables` arrays when enabled
+  - Consistent with Vite plugin and Runtime API debug behavior
+  - Clear visual comparison in help text showing debug mode features
 
 - **Error Messages**: Enhanced error context in theme file generation
   - Error logs now include file path for faster debugging

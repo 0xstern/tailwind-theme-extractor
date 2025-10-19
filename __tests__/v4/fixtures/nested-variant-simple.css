@@ -1,0 +1,17 @@
+.theme-test {
+  --color-primary: red;
+
+  @variant dark {
+    --color-primary: darkred;
+  }
+}
+
+.theme-multi {
+  --color-bg: white;
+  --color-fg: black;
+
+  @variant dark {
+    --color-bg: black;
+    --color-fg: white;
+  }
+}

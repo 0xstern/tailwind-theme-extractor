@@ -320,13 +320,13 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('resolves theme-default variant', () => {
-    expect(result.variants['theme-default']).toBeDefined();
+    expect(result.variants.themeDefault).toBeDefined();
   });
 
   test('resolves theme-mono variant', () => {
-    expect(result.variants['theme-mono']).toBeDefined();
+    expect(result.variants.themeMono).toBeDefined();
 
-    const mono = result.variants['theme-mono'];
+    const mono = result.variants.themeMono;
     if (mono === undefined) {
       throw new Error('Theme-mono variant should be defined');
     }
@@ -338,16 +338,16 @@ describe('Theme Variants from shadcn-themes.css', () => {
 
   test('resolves color theme variants', () => {
     const colorThemes = [
-      'theme-blue',
-      'theme-green',
-      'theme-amber',
-      'theme-rose',
-      'theme-purple',
-      'theme-orange',
-      'theme-teal',
-      'theme-red',
-      'theme-yellow',
-      'theme-violet',
+      'themeBlue',
+      'themeGreen',
+      'themeAmber',
+      'themeRose',
+      'themePurple',
+      'themeOrange',
+      'themeTeal',
+      'themeRed',
+      'themeYellow',
+      'themeViolet',
     ];
 
     for (const themeName of colorThemes) {
@@ -356,7 +356,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('theme-blue resolves primary colors from Tailwind defaults', () => {
-    const blue = result.variants['theme-blue'];
+    const blue = result.variants.themeBlue;
     if (blue === undefined) {
       throw new Error('Theme-blue variant should be defined');
     }
@@ -368,7 +368,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('theme-green resolves lime colors from Tailwind defaults', () => {
-    const green = result.variants['theme-green'];
+    const green = result.variants.themeGreen;
     if (green === undefined) {
       throw new Error('Theme-green variant should be defined');
     }
@@ -380,11 +380,11 @@ describe('Theme Variants from shadcn-themes.css', () => {
 
   test('resolves radius variants', () => {
     const radiusVariants = [
-      'theme-rounded-none',
-      'theme-rounded-small',
-      'theme-rounded-medium',
-      'theme-rounded-large',
-      'theme-rounded-full',
+      'themeRoundedNone',
+      'themeRoundedSmall',
+      'themeRoundedMedium',
+      'themeRoundedLarge',
+      'themeRoundedFull',
     ];
 
     for (const variant of radiusVariants) {
@@ -393,7 +393,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('theme-rounded-none sets radius to 0', () => {
-    const variant = result.variants['theme-rounded-none'];
+    const variant = result.variants.themeRoundedNone;
     if (variant === undefined) {
       throw new Error('Theme-rounded-none variant should be defined');
     }
@@ -402,7 +402,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
   });
 
   test('theme-rounded-full has large radius', () => {
-    const variant = result.variants['theme-rounded-full'];
+    const variant = result.variants.themeRoundedFull;
     if (variant === undefined) {
       throw new Error('Theme-rounded-full variant should be defined');
     }
@@ -412,10 +412,10 @@ describe('Theme Variants from shadcn-themes.css', () => {
 
   test('resolves font variants', () => {
     const fontVariants = [
-      'theme-inter',
-      'theme-noto-sans',
-      'theme-nunito-sans',
-      'theme-figtree',
+      'themeInter',
+      'themeNotoSans',
+      'themeNunitoSans',
+      'themeFigtree',
     ];
 
     for (const variant of fontVariants) {
@@ -427,7 +427,7 @@ describe('Theme Variants from shadcn-themes.css', () => {
 describe('Media Query Variants', () => {
   test('resolves theme-mono media query overrides', () => {
     // theme-mono has @media (min-width: 1024px) with font size overrides
-    const mono = result.variants['theme-mono'];
+    const mono = result.variants.themeMono;
     if (mono === undefined) {
       throw new Error('Theme-mono variant should be defined');
     }
@@ -437,7 +437,7 @@ describe('Media Query Variants', () => {
   });
 
   test('resolves theme-scaled media query overrides', () => {
-    const scaled = result.variants['theme-scaled'];
+    const scaled = result.variants.themeScaled;
     if (scaled === undefined) {
       throw new Error('Theme-scaled variant should be defined');
     }
@@ -452,7 +452,7 @@ describe('Nested Variant Handling', () => {
     // theme-blue has a nested @variant dark { } block
     // This creates a composite selector
     const blueVariants = Object.keys(result.variants).filter((name) =>
-      name.includes('blue'),
+      name.toLowerCase().includes('blue'),
     );
 
     expect(blueVariants.length).toBeGreaterThan(0);
@@ -460,7 +460,7 @@ describe('Nested Variant Handling', () => {
 
   test('theme-mono has nested @variant dark block', () => {
     const monoVariants = Object.keys(result.variants).filter((name) =>
-      name.includes('mono'),
+      name.toLowerCase().includes('mono'),
     );
 
     expect(monoVariants.length).toBeGreaterThan(0);

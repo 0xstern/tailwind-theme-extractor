@@ -246,10 +246,10 @@ describe('Complex CSS Functions and Variables', () => {
       expect(variantNames).toContain('dark');
       expect(variantNames).toContain('compact');
       expect(variantNames).toContain('large');
-      expect(variantNames).toContain('high-contrast');
+      expect(variantNames).toContain('highContrast');
       expect(variantNames).toContain('gradient');
-      expect(variantNames).toContain('math-heavy');
-      expect(variantNames).toContain('edge-cases');
+      expect(variantNames).toContain('mathHeavy');
+      expect(variantNames).toContain('edgeCases');
     });
 
     test('dark variant overrides in raw variables (no reference map)', async () => {

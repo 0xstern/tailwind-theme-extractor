@@ -466,7 +466,7 @@ The CLI does not watch files. To regenerate:
 - **Medium themes** (100-500 variables): ~30-50ms
 - **Large themes** (> 500 variables): ~80-150ms
 
-_Note: Times exclude file I/O, measured on M1 Mac_
+_Note: Times exclude file I/O, measured on M2 Mac_
 
 ## Requirements
 

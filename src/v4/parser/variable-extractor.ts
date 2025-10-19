@@ -3,7 +3,7 @@
  * Extracts variables from `@theme`, :root, and variant selectors
  */
 
-import type { AtRule, Root } from 'postcss';
+import type { AtRule, ChildNode, Container, Root } from 'postcss';
 
 import type { CSSVariable, DeprecationWarning } from '../types';
 
@@ -156,12 +156,65 @@ export function extractVariantName(selector: string): string | null {
 }
 
 /**
+ * Recursively processes nested @variant at-rules to create compound variants
+ *
+ * @param container - The PostCSS container to process (Rule or AtRule)
+ * @param baseVariantName - The base variant name to prepend
+ * @param baseSelector - The base selector for tracking
+ * @param variables - Array to push extracted variables into
+ */
+function processNestedVariants(
+  container: Container<ChildNode>,
+  baseVariantName: string,
+  baseSelector: string,
+  variables: Array<CSSVariable>,
+): void {
+  // Process @variant at-rules nested in this container
+  container.walkAtRules('variant', (variantRule) => {
+    const nestedVariantName = variantRule.params.trim();
+    if (nestedVariantName !== '') {
+      // Create compound variant name (e.g., "theme-mono.dark" or "theme-mono.dark.hover")
+      const compoundVariantName = `${baseVariantName}.${nestedVariantName}`;
+      const compoundSelector = `${baseSelector} @variant ${nestedVariantName}`;
+
+      // Extract direct declarations in this @variant (not in nested @variant blocks)
+      variantRule.each((child) => {
+        if (child.type === 'decl') {
+          const decl = child;
+          if (decl.prop.startsWith('--')) {
+            if (!isSelfReferential(decl.prop, decl.value)) {
+              variables.push({
+                name: decl.prop,
+                value: decl.value,
+                source: 'variant',
+                selector: compoundSelector,
+                variantName: compoundVariantName,
+              });
+            }
+          }
+        }
+      });
+
+      // Recursively process nested @variant blocks inside this @variant
+      processNestedVariants(
+        variantRule,
+        compoundVariantName,
+        compoundSelector,
+        variables,
+      );
+    }
+  });
+}
+
+/**
  * Extracts CSS variables and keyframes from `@theme,` :root, and variant blocks in a PostCSS AST
  *
  * Supports:
  * - Base theme: `@theme` and :root
  * - Variants: any selector with CSS variables (e.g., [data-theme='dark'], .midnight)
  * - Keyframes: `@keyframes` rules
+ * - Nested @variant blocks: creates compound variants with recursive support
+ *   (e.g., .theme-mono @variant dark @variant hover → theme-mono.dark.hover)
  *
  * @param root - The PostCSS root node to extract variables from
  * @returns Object with extracted CSS variables and keyframes
@@ -245,20 +298,27 @@ export function extractVariables(root: Root): {
         const variantName = extractVariantName(rule.selector);
 
         if (variantName !== null) {
-          // Walk declarations directly in this rule
-          rule.walkDecls((decl) => {
-            if (decl.prop.startsWith('--')) {
-              if (!isSelfReferential(decl.prop, decl.value)) {
-                variables.push({
-                  name: decl.prop,
-                  value: decl.value,
-                  source: 'variant',
-                  selector: rule.selector,
-                  variantName,
-                });
+          // Walk declarations directly in this rule (not nested in at-rules)
+          // Use rule.each() instead of rule.walkDecls() to only get direct children
+          rule.each((child) => {
+            if (child.type === 'decl') {
+              const decl = child;
+              if (decl.prop.startsWith('--')) {
+                if (!isSelfReferential(decl.prop, decl.value)) {
+                  variables.push({
+                    name: decl.prop,
+                    value: decl.value,
+                    source: 'variant',
+                    selector: rule.selector,
+                    variantName,
+                  });
+                }
               }
             }
           });
+
+          // Process nested @variant at-rules recursively
+          processNestedVariants(rule, variantName, rule.selector, variables);
 
           // Check for media queries nested inside this rule
           rule.walkAtRules('media', (mediaRule) => {
@@ -377,11 +437,43 @@ export function kebabToCamelCase(str: string): string {
     return cached;
   }
 
-  const result = str.replace(/-([a-z])/g, (_, letter: string) =>
-    letter.toUpperCase(),
+  const result = str.replace(/-([a-z0-9])/g, (_, char: string) =>
+    char.toUpperCase(),
   );
   camelCaseCache.set(str, result);
   return result;
+}
+
+/**
+ * Converts variant names with dots and kebab-case to camelCase
+ *
+ * Handles compound variant names (e.g., "theme-mono.dark" → "themeMonoDark")
+ * by converting each segment to camelCase and joining them together.
+ *
+ * @param variantName - The variant name to convert (may contain dots)
+ * @returns The camelCase version
+ *
+ * @example
+ * variantNameToCamelCase('theme-mono') // 'themeMono'
+ * variantNameToCamelCase('theme-mono.dark') // 'themeMonoDark'
+ * variantNameToCamelCase('theme-rounded-none.dark.hover') // 'themeRoundedNoneDarkHover'
+ */
+export function variantNameToCamelCase(variantName: string): string {
+  // Split by dots, convert each part to camelCase, then join
+  const parts = variantName.split('.');
+  const camelParts = parts.map((part) => kebabToCamelCase(part));
+
+  // Join parts with capital first letter (except the first part)
+  if (camelParts.length === 1) {
+    return camelParts[0] ?? '';
+  }
+
+  const firstPart = camelParts[0] ?? '';
+  const restParts = camelParts
+    .slice(1)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1));
+
+  return firstPart + restParts.join('');
 }
 
 /**
