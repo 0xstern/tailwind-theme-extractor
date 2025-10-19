@@ -2,8 +2,12 @@
  * Generates TypeScript type definitions from resolved theme
  */
 
-import type { ParseResult, TailwindResult, Theme } from '../types';
-import type { RuntimeGenerationOptions } from './plugin';
+import type {
+  ParseResult,
+  RuntimeGenerationOptions,
+  TailwindResult,
+  Theme,
+} from '../types';
 
 const JSON_INDENT_SPACES = 2;
 

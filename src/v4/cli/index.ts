@@ -4,15 +4,12 @@
  */
 import type { RuntimeGenerationOptions } from '../types';
 
-import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
-import {
-  DEFAULT_OUTPUT_DIRS,
-  generateThemeFiles,
-  OUTPUT_FILES,
-} from '../vite/plugin';
+import { OUTPUT_FILES } from '../shared/constants';
+import { generateThemeFiles } from '../shared/file-generator';
+import { autoDetectOutputDir } from '../shared/utils';
 
 interface CliOptions {
   input?: string;
@@ -193,15 +190,6 @@ async function main(): Promise<void> {
     }
     process.exit(1);
   }
-}
-
-function autoDetectOutputDir(cwd: string): string {
-  const srcPath = join(cwd, 'src');
-  if (existsSync(srcPath)) {
-    return DEFAULT_OUTPUT_DIRS.WITH_SRC;
-  }
-
-  return DEFAULT_OUTPUT_DIRS.WITHOUT_SRC;
 }
 
 main().catch((error: unknown) => {
