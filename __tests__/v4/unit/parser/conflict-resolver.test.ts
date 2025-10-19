@@ -3,8 +3,8 @@
  * Tests for detecting and resolving conflicts between CSS rules and theme variables
  */
 
-import type { CSSRuleOverride } from '../../src/v4/parser/css-rule-extractor';
-import type { Theme } from '../../src/v4/types';
+import type { CSSRuleOverride } from '../../../../src/v4/parser/css-rule-extractor';
+import type { Theme } from '../../../../src/v4/types';
 
 import { describe, expect, test } from 'bun:test';
 
@@ -13,7 +13,7 @@ import {
   detectConflicts,
   filterResolvableConflicts,
   groupConflictsByVariant,
-} from '../../src/v4/parser/conflict-resolver';
+} from '../../../../src/v4/parser/conflict-resolver';
 
 const ONE_CONFLICT = 1;
 const TWO_CONFLICTS = 2;

@@ -3,7 +3,7 @@ import { join } from 'path';
 
 import { describe, expect, test } from 'bun:test';
 
-import { resolveTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../../src/v4/index';
 
 // Test constants
 const EXPECTED_THEME_VARIANT_COUNT = 9;
@@ -21,7 +21,7 @@ describe('Complex CSS Functions and Variables', () => {
   // Load the complex CSS fixture once before all tests
   test('load complex CSS fixture', async () => {
     css = await readFile(
-      join(__dirname, 'fixtures', 'complex-css-functions.css'),
+      join(__dirname, '../fixtures', 'complex-css-functions.css'),
       'utf-8',
     );
     expect(css).toBeDefined();

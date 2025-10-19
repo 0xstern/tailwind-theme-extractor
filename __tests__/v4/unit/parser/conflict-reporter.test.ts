@@ -3,16 +3,16 @@
  * Tests for generating Markdown and JSON conflict reports
  */
 
-import type { CSSRuleConflict } from '../../src/v4/parser/conflict-resolver';
-import type { CSSRuleOverride } from '../../src/v4/parser/css-rule-extractor';
-import type { Theme } from '../../src/v4/types';
+import type { CSSRuleConflict } from '../../../../src/v4/parser/conflict-resolver';
+import type { CSSRuleOverride } from '../../../../src/v4/parser/css-rule-extractor';
+import type { Theme } from '../../../../src/v4/types';
 
 import { describe, expect, test } from 'bun:test';
 
 import {
   generateJSONReport,
   generateMarkdownReport,
-} from '../../src/v4/parser/conflict-reporter';
+} from '../../../../src/v4/parser/conflict-reporter';
 
 const ZERO_LENGTH = 0;
 

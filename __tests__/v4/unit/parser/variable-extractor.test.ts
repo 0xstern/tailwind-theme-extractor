@@ -10,7 +10,7 @@ import {
   parseColorScale,
   parseFontSizeLineHeight,
   parseVariableName,
-} from '../../../src/v4/parser/variable-extractor';
+} from '../../../../src/v4/parser/variable-extractor';
 
 describe('extractVariantName', () => {
   test('extracts from data-theme attribute', () => {

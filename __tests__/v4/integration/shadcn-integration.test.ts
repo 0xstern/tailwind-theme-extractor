@@ -3,13 +3,13 @@
  * Tests variable resolution, self-referential handling, and Tailwind defaults
  */
 
-import type { TailwindResult } from '../../src/v4/types';
+import type { TailwindResult } from '../../../src/v4/types';
 
 import { resolve } from 'node:path';
 
 import { beforeAll, describe, expect, test } from 'bun:test';
 
-import { resolveTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../../src/v4/index';
 
 // Test constants for expected counts
 const EXPECTED_FILE_COUNT = 3;
@@ -23,7 +23,7 @@ let result: TailwindResult;
 beforeAll(async () => {
   // Parse shadcn-global.css which imports default-theme.css and shadcn-themes.css
   result = await resolveTheme({
-    input: resolve(__dirname, './fixtures/shadcn-global.css'),
+    input: resolve(__dirname, '../fixtures/shadcn-global.css'),
     resolveImports: true,
     basePath: __dirname, // Use test directory as basePath to find node_modules
   });

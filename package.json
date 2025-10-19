@@ -99,6 +99,11 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
+    "test:unit": "bun test __tests__/v4/unit",
+    "test:integration": "bun test __tests__/v4/integration",
+    "test:e2e": "bun test __tests__/v4/e2e",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

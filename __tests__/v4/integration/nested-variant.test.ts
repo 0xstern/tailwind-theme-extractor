@@ -3,11 +3,11 @@
  * Tests that @variant at-rules inside variant selectors create compound variants
  */
 
-import type { TailwindResult } from '../../src/v4/types';
+import type { TailwindResult } from '../../../src/v4/types';
 
 import { beforeAll, describe, expect, test } from 'bun:test';
 
-import { resolveTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../../src/v4/index';
 
 let result: TailwindResult;
 

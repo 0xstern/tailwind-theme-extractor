@@ -11,7 +11,7 @@ import {
   filterResolvableRules,
   groupRulesByVariant,
   mapPropertyToTheme,
-} from '../../src/v4/parser/css-rule-extractor';
+} from '../../../../src/v4/parser/css-rule-extractor';
 
 const SIMPLE_RULE_COUNT = 1;
 const COMPLEX_RULE_COUNT = 1;

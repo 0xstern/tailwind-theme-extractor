@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { resolveTheme } from '../../src/v4/index';
+import { resolveTheme } from '../../../src/v4/index';
 
 // Test constants
 const EXPECTED_KEYFRAME_COUNT_THREE = 3;
