@@ -2,6 +2,13 @@
 
 Resolve Tailwind CSS v4 theme variables into TypeScript types and runtime objects.
 
+<p>
+    <a href="https://github.com/0xstern/tailwind-resolver/actions"><img src="https://img.shields.io/github/actions/workflow/status/0xstern/tailwind-resolver/ci.yml?branch=main" alt="Build Status"></a>
+    <a href="https://github.com/0xstern/tailwind-resolver/releases"><img src="https://img.shields.io/npm/v/tailwind-resolver.svg" alt="Latest Release"></a>
+    <a href="https://github.com/0xstern/tailwind-resolver/blob/master/LICENSE"><img src="https://img.shields.io/npm/l/tailwind-resolver.svg" alt="License"></a>
+    <a href="https://twitter.com/mrstern_"><img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/mrstern_.svg?style=social"></a>
+</p>
+
 ## Installation
 
 ```bash
