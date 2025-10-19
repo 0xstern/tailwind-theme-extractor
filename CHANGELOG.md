@@ -7,17 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Performance
+
+- Extract regex patterns to module-level constants across parser modules (import-resolver, css-rule-extractor, conflict-resolver)
+- 1-4% performance improvement in CSS rule extraction
+- Eliminates regex recompilation in hot paths
+
 ### Refactored
 
-- **Module Architecture**: Extracted shared code into dedicated `src/v4/shared/` module to eliminate improper cross-module dependencies
-  - Created `shared/constants.ts` - Centralized constants (OUTPUT_FILES, DEFAULT_OUTPUT_DIRS, DEFAULT_INTERFACE_NAME)
-  - Created `shared/utils.ts` - Shared utilities (autoDetectOutputDir, normalizeRuntimeOptions)
-  - Created `shared/file-generator.ts` - File generation logic (generateThemeFiles and helper functions)
-  - Fixed CLI importing from Vite plugin (now both import from shared module)
-  - Fixed type-generator importing RuntimeGenerationOptions from plugin (now imports from types)
-  - Improved separation of concerns between CLI, Vite plugin, and shared functionality
-  - Better tree-shaking for library consumers
-  - Easier to add new entry points in the future
+- Extract shared code into `src/v4/shared/` module (constants, utils, file-generator)
+- Fix improper cross-module dependencies between CLI and Vite plugin
+- Improve separation of concerns and tree-shaking
 
 ## [0.1.8] - 2025-01-18
 

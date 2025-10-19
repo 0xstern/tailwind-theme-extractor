@@ -79,6 +79,7 @@
     "eslint-plugin-jsdoc": "^61.1.4",
     "eslint-plugin-n": "^17.23.1",
     "globals": "^16.4.0",
+    "mitata": "^1.0.34",
     "prettier": "^3.0.0",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.45.0",

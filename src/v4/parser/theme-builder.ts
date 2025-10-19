@@ -29,6 +29,24 @@ import {
 } from './variable-extractor';
 
 /**
+ * Compiled regex patterns for performance (avoid recompilation on each call)
+ */
+const VAR_REFERENCE_REGEX = /var\((--[\w-]+)\)/;
+const CSS_FUNCTION_REGEX =
+  /(?:calc|min|max|clamp|abs|sign|round|mod|rem|sin|cos|tan|asin|acos|atan|atan2|pow|sqrt|hypot|log|exp)\s*\(/;
+
+/**
+ * Maximum iterations for resolving nested var() references in CSS functions
+ */
+const MAX_VAR_RESOLUTION_ITERATIONS = 100;
+
+/**
+ * Cache for variant resolution maps to avoid redundant map creation
+ * Key format: "variantName|defaultVarsLength|themeVarsLength|rootVarsLength|parentVarsLength|varVarsLength"
+ */
+const variantResolutionMapCache = new Map<string, Map<string, string>>();
+
+/**
  * Represents a reference from a Tailwind theme variable to a raw CSS variable
  * Used to resolve var() references from @theme to :root/:dark values
  */
@@ -49,7 +67,7 @@ interface VariableReference {
  * extractVarReference('oklch(1 0 0)') // null
  */
 function extractVarReference(value: string): string | null {
-  const match = value.match(/var\((--[\w-]+)\)/);
+  const match = value.match(VAR_REFERENCE_REGEX);
   return match?.[1] ?? null;
 }
 
@@ -72,10 +90,7 @@ function resolveVarReferences(
   visited = new Set<string>(),
 ): string {
   // Check if value contains any CSS function (calc, min, max, clamp, etc.)
-  const hasCSSFunction =
-    /(?:calc|min|max|clamp|abs|sign|round|mod|rem|sin|cos|tan|asin|acos|atan|atan2|pow|sqrt|hypot|log|exp)\s*\(/.test(
-      value,
-    );
+  const hasCSSFunction = CSS_FUNCTION_REGEX.test(value);
 
   // If it has a CSS function, replace all var() references within it
   if (hasCSSFunction) {
@@ -98,13 +113,12 @@ function resolveCSSFunctionVars(
   variablesMap: Map<string, string>,
   visited: Set<string>,
 ): string {
-  const MAX_ITERATIONS = 100;
   let result = value;
   let iterations = 0;
 
   // Keep replacing until no more var() references or we hit iteration limit
-  while (iterations++ < MAX_ITERATIONS) {
-    const varMatch = result.match(/var\((--[\w-]+)\)/);
+  while (iterations++ < MAX_VAR_RESOLUTION_ITERATIONS) {
+    const varMatch = result.match(VAR_REFERENCE_REGEX);
     if (varMatch === null) {
       break;
     }
@@ -273,26 +287,41 @@ function createEmptyTheme(): Theme {
 }
 
 /**
- * Converts a Theme object back into an array of CSSVariable objects
- * Used to make Tailwind default theme variables available for var() resolution
+ * Generates namespace to property reverse mappings from NAMESPACE_MAP
+ * Excludes special processors (color, text, default) that handle their own conversion
  *
- * @param theme - Theme object to convert
- * @returns Array of CSSVariable objects with source='theme'
+ * @returns Array of property-to-namespace mappings for simple theme properties
  */
-function themeToVariables(theme: Theme): Array<CSSVariable> {
-  const variables: Array<CSSVariable> = [];
+function getPropertyToNamespaceMappings(): Array<{
+  property: keyof Theme;
+  namespace: string;
+}> {
+  const mappings: Array<{ property: keyof Theme; namespace: string }> = [];
 
-  // Convert colors
-  for (const [key, value] of Object.entries(theme.colors)) {
+  for (const [namespace, config] of Object.entries(NAMESPACE_MAP)) {
+    // Skip properties with custom processors - they handle their own conversion
+    if (config.processor !== undefined) {
+      continue;
+    }
+    mappings.push({ property: config.property, namespace });
+  }
+
+  return mappings;
+}
+
+/**
+ * Converts color properties to CSS variables
+ * @param colors - Theme colors object
+ * @param variables - Array to push variables into
+ */
+function convertColorsToVariables(
+  colors: ThemeColors,
+  variables: Array<CSSVariable>,
+): void {
+  for (const [key, value] of Object.entries(colors)) {
     if (typeof value === 'string') {
-      // Flat color
-      variables.push({
-        name: `--color-${key}`,
-        value,
-        source: 'theme',
-      });
+      variables.push({ name: `--color-${key}`, value, source: 'theme' });
     } else {
-      // Color scale
       for (const [variant, colorValue] of Object.entries(value)) {
         variables.push({
           name: `--color-${key}-${variant}`,
@@ -302,34 +331,58 @@ function themeToVariables(theme: Theme): Array<CSSVariable> {
       }
     }
   }
+}
 
-  // Convert other theme properties with their namespaces
-  const namespaceMap: Array<{
-    property: keyof Theme;
-    namespace: string;
-  }> = [
-    { property: 'spacing', namespace: 'spacing' },
-    { property: 'fonts', namespace: 'font' },
-    { property: 'fontSize', namespace: 'text' },
-    { property: 'fontWeight', namespace: 'font-weight' },
-    { property: 'tracking', namespace: 'tracking' },
-    { property: 'leading', namespace: 'leading' },
-    { property: 'breakpoints', namespace: 'breakpoint' },
-    { property: 'containers', namespace: 'container' },
-    { property: 'radius', namespace: 'radius' },
-    { property: 'shadows', namespace: 'shadow' },
-    { property: 'insetShadows', namespace: 'inset-shadow' },
-    { property: 'dropShadows', namespace: 'drop-shadow' },
-    { property: 'textShadows', namespace: 'text-shadow' },
-    { property: 'blur', namespace: 'blur' },
-    { property: 'perspective', namespace: 'perspective' },
-    { property: 'aspect', namespace: 'aspect' },
-    { property: 'ease', namespace: 'ease' },
-    { property: 'animations', namespace: 'animate' },
-    { property: 'defaults', namespace: 'default' },
-  ];
+/**
+ * Converts font size properties to CSS variables
+ * @param fontSize - Theme font sizes object
+ * @param variables - Array to push variables into
+ */
+function convertFontSizesToVariables(
+  fontSize: ThemeFontSizes,
+  variables: Array<CSSVariable>,
+): void {
+  for (const [key, value] of Object.entries(fontSize)) {
+    if (typeof value === 'object') {
+      variables.push({
+        name: `--text-${key}`,
+        value: value.size,
+        source: 'theme',
+      });
+      if (value.lineHeight !== undefined) {
+        variables.push({
+          name: `--text-${key}--line-height`,
+          value: value.lineHeight,
+          source: 'theme',
+        });
+      }
+    }
+  }
+}
 
-  for (const { property, namespace } of namespaceMap) {
+/**
+ * Converts a Theme object back into an array of CSSVariable objects
+ * Used to make Tailwind default theme variables available for var() resolution
+ *
+ * @param theme - Theme object to convert
+ * @returns Array of CSSVariable objects with source='theme'
+ */
+function themeToVariables(theme: Theme): Array<CSSVariable> {
+  const variables: Array<CSSVariable> = [];
+
+  convertColorsToVariables(theme.colors, variables);
+  convertFontSizesToVariables(theme.fontSize, variables);
+
+  // Convert defaults
+  for (const [key, value] of Object.entries(theme.defaults)) {
+    if (typeof value === 'string') {
+      variables.push({ name: `--default-${key}`, value, source: 'theme' });
+    }
+  }
+
+  // Convert all other properties using generated mappings
+  const propertyMappings = getPropertyToNamespaceMappings();
+  for (const { property, namespace } of propertyMappings) {
     const values = theme[property] as Record<string, unknown>;
     for (const [key, value] of Object.entries(values)) {
       if (typeof value === 'string') {
@@ -338,21 +391,6 @@ function themeToVariables(theme: Theme): Array<CSSVariable> {
           value,
           source: 'theme',
         });
-      } else if (property === 'fontSize' && typeof value === 'object') {
-        // Handle font size objects with size and lineHeight
-        const fontSize = value as { size: string; lineHeight?: string };
-        variables.push({
-          name: `--${namespace}-${key}`,
-          value: fontSize.size,
-          source: 'theme',
-        });
-        if (fontSize.lineHeight !== undefined) {
-          variables.push({
-            name: `--${namespace}-${key}--line-height`,
-            value: fontSize.lineHeight,
-            source: 'theme',
-          });
-        }
       }
     }
   }
@@ -556,19 +594,20 @@ function buildVariantTheme(
     variantGroups,
   );
 
-  const variantVariablesMap = createVariablesMap([
-    ...defaultVariables,
-    ...dedupedThemeVars,
-    ...dedupedRootVars,
-    ...parentVariantVars,
-    ...varVars,
-  ]);
+  // Build arrays using concat for better performance than spreading
+  const allVariablesForMap: Array<CSSVariable> = [];
+  allVariablesForMap.push(...defaultVariables);
+  allVariablesForMap.push(...dedupedThemeVars);
+  allVariablesForMap.push(...dedupedRootVars);
+  allVariablesForMap.push(...parentVariantVars);
+  allVariablesForMap.push(...varVars);
 
-  const variantThemeVariables = [
-    ...dedupedThemeVars,
-    ...parentVariantVars,
-    ...varVars,
-  ];
+  const variantVariablesMap = createVariablesMap(allVariablesForMap);
+
+  const variantThemeVariables: Array<CSSVariable> = [];
+  variantThemeVariables.push(...dedupedThemeVars);
+  variantThemeVariables.push(...parentVariantVars);
+  variantThemeVariables.push(...varVars);
 
   return {
     selector,
@@ -580,6 +619,49 @@ function buildVariantTheme(
       variantVariablesMap,
     ),
   };
+}
+
+/**
+ * Creates a cache key for variant resolution map
+ *
+ * @param variantName - Name of the variant
+ * @param defaultVarsLen - Length of default variables array
+ * @param themeVarsLen - Length of theme variables array
+ * @param rootVarsLen - Length of root variables array
+ * @param parentVarsLen - Length of parent variant variables array
+ * @param varVarsLen - Length of variant-specific variables array
+ * @returns Cache key string
+ */
+function createVariantCacheKey(
+  variantName: string,
+  defaultVarsLen: number,
+  themeVarsLen: number,
+  rootVarsLen: number,
+  parentVarsLen: number,
+  varVarsLen: number,
+): string {
+  return `${variantName}|${defaultVarsLen}|${themeVarsLen}|${rootVarsLen}|${parentVarsLen}|${varVarsLen}`;
+}
+
+/**
+ * Gets or creates a cached variant resolution map
+ *
+ * @param cacheKey - Cache key for the resolution map
+ * @param variables - Variables to create map from if not cached
+ * @returns Cached or newly created variables map
+ */
+function getOrCreateVariantResolutionMap(
+  cacheKey: string,
+  variables: Array<CSSVariable>,
+): Map<string, string> {
+  const cached = variantResolutionMapCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const map = createVariablesMap(variables);
+  variantResolutionMapCache.set(cacheKey, map);
+  return map;
 }
 
 /**
@@ -614,14 +696,28 @@ function resolveVariable(
       variantGroups,
     );
 
-    const variantSpecificVariables = [
-      ...defaultVariables,
-      ...dedupedThemeVars,
-      ...dedupedRootVars,
-      ...parentVariantVars,
-      ...variantVars,
-    ];
-    resolveMap = createVariablesMap(variantSpecificVariables);
+    // Create cache key based on array lengths
+    const cacheKey = createVariantCacheKey(
+      variable.variantName,
+      defaultVariables.length,
+      dedupedThemeVars.length,
+      dedupedRootVars.length,
+      parentVariantVars.length,
+      variantVars.length,
+    );
+
+    // Build variables array using push for better performance
+    const variantSpecificVariables: Array<CSSVariable> = [];
+    variantSpecificVariables.push(...defaultVariables);
+    variantSpecificVariables.push(...dedupedThemeVars);
+    variantSpecificVariables.push(...dedupedRootVars);
+    variantSpecificVariables.push(...parentVariantVars);
+    variantSpecificVariables.push(...variantVars);
+
+    resolveMap = getOrCreateVariantResolutionMap(
+      cacheKey,
+      variantSpecificVariables,
+    );
   } else {
     resolveMap = allVariablesMap;
   }

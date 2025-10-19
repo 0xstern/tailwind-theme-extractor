@@ -34,6 +34,18 @@ const MULTI_WORD_NAMESPACES = [
 ] as const;
 
 /**
+ * Compiled regex patterns for performance (avoid recompilation on each call)
+ */
+const DATA_THEME_REGEX = /\[data-theme\s*=\s*['"]([^'"]+)['"]\]/g;
+const DATA_ATTR_REGEX = /\[data-[\w-]+\s*=\s*['"]([^'"]+)['"]\]/;
+const CLASS_NAME_REGEX = /\.([a-z][\w-]*)/gi;
+const MEDIA_COLOR_SCHEME_REGEX = /prefers-color-scheme:\s*(\w+)/;
+const SELF_REFERENTIAL_REGEX = /^var\((--[\w-]+)\)$/;
+const COLOR_SCALE_REGEX = /^(.+?)-(\d+(?:-.+)?)$/;
+const FONT_SIZE_LINE_HEIGHT_REGEX = /^(.+)--line-height$/;
+const KEBAB_TO_CAMEL_REGEX = /-([a-z0-9])/g;
+
+/**
  * Checks if a CSS variable is self-referential (e.g., --font-sans: var(--font-sans))
  *
  * Self-referential variables create circular dependencies and should be ignored
@@ -49,7 +61,7 @@ const MULTI_WORD_NAMESPACES = [
  */
 function isSelfReferential(name: string, value: string): boolean {
   // Match var(--variable-name) pattern
-  const varMatch = value.match(/^var\((--[\w-]+)\)$/);
+  const varMatch = value.match(SELF_REFERENTIAL_REGEX);
   if (varMatch === null) {
     return false;
   }
@@ -65,7 +77,7 @@ function isSelfReferential(name: string, value: string): boolean {
  */
 function extractDataThemeValues(selector: string): Array<string> {
   const values: Array<string> = [];
-  const matches = selector.matchAll(/\[data-theme\s*=\s*['"]([^'"]+)['"]\]/g);
+  const matches = selector.matchAll(DATA_THEME_REGEX);
   for (const match of matches) {
     if (match[1] !== undefined) {
       values.push(match[1]);
@@ -80,7 +92,7 @@ function extractDataThemeValues(selector: string): Array<string> {
  * @returns Data attribute value or null
  */
 function extractDataAttributeValue(selector: string): string | null {
-  const match = selector.match(/\[data-[\w-]+\s*=\s*['"]([^'"]+)['"]\]/);
+  const match = selector.match(DATA_ATTR_REGEX);
   return match?.[1] ?? null;
 }
 
@@ -91,7 +103,7 @@ function extractDataAttributeValue(selector: string): string | null {
  */
 function extractClassNames(selector: string): Array<string> {
   const classNames: Array<string> = [];
-  const matches = selector.matchAll(/\.([a-z][\w-]*)/gi);
+  const matches = selector.matchAll(CLASS_NAME_REGEX);
   for (const match of matches) {
     if (match[1] !== undefined) {
       classNames.push(match[1]);
@@ -106,7 +118,7 @@ function extractClassNames(selector: string): Array<string> {
  * @returns Color scheme preference or null
  */
 function extractMediaColorScheme(selector: string): string | null {
-  const match = selector.match(/prefers-color-scheme:\s*(\w+)/);
+  const match = selector.match(MEDIA_COLOR_SCHEME_REGEX);
   return match?.[1] ?? null;
 }
 
@@ -231,7 +243,6 @@ export function extractVariables(root: Root): {
   const variables: Array<CSSVariable> = [];
   const keyframes = new Map<string, string>();
   const cssRules: Array<CSSRuleOverride> = [];
-  const processedMediaInRules = new Set<AtRule>();
 
   // Single pass through all top-level nodes
   root.each((node) => {
@@ -332,8 +343,6 @@ export function extractVariables(root: Root): {
 
           // Check for media queries nested inside this rule
           rule.walkAtRules('media', (mediaRule) => {
-            processedMediaInRules.add(mediaRule);
-
             mediaRule.walkDecls((decl) => {
               if (decl.prop.startsWith('--')) {
                 if (!isSelfReferential(decl.prop, decl.value)) {
@@ -374,6 +383,12 @@ export function parseVariableName(variableName: string): {
   key: string;
   deprecationWarning?: DeprecationWarning;
 } | null {
+  // Check cache first
+  const cached = parseVariableNameCache.get(variableName);
+  if (cached !== undefined) {
+    return cached;
+  }
+
   // Remove the -- prefix
   const PREFIX_LENGTH = 2;
   const name = variableName.startsWith('--')
@@ -395,24 +410,30 @@ export function parseVariableName(variableName: string): {
         replacement: mapping.replacement,
       };
 
-      return {
+      const result = {
         namespace,
         key: mapping.key,
         deprecationWarning,
       };
+      parseVariableNameCache.set(variableName, result);
+      return result;
     }
 
     // Unknown singular variable
-    return { namespace, key: 'default' };
+    const result = { namespace, key: 'default' };
+    parseVariableNameCache.set(variableName, result);
+    return result;
   }
 
   // Check for multi-word namespaces first
   for (const ns of MULTI_WORD_NAMESPACES) {
     if (name.startsWith(ns + '-')) {
-      return {
+      const result = {
         namespace: ns,
         key: name.slice(ns.length + 1),
       };
+      parseVariableNameCache.set(variableName, result);
+      return result;
     }
   }
 
@@ -420,13 +441,27 @@ export function parseVariableName(variableName: string): {
   const namespace = name.slice(0, firstHyphenIndex);
   const key = name.slice(firstHyphenIndex + 1);
 
-  return { namespace, key };
+  const result = { namespace, key };
+  parseVariableNameCache.set(variableName, result);
+  return result;
 }
 
 /**
  * Cache for kebabToCamelCase conversion to avoid redundant regex operations
  */
 const camelCaseCache = new Map<string, string>();
+
+/**
+ * Cache for parseVariableName to avoid redundant parsing operations
+ */
+const parseVariableNameCache = new Map<
+  string,
+  {
+    namespace: string;
+    key: string;
+    deprecationWarning?: DeprecationWarning;
+  } | null
+>();
 
 /**
  * Converts kebab-case to camelCase with memoization for performance
@@ -447,7 +482,7 @@ export function kebabToCamelCase(str: string): string {
     return cached;
   }
 
-  const result = str.replace(/-([a-z0-9])/g, (_, char: string) =>
+  const result = str.replace(KEBAB_TO_CAMEL_REGEX, (_, char: string) =>
     char.toUpperCase(),
   );
   camelCaseCache.set(str, result);
@@ -506,7 +541,7 @@ export function parseColorScale(key: string): {
   // - "red-500" → ["red", "500"]
   // - "tooltip-outline-50" → ["tooltip-outline", "50"]
   // - "brand-500-hover" → ["brand", "500-hover"]
-  const match = key.match(/^(.+?)-(\d+(?:-.+)?)$/);
+  const match = key.match(COLOR_SCALE_REGEX);
 
   if (match === null) {
     return null;
@@ -533,7 +568,7 @@ export function parseColorScale(key: string): {
  */
 export function parseFontSizeLineHeight(key: string): string | null {
   // Match pattern like "xs--line-height", "2xl--line-height"
-  const match = key.match(/^(.+)--line-height$/);
+  const match = key.match(FONT_SIZE_LINE_HEIGHT_REGEX);
 
   if (match === null) {
     return null;

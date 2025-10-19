@@ -23,6 +23,12 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["src/**/*", "__tests__/**/*", "examples/**/*", "build.ts"],
+  "include": [
+    "src/**/*",
+    "__tests__/**/*",
+    "bench/**/*",
+    "examples/**/*",
+    "build.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

@@ -42,6 +42,25 @@ interface PropertyMapping {
 }
 
 /**
+ * Compiled regex patterns for utility key extraction (avoid recompilation on each call)
+ */
+const ROUNDED_UTILITY_REGEX = /\.rounded-(xs|sm|md|lg|xl|2xl|3xl|full)/;
+const SHADOW_UTILITY_REGEX = /\.shadow-(xs|sm|md|lg|xl|2xl)/;
+const TEXT_SHADOW_UTILITY_REGEX = /\.text-shadow-(xs|sm|md|lg|xl)/;
+const BLUR_UTILITY_REGEX = /\.blur-(xs|sm|md|lg|xl)/;
+
+/**
+ * Compiled regex pattern for dynamic CSS functions
+ */
+const DYNAMIC_VALUE_REGEX = /var\(|calc\(|min\(|max\(|clamp\(/;
+
+/**
+ * Compiled regex patterns for pseudo-selectors
+ */
+const PSEUDO_CLASS_REGEX = /:hover|:focus/;
+const PSEUDO_ELEMENT_REGEX = /::(before|after)/;
+
+/**
  * CSS property to theme namespace mappings
  */
 const PROPERTY_MAPPINGS: Record<string, PropertyMapping> = {
@@ -85,7 +104,7 @@ const PROPERTY_MAPPINGS: Record<string, PropertyMapping> = {
  * @returns Theme key (e.g., "lg", "xs") or null
  */
 function extractRoundedUtilityKey(selector: string): string | null {
-  const match = selector.match(/\.rounded-(xs|sm|md|lg|xl|2xl|3xl|full)/);
+  const match = selector.match(ROUNDED_UTILITY_REGEX);
   return match?.[1] ?? null;
 }
 
@@ -95,7 +114,7 @@ function extractRoundedUtilityKey(selector: string): string | null {
  * @returns Theme key (e.g., "lg", "xs") or null
  */
 function extractShadowUtilityKey(selector: string): string | null {
-  const match = selector.match(/\.shadow-(xs|sm|md|lg|xl|2xl)/);
+  const match = selector.match(SHADOW_UTILITY_REGEX);
   return match?.[1] ?? null;
 }
 
@@ -105,7 +124,7 @@ function extractShadowUtilityKey(selector: string): string | null {
  * @returns Theme key or null
  */
 function extractTextShadowUtilityKey(selector: string): string | null {
-  const match = selector.match(/\.text-shadow-(xs|sm|md|lg|xl)/);
+  const match = selector.match(TEXT_SHADOW_UTILITY_REGEX);
   return match?.[1] ?? null;
 }
 
@@ -115,7 +134,7 @@ function extractTextShadowUtilityKey(selector: string): string | null {
  * @returns Theme key or null
  */
 function extractBlurUtilityKey(selector: string): string | null {
-  const match = selector.match(/\.blur-(xs|sm|md|lg|xl)/);
+  const match = selector.match(BLUR_UTILITY_REGEX);
   return match?.[1] ?? null;
 }
 
@@ -150,7 +169,7 @@ const MAX_SIMPLE_DECLARATIONS = 3;
  * @returns True if selector contains pseudo-classes
  */
 function hasPseudoClasses(selector: string): boolean {
-  return selector.includes(':hover') || selector.includes(':focus');
+  return PSEUDO_CLASS_REGEX.test(selector);
 }
 
 /**
@@ -159,7 +178,7 @@ function hasPseudoClasses(selector: string): boolean {
  * @returns True if selector contains pseudo-elements
  */
 function hasPseudoElements(selector: string): boolean {
-  return selector.includes('::before') || selector.includes('::after');
+  return PSEUDO_ELEMENT_REGEX.test(selector);
 }
 
 /**
@@ -168,7 +187,7 @@ function hasPseudoElements(selector: string): boolean {
  * @returns True if value contains dynamic functions
  */
 function hasDynamicValue(value: string): boolean {
-  return /var\(|calc\(|min\(|max\(|clamp\(/.test(value);
+  return DYNAMIC_VALUE_REGEX.test(value);
 }
 
 /**

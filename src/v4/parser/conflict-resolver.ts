@@ -9,6 +9,11 @@ import type { CSSRuleOverride } from './css-rule-extractor';
 import { mapPropertyToTheme } from './css-rule-extractor';
 
 /**
+ * Compiled regex pattern for unit extraction (avoid recompilation on each call)
+ */
+const CSS_UNIT_REGEX = /(px|rem|em|%|vh|vw)$/;
+
+/**
  * Represents a conflict between a CSS rule and a theme variable
  */
 export interface CSSRuleConflict {
@@ -40,8 +45,8 @@ export interface CSSRuleConflict {
  */
 function hasUnitMismatch(ruleValue: string, variableValue: string): boolean {
   // Extract units from both values
-  const ruleUnit = ruleValue.match(/(px|rem|em|%|vh|vw)$/)?.[1];
-  const varUnit = variableValue.match(/(px|rem|em|%|vh|vw)$/)?.[1];
+  const ruleUnit = ruleValue.match(CSS_UNIT_REGEX)?.[1];
+  const varUnit = variableValue.match(CSS_UNIT_REGEX)?.[1];
 
   // If both have units and they differ, it's a mismatch
   if (ruleUnit !== undefined && varUnit !== undefined && ruleUnit !== varUnit) {

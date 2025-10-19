@@ -16,6 +16,12 @@ import postcss from 'postcss';
 const MAX_IMPORT_DEPTH = 50;
 
 /**
+ * Compiled regex patterns for parseImportPath (avoid recompilation on each call)
+ */
+const URL_IMPORT_REGEX = /^url\(['"]?([^'"]+)['"]?\)/;
+const STRING_IMPORT_REGEX = /^['"]([^'"]+)['"]/;
+
+/**
  * Resolves all `@import` statements in a PostCSS AST recursively
  *
  * This function performs graceful error handling by design:
@@ -155,13 +161,13 @@ function parseImportPath(params: string): string | null {
   const trimmed = params.trim();
 
   // Handle url() syntax
-  const urlMatch = trimmed.match(/^url\(['"]?([^'"]+)['"]?\)/);
+  const urlMatch = trimmed.match(URL_IMPORT_REGEX);
   if (urlMatch?.[1] !== undefined) {
     return urlMatch[1];
   }
 
   // Handle direct string syntax
-  const stringMatch = trimmed.match(/^['"]([^'"]+)['"]/);
+  const stringMatch = trimmed.match(STRING_IMPORT_REGEX);
   if (stringMatch?.[1] !== undefined) {
     return stringMatch[1];
   }
