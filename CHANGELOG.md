@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Documentation**: Added missing unresolved variable report files to generated files list in README and CLI help text
+
 ## [0.2.3] - 2025-01-19
 
 ### Added

@@ -66,8 +66,10 @@ Generated Files:
   - ${OUTPUT_FILES.TYPES} (TypeScript interface definition)
   - ${OUTPUT_FILES.THEME} (Runtime theme objects, if --runtime enabled)
   - ${OUTPUT_FILES.INDEX} (Re-exports, if --runtime enabled)
-  - conflicts.md/json (CSS conflict reports, if conflicts detected and reports enabled)
-  - unresolved.md/json (Unresolved variable reports, if unresolved vars detected and reports enabled)
+  - conflicts.md (Human-readable conflict report, if conflicts detected and reports enabled)
+  - conflicts.json (Machine-readable conflict report, if conflicts detected and reports enabled)
+  - unresolved.md (Human-readable unresolved variable report, if detected and reports enabled)
+  - unresolved.json (Machine-readable unresolved variable report, if detected and reports enabled)
 
 Debug Mode (--debug):
   ✓ Show import resolution warnings

@@ -84,8 +84,10 @@ This generates files in `src/generated/tailwindcss/`:
 - `types.ts` - TypeScript interfaces
 - `theme.ts` - Runtime theme objects (if `generateRuntime: true`)
 - `index.ts` - Re-exports (if `generateRuntime: true`)
-- `conflicts.md` - Human-readable conflict report (if CSS conflicts detected)
-- `conflicts.json` - Machine-readable conflict report (if CSS conflicts detected)
+- `conflicts.md` - Human-readable conflict report (if CSS conflicts detected and reports enabled)
+- `conflicts.json` - Machine-readable conflict report (if CSS conflicts detected and reports enabled)
+- `unresolved.md` - Human-readable unresolved variable report (if unresolved variables detected and reports enabled)
+- `unresolved.json` - Machine-readable unresolved variable report (if unresolved variables detected and reports enabled)
 
 **2. Use the generated theme in your code:**
 
