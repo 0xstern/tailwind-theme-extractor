@@ -3,6 +3,7 @@
  */
 
 import type { CSSRuleConflict } from '../parser/conflict-resolver';
+import type { UnresolvedVariable } from '../parser/unresolved-detector';
 import type { RuntimeGenerationOptions } from '../types';
 
 import fs from 'node:fs/promises';
@@ -10,6 +11,7 @@ import path from 'node:path';
 
 import { resolveTheme } from '../index';
 import { writeConflictReports } from '../parser/conflict-reporter';
+import { writeUnresolvedReports } from '../parser/unresolved-reporter';
 import { DEFAULT_INTERFACE_NAME, OUTPUT_FILES } from './constants';
 import {
   generateRuntimeFile,
@@ -112,6 +114,42 @@ async function processConflictReports(
 }
 
 /**
+ * Processes and writes unresolved variable reports if unresolved variables exist
+ *
+ * @param result - Theme resolution result
+ * @param outputDir - Output directory path
+ * @param relativeSourcePath - Relative path to source file
+ * @returns Unresolved variable info or undefined
+ */
+async function processUnresolvedReports(
+  result: ReturnType<typeof resolveTheme> extends Promise<infer T> ? T : never,
+  outputDir: string,
+  relativeSourcePath: string,
+): Promise<{ count: number; reportPath: string } | undefined> {
+  const unresolved =
+    result.unresolvedVariables !== undefined &&
+    Array.isArray(result.unresolvedVariables)
+      ? (result.unresolvedVariables as Array<UnresolvedVariable>)
+      : undefined;
+
+  if (unresolved === undefined || unresolved.length === 0) {
+    return undefined;
+  }
+
+  const version = await findPackageVersion();
+  const reportPaths = await writeUnresolvedReports(outputDir, unresolved, {
+    generatedAt: new Date().toISOString(),
+    source: relativeSourcePath,
+    version,
+  });
+
+  return {
+    count: unresolved.length,
+    reportPath: reportPaths.markdown,
+  };
+}
+
+/**
  * Generates TypeScript theme type declarations and runtime files from CSS
  *
  * This function is used by both the Vite plugin and the CLI tool to generate
@@ -129,6 +167,7 @@ async function processConflictReports(
  * - Conditional: theme.ts (runtime theme objects, if runtimeOptions is not false)
  * - Conditional: index.ts (re-exports from types.ts and theme.ts, if runtimeOptions is not false)
  * - Conditional: conflicts.md and conflicts.json (if CSS conflicts detected)
+ * - Conditional: unresolved.md and unresolved.json (if unresolved variables detected)
  *
  * Type Safety:
  * The types.ts file generates a Tailwind interface that users pass as a generic parameter
@@ -141,7 +180,7 @@ async function processConflictReports(
  * @param includeTailwindDefaults - Whether to include Tailwind CSS defaults from node_modules
  * @param debug - Enable debug logging for troubleshooting
  * @param basePath - Base path for resolving node_modules (defaults to input file's directory)
- * @returns Promise resolving to object with files and optional conflict info
+ * @returns Promise resolving to object with files and optional report info
  * @throws Error if input file cannot be read or parsed
  * @throws Error if output files cannot be written
  */
@@ -157,6 +196,8 @@ export async function generateThemeFiles(
   files: Array<string>;
   conflictCount?: number;
   conflictReportPath?: string;
+  unresolvedCount?: number;
+  unresolvedReportPath?: string;
 }> {
   try {
     const result = await resolveTheme({
@@ -192,12 +233,20 @@ export async function generateThemeFiles(
       relativeSourcePath,
     );
 
+    const unresolvedInfo = await processUnresolvedReports(
+      result,
+      outputDir,
+      relativeSourcePath,
+    );
+
     await Promise.all(writePromises);
 
     return {
       files: result.files,
       conflictCount: conflictInfo?.count,
       conflictReportPath: conflictInfo?.reportPath,
+      unresolvedCount: unresolvedInfo?.count,
+      unresolvedReportPath: unresolvedInfo?.reportPath,
     };
   } catch (error) {
     const errorMessage =

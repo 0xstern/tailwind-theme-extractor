@@ -14,12 +14,14 @@ import type {
 } from '../types';
 import type { CSSRuleConflict } from './conflict-resolver';
 import type { CSSRuleOverride } from './css-rule-extractor';
+import type { UnresolvedVariable } from './unresolved-detector';
 
 import {
   applyOverride,
   detectConflicts,
   filterResolvableConflicts,
 } from './conflict-resolver';
+import { detectUnresolvedVariables } from './unresolved-detector';
 import {
   kebabToCamelCase,
   parseColorScale,
@@ -753,6 +755,7 @@ export function buildThemes(
   deprecationWarnings: Array<DeprecationWarning>;
   cssConflicts: Array<CSSRuleConflict>;
   variables: Array<CSSVariable>;
+  unresolvedVariables: Array<UnresolvedVariable>;
 } {
   const { themeVariables, rootVariables, variantVariables } =
     separateVariablesBySource(variables);
@@ -830,12 +833,19 @@ export function buildThemes(
     ),
   );
 
+  // Detect unresolved variable references
+  const unresolvedVariables = detectUnresolvedVariables(
+    variables,
+    resolvedVariables,
+  );
+
   return {
     theme,
     variants,
     deprecationWarnings: uniqueWarnings,
     cssConflicts,
     variables: resolvedVariables,
+    unresolvedVariables,
   };
 }
 

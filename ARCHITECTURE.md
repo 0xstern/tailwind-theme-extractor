@@ -53,40 +53,42 @@ CSS Input
                 │ (structured) │
                 └──────┬───────┘
                        │
-          ┌────────────┼────────────┐
-          │            │            │
-          ▼            ▼            ▼
-    ┌─────────┐  ┌─────────┐  ┌──────────┐
-    │  Base   │  │Variants │  │Conflict  │
-    │  Theme  │  │ (dark,  │  │Detector  │
-    │         │  │  etc.)  │  │          │
-    └────┬────┘  └────┬────┘  └────┬─────┘
-         │            │            │
-         └────────────┼────────────┘
+          ┌────────────┼────────────────┐
+          │            │                │
+          ▼            ▼                ▼
+    ┌─────────┐  ┌─────────┐  ┌──────────────┐
+    │  Base   │  │Variants │  │   Conflict   │
+    │  Theme  │  │ (dark,  │  │   Detector   │
+    │         │  │  etc.)  │  │& Unresolved  │
+    └────┬────┘  └────┬────┘  └──────┬───────┘
+         │            │              │
+         └────────────┼──────────────┘
                       │
                       ▼
-              ┌───────────────┐
-              │ ParseResult   │
-              │  (internal)   │
-              │+ cssConflicts │
-              └───────┬───────┘
-                      │
-                      ▼
-              ┌───────────────┐
-              │TailwindResult │
-              │   (public)    │
-              │+ cssConflicts │
-              └───────┬───────┘
-                      │
-         ┌────────────┴────────────┐
-         │                         │
-         ▼                         ▼
-  ┌─────────────┐          ┌────────────────┐
-  │  Generated  │          │   Conflict     │
-  │    Types    │          │   Reports      │
-  │  & Runtime  │          │(conflicts.md)  │
-  │             │          │(conflicts.json)│
-  └─────────────┘          └────────────────┘
+              ┌───────────────────┐
+              │   ParseResult     │
+              │    (internal)     │
+              │ + cssConflicts    │
+              │ + unresolvedVars  │
+              └─────────┬─────────┘
+                        │
+                        ▼
+              ┌───────────────────┐
+              │  TailwindResult   │
+              │     (public)      │
+              │ + cssConflicts    │
+              │ + unresolvedVars  │
+              └─────────┬─────────┘
+                        │
+         ┌──────────────┼──────────────┐
+         │              │              │
+         ▼              ▼              ▼
+  ┌─────────┐   ┌────────────┐ ┌──────────────┐
+  │Generated│   │ Conflict   │ │  Unresolved  │
+  │  Types  │   │  Reports   │ │   Reports    │
+  │& Runtime│   │(conflicts  │ │(unresolved   │
+  │         │   │ .md/.json) │ │  .md/.json)  │
+  └─────────┘   └────────────┘ └──────────────┘
 ```
 
 ## Public API
@@ -109,6 +111,7 @@ export interface TailwindResult<TTailwind = UnknownTailwind> {
   variables: Array<CSSVariable>;
   deprecationWarnings: Array<DeprecationWarning>;
   cssConflicts?: Array<unknown>; // CSS rule conflicts (optional)
+  unresolvedVariables?: Array<unknown>; // Unresolved var() references (optional)
 }
 ```
 
@@ -130,6 +133,7 @@ export interface ParseResult<TTheme extends Theme = Theme> {
   variables: Array<CSSVariable>;
   deprecationWarnings: Array<DeprecationWarning>;
   cssConflicts?: Array<unknown>; // CSS rule conflicts (optional)
+  unresolvedVariables?: Array<unknown>; // Unresolved var() references (optional)
 }
 ```
 
@@ -405,7 +409,141 @@ if (conflict.canResolve && conflict.confidence === 'high') {
 
 This ensures the runtime theme object matches actual rendered styles.
 
-### 3c. Conflict Reporter (`src/v4/parser/conflict-reporter.ts`)
+### 3c. Unresolved Variable Detector (`src/v4/parser/unresolved-detector.ts`)
+
+**Purpose** - Detect CSS variables with `var()` references that couldn't be resolved during theme building.
+
+**Problem Context:**
+
+Real-world CSS often references variables that are injected at runtime or provided by external sources:
+
+```css
+@theme {
+  --font-sans: var(--font-inter); /* Injected by Next.js */
+  --color-accent: var(--tw-primary); /* Tailwind plugin variable */
+  --spacing-base: var(--spacing-base); /* Self-referential (intentional) */
+}
+```
+
+Without detection, users wouldn't know which variables require external injection.
+
+**Detection Process:**
+
+Compares original variables with resolved variables to identify unresolved `var()` references:
+
+```typescript
+interface UnresolvedVariable {
+  variableName: string; // e.g., '--font-sans'
+  originalValue: string; // e.g., 'var(--font-inter)'
+  referencedVariable: string; // e.g., '--font-inter'
+  fallbackValue?: string; // Fallback if provided in var()
+  source: 'theme' | 'root' | 'variant';
+  variantName?: string;
+  selector?: string;
+  likelyCause: UnresolvedCause;
+}
+```
+
+**Cause Classification:**
+
+Variables are categorized by their likely cause:
+
+- **External** (`--tw-*` prefix): Tailwind plugins, runtime injection, external stylesheets
+- **Self-referential**: Variables that reference themselves (intentionally skipped to use defaults)
+- **Unknown**: All other unresolved references (requires user review)
+
+**Regex Pattern Handling:**
+
+Uses separate regex patterns to avoid global state issues:
+
+```typescript
+const VAR_REFERENCE_REGEX_GLOBAL = /var\((--[\w-]+)(?:,\s*([^)]+))?\)/g;
+const VAR_REFERENCE_REGEX_TEST = /var\((--[\w-]+)(?:,\s*([^)]+))?\)/;
+```
+
+The non-global pattern is used for testing, global pattern for extraction, preventing `lastIndex` state bugs.
+
+### 3d. Unresolved Variable Reporter (`src/v4/parser/unresolved-reporter.ts`)
+
+**Purpose** - Generate human-readable and machine-readable reports for unresolved variables.
+
+**Output Files:**
+
+Generated in the same output directory as theme files:
+
+1. **`unresolved.md`** - Human-readable Markdown report
+2. **`unresolved.json`** - Machine-readable JSON for tooling integration
+
+**Markdown Report Structure:**
+
+```markdown
+# Unresolved CSS Variables
+
+**Generated:** 2025-10-19T23:15:42.930Z
+**Source:** src/theme.css
+**Version:** 0.2.1
+
+## Summary
+
+- **Total unresolved:** 8
+- **External references:** 2 (plugins, runtime injection, external stylesheets)
+- **Self-referential (skipped):** 1
+- **Unknown:** 5
+
+## Unresolved Variables
+
+### ⚠️ Unknown
+
+[Variables that need review]
+
+### ℹ️ External Reference
+
+[Variables from plugins/external sources]
+
+### ✅ Self-referential (Intentional)
+
+[Variables intentionally left unresolved]
+
+## Recommendations
+
+[Context-specific recommendations based on detection results]
+```
+
+**JSON Report Structure:**
+
+```json
+{
+  "generatedAt": "2025-10-19T23:15:42.930Z",
+  "source": "src/theme.css",
+  "version": "0.2.1",
+  "summary": {
+    "total": 8,
+    "external": 2,
+    "selfReferential": 1,
+    "unknown": 5
+  },
+  "unresolved": [
+    {
+      "variableName": "--font-sans",
+      "originalValue": "var(--font-inter)",
+      "referencedVariable": "--font-inter",
+      "source": "variant",
+      "variantName": "theme-inter",
+      "likelyCause": "unknown"
+    }
+  ]
+}
+```
+
+**Terminal Output:**
+
+Non-intrusive single-line notification:
+
+```
+ℹ  8 unresolved variables detected (see src/generated/tailwindcss/unresolved.md)
+```
+
+### 3e. Conflict Reporter (`src/v4/parser/conflict-reporter.ts`)
 
 **Purpose** - Generate human-readable and machine-readable conflict reports.
 
@@ -1057,13 +1195,16 @@ That's it! The pipeline will automatically handle resolution, building, and type
 
 ### Test Coverage
 
-- 214 passing tests (100% pass rate)
-- 825 expect() assertions
+- 546 passing tests (100% pass rate)
 - All core paths covered
 - Updated to use new `TailwindResult` API structure
 - Tests verify both runtime API and generated code consistency
 - Comprehensive coverage of nested variant combinations and variable resolution
-- CSS rule extraction and conflict detection test coverage (integration tests pending)
+- CSS rule extraction and conflict detection test coverage
+- Unresolved variable detection test coverage:
+  - 21 unit tests for detection logic (unresolved-detector.test.ts)
+  - 7 unit tests for report generation (unresolved-reporter.test.ts)
+  - 4 integration tests for full pipeline (unresolved-detection-pipeline.test.ts)
 
 ## Related Documentation
 

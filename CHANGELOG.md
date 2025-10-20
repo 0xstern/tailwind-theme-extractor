@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Unresolved Variable Detection and Reporting**: Automatically detect and report CSS variables with `var()` references that couldn't be resolved
+  - Categorizes unresolved variables by cause: `external` (--tw-\* prefix), `self-referential`, or `unknown`
+  - Generates reports in Markdown (`unresolved.md`) and JSON (`unresolved.json`) formats with actionable recommendations
+  - Adds `unresolvedVariables` field to `ParseResult` and `TailwindResult` interfaces
+  - New modules: `unresolved-detector.ts` and `unresolved-reporter.ts`
+  - 32 new tests (21 unit + 7 reporter + 4 integration)
+  - Both CLI and Vite plugin automatically generate reports when unresolved variables are detected
+
+### Fixed
+
+- **Markdown Report Formatting**: Fixed literal `\n` strings in generated Markdown reports (now uses actual newlines)
+- **Missing Field in resolveTheme**: Added `unresolvedVariables` field to return value in `src/v4/index.ts`
+
+### Improved
+
+- **Variable Detection Logic**: Enhanced regex handling with separate global/non-global patterns to avoid `lastIndex` state issues
+  - Extracts references from resolved values to correctly identify what remains unresolved
+  - Added `createVariableKey` helper function for better maintainability
+
+### Performance
+
+- **Unresolved Variable Detection**: Added benchmark suite showing optimal performance (~5-7 µs for small datasets, ~40-60 µs for realistic workloads)
+
 ## [0.2.1] - 2025-01-19
 
 ### Added

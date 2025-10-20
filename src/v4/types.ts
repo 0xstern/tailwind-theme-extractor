@@ -349,6 +349,10 @@ export interface ParseResult<TTheme extends Theme = Theme> {
    * CSS rule conflicts detected (optional for backward compatibility)
    */
   cssConflicts?: Array<unknown>;
+  /**
+   * Unresolved CSS variable references (optional for backward compatibility)
+   */
+  unresolvedVariables?: Array<unknown>;
 }
 
 /**
@@ -403,6 +407,10 @@ export interface TailwindResult<TTailwind = UnknownTailwind> {
    * CSS rule conflicts detected (optional for backward compatibility)
    */
   cssConflicts?: Array<unknown>;
+  /**
+   * Unresolved CSS variable references (optional for backward compatibility)
+   */
+  unresolvedVariables?: Array<unknown>;
 }
 
 /**

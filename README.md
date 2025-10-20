@@ -390,6 +390,66 @@ Generated files:
 
 High-confidence overrides ensure your runtime theme matches actual rendered styles.
 
+## Unresolved Variable Detection
+
+The resolver automatically detects CSS variables with `var()` references that couldn't be resolved, helping identify variables requiring external injection or definition.
+
+### Problem
+
+Real-world CSS often references variables injected at runtime or provided externally:
+
+```css
+@theme {
+  --font-sans: var(--font-inter); /* Injected by Next.js */
+  --color-accent: var(--tw-primary); /* Tailwind plugin variable */
+}
+```
+
+### Solution
+
+The resolver:
+
+1. **Detects unresolved `var()` references** after variable resolution
+2. **Categorizes by likely cause** (external, self-referential, unknown)
+3. **Generates detailed reports** in `unresolved.md` and `unresolved.json`
+
+### Unresolved Variable Reports
+
+When unresolved variables are detected, two report files are generated:
+
+**`unresolved.md`** - Human-readable report with:
+
+- Summary of total unresolved variables by cause
+- Detailed list grouped by cause with context (variable name, source, selector)
+- Actionable recommendations for each category
+- Fallback values if specified
+
+**`unresolved.json`** - Machine-readable format for CI/CD integration
+
+### Terminal Output
+
+```
+ℹ  8 unresolved variables detected (see src/generated/tailwindcss/unresolved.md)
+```
+
+### Variable Categories
+
+**Unknown** - Variables requiring review:
+
+- May need to be defined in your theme
+- Or verified to be loaded externally
+
+**External** - Variables from external sources:
+
+- Tailwind plugins (detected by `--tw-*` prefix)
+- Runtime injection (Next.js fonts, framework variables)
+- External stylesheets
+
+**Self-referential** - Variables intentionally left unresolved:
+
+- Variables like `--font-sans: var(--font-sans)`
+- Intentionally skipped to use Tailwind defaults
+
 ## Debugging
 
 Enable debug mode to see warnings for failed imports:
