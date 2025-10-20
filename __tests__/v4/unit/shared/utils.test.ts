@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 
 import {
   autoDetectOutputDir,
+  normalizeReportOptions,
   normalizeRuntimeOptions,
 } from '../../../../src/v4/shared/utils';
 
@@ -30,6 +31,10 @@ describe('normalizeRuntimeOptions', () => {
       selectors: true,
       files: false,
       variables: false,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
   });
 
@@ -41,6 +46,10 @@ describe('normalizeRuntimeOptions', () => {
       selectors: true,
       files: false,
       variables: false,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
   });
 
@@ -55,6 +64,10 @@ describe('normalizeRuntimeOptions', () => {
       selectors: false,
       files: false,
       variables: false,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
   });
 
@@ -71,6 +84,10 @@ describe('normalizeRuntimeOptions', () => {
       selectors: true,
       files: true,
       variables: true,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
   });
 
@@ -87,6 +104,10 @@ describe('normalizeRuntimeOptions', () => {
       selectors: false,
       files: false,
       variables: false,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
   });
 
@@ -102,6 +123,10 @@ describe('normalizeRuntimeOptions', () => {
       selectors: true,
       files: true,
       variables: true,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
   });
 
@@ -117,6 +142,10 @@ describe('normalizeRuntimeOptions', () => {
       selectors: true,
       files: true,
       variables: true,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
   });
 
@@ -132,6 +161,10 @@ describe('normalizeRuntimeOptions', () => {
       selectors: true,
       files: false,
       variables: true,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
   });
 
@@ -147,6 +180,10 @@ describe('normalizeRuntimeOptions', () => {
       selectors: true,
       files: true,
       variables: false,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
   });
 
@@ -158,6 +195,164 @@ describe('normalizeRuntimeOptions', () => {
       selectors: true,
       files: false,
       variables: false,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
+    });
+  });
+
+  it('should handle reports as boolean true', () => {
+    const result = normalizeRuntimeOptions({
+      reports: true,
+    });
+
+    expect(result).toEqual({
+      variants: true,
+      selectors: true,
+      files: false,
+      variables: false,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
+    });
+  });
+
+  it('should handle reports as boolean false', () => {
+    const result = normalizeRuntimeOptions({
+      reports: false,
+    });
+
+    expect(result).toEqual({
+      variants: true,
+      selectors: true,
+      files: false,
+      variables: false,
+      reports: {
+        conflicts: false,
+        unresolved: false,
+      },
+    });
+  });
+
+  it('should handle reports as object with conflicts disabled', () => {
+    const result = normalizeRuntimeOptions({
+      reports: {
+        conflicts: false,
+        unresolved: true,
+      },
+    });
+
+    expect(result).toEqual({
+      variants: true,
+      selectors: true,
+      files: false,
+      variables: false,
+      reports: {
+        conflicts: false,
+        unresolved: true,
+      },
+    });
+  });
+
+  it('should handle reports as object with unresolved disabled', () => {
+    const result = normalizeRuntimeOptions({
+      reports: {
+        conflicts: true,
+        unresolved: false,
+      },
+    });
+
+    expect(result).toEqual({
+      variants: true,
+      selectors: true,
+      files: false,
+      variables: false,
+      reports: {
+        conflicts: true,
+        unresolved: false,
+      },
+    });
+  });
+
+  it('should handle partial reports object with defaults', () => {
+    const result = normalizeRuntimeOptions({
+      reports: {
+        conflicts: false,
+      },
+    });
+
+    expect(result).toEqual({
+      variants: true,
+      selectors: true,
+      files: false,
+      variables: false,
+      reports: {
+        conflicts: false,
+        unresolved: true,
+      },
+    });
+  });
+});
+
+describe('normalizeReportOptions', () => {
+  it('should return all enabled when input is true', () => {
+    const result = normalizeReportOptions(true);
+
+    expect(result).toEqual({
+      conflicts: true,
+      unresolved: true,
+    });
+  });
+
+  it('should return all enabled when input is undefined', () => {
+    const result = normalizeReportOptions(undefined);
+
+    expect(result).toEqual({
+      conflicts: true,
+      unresolved: true,
+    });
+  });
+
+  it('should return all disabled when input is false', () => {
+    const result = normalizeReportOptions(false);
+
+    expect(result).toEqual({
+      conflicts: false,
+      unresolved: false,
+    });
+  });
+
+  it('should merge object input with defaults', () => {
+    const result = normalizeReportOptions({
+      conflicts: false,
+    });
+
+    expect(result).toEqual({
+      conflicts: false,
+      unresolved: true,
+    });
+  });
+
+  it('should handle both properties explicitly set', () => {
+    const result = normalizeReportOptions({
+      conflicts: false,
+      unresolved: false,
+    });
+
+    expect(result).toEqual({
+      conflicts: false,
+      unresolved: false,
+    });
+  });
+
+  it('should handle empty object as input', () => {
+    const result = normalizeReportOptions({});
+
+    expect(result).toEqual({
+      conflicts: true,
+      unresolved: true,
     });
   });
 });

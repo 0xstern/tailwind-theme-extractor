@@ -269,6 +269,10 @@ describe('CLI - Utility functions', () => {
       selectors: true,
       files: false,
       variables: false,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
 
     const debugOptions = normalizeRuntimeOptions({
@@ -282,6 +286,10 @@ describe('CLI - Utility functions', () => {
       selectors: true,
       files: true,
       variables: true,
+      reports: {
+        conflicts: true,
+        unresolved: true,
+      },
     });
 
     const noRuntime = normalizeRuntimeOptions(false);

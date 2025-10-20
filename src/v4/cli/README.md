@@ -45,6 +45,10 @@ npx tailwind-resolver -i src/styles.css
 - `-o, --output <path>` - Output directory for generated files (default: auto-detected)
 - `-r, --runtime` - Generate runtime objects (default: true)
 - `--no-runtime` - Generate types only, no runtime file
+- `--reports` - Generate diagnostic reports (default: true)
+- `--no-reports` - Skip all diagnostic reports
+- `--no-conflict-reports` - Skip CSS conflict reports only
+- `--no-unresolved-reports` - Skip unresolved variable reports only
 - `-d, --debug` - Enable debug mode (logging + include debug data in runtime)
 - `-h, --help` - Display help message
 
@@ -70,8 +74,10 @@ The CLI generates the same files as the Vite plugin:
 - `types.ts` - TypeScript type declarations (always)
 - `theme.ts` - Runtime theme objects (if `--runtime` enabled)
 - `index.ts` - Re-exports (if `--runtime` enabled)
-- `conflicts.md` - Human-readable conflict report (if CSS conflicts detected)
-- `conflicts.json` - Machine-readable conflict report (if CSS conflicts detected)
+- `conflicts.md` - Human-readable conflict report (if CSS conflicts detected and reports enabled)
+- `conflicts.json` - Machine-readable conflict report (if CSS conflicts detected and reports enabled)
+- `unresolved.md` - Human-readable unresolved variable report (if unresolved variables detected and reports enabled)
+- `unresolved.json` - Machine-readable unresolved variable report (if unresolved variables detected and reports enabled)
 
 ### Always Generated
 
@@ -186,9 +192,41 @@ bunx tailwind-resolver -i src/styles.css --debug
 bunx tailwind-resolver -i src/styles.css --no-runtime
 ```
 
+## Report Generation
+
+The CLI generates diagnostic reports to help you identify and resolve issues in your theme configuration. Reports are enabled by default but can be controlled via CLI flags.
+
+### Controlling Report Generation
+
+**Disable all reports:**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --no-reports
+```
+
+**Disable only conflict reports:**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --no-conflict-reports
+```
+
+**Disable only unresolved variable reports:**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --no-unresolved-reports
+```
+
+**Enable all reports (default behavior):**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --reports
+# or simply omit the flag:
+bunx tailwind-resolver -i src/styles.css
+```
+
 ## CSS Conflict Detection
 
-The CLI automatically detects when CSS rules override CSS variables, ensuring your runtime theme object matches actual rendered styles.
+The CLI automatically detects when CSS rules override CSS variables, ensuring your runtime theme object matches actual rendered styles. This feature generates reports by default unless disabled with `--no-reports` or `--no-conflict-reports`.
 
 ### Problem
 

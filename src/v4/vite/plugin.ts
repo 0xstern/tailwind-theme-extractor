@@ -100,6 +100,16 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
     const fullOutputDir = path.resolve(projectRoot, resolvedOutputDir);
     const basePath = path.dirname(fullInputPath);
 
+    // Extract report options from runtime options
+    const reportOptions =
+      runtimeOptions !== false && runtimeOptions.reports !== undefined
+        ? typeof runtimeOptions.reports === 'boolean'
+          ? runtimeOptions.reports
+            ? { conflicts: true, unresolved: true }
+            : { conflicts: false, unresolved: false }
+          : runtimeOptions.reports
+        : { conflicts: true, unresolved: true };
+
     const result = await generateThemeFiles(
       fullInputPath,
       fullOutputDir,
@@ -108,6 +118,7 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
       includeTailwindDefaults,
       debug,
       basePath,
+      reportOptions,
     );
 
     // Update watched files set

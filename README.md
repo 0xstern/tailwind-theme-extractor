@@ -61,6 +61,10 @@ export default defineConfig({
         selectors: true, // CSS selectors for variants
         files: false, // Processed file list (debug only)
         variables: false, // Raw CSS variables (debug only)
+        reports: {
+          conflicts: true, // Generate CSS conflict reports (default: true)
+          unresolved: true, // Generate unresolved variable reports (default: true)
+        },
       },
 
       // Optional: Include Tailwind CSS defaults from node_modules
@@ -181,6 +185,10 @@ npx tailwind-resolver -i src/styles.css
 - `-o, --output <path>` - Output directory (default: auto-detected)
 - `-r, --runtime` - Generate runtime objects (default: true)
 - `--no-runtime` - Types only
+- `--reports` - Generate diagnostic reports (default: true)
+- `--no-reports` - Skip all diagnostic reports
+- `--no-conflict-reports` - Skip CSS conflict reports only
+- `--no-unresolved-reports` - Skip unresolved variable reports only
 - `-d, --debug` - Enable debug mode (logging + include debug data in runtime)
 - `-h, --help` - Show help
 
@@ -316,6 +324,49 @@ result.selectors.dark; // ✓ Type-safe
 ```
 
 Autocomplete works automatically when the output directory is in `tsconfig.json` includes.
+
+## Report Generation
+
+The resolver can generate diagnostic reports to help you understand and troubleshoot your theme configuration.
+
+### Controlling Report Generation
+
+Reports are enabled by default but can be controlled via configuration:
+
+**Vite Plugin:**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  generateRuntime: {
+    reports: false, // Disable all reports
+  },
+});
+
+// Or granular control
+tailwindResolver({
+  input: 'src/styles.css',
+  generateRuntime: {
+    reports: {
+      conflicts: true, // Enable conflict reports
+      unresolved: false, // Disable unresolved variable reports
+    },
+  },
+});
+```
+
+**CLI:**
+
+```bash
+# Disable all reports
+bunx tailwind-resolver -i src/styles.css --no-reports
+
+# Disable only conflict reports
+bunx tailwind-resolver -i src/styles.css --no-conflict-reports
+
+# Disable only unresolved variable reports
+bunx tailwind-resolver -i src/styles.css --no-unresolved-reports
+```
 
 ## CSS Conflict Detection
 

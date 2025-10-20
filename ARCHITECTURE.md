@@ -409,6 +409,71 @@ if (conflict.canResolve && conflict.confidence === 'high') {
 
 This ensures the runtime theme object matches actual rendered styles.
 
+### Report Configuration
+
+The library supports granular control over which diagnostic reports are generated, with all reports enabled by default for comprehensive theme analysis.
+
+**Configuration Options:**
+
+Both the Vite plugin and CLI support report configuration:
+
+```typescript
+// Vite Plugin
+tailwindResolver({
+  input: 'src/styles.css',
+  generateRuntime: {
+    reports: false, // Disable all reports
+    // Or granular control:
+    reports: {
+      conflicts: true,
+      unresolved: false,
+    },
+  },
+});
+
+// CLI
+// --no-reports (disable all)
+// --no-conflict-reports (disable conflicts only)
+// --no-unresolved-reports (disable unresolved only)
+```
+
+**Implementation:**
+
+The configuration flows through the file generation pipeline:
+
+1. `RuntimeGenerationOptions` includes optional `reports` property (boolean or object)
+2. `normalizeRuntimeOptions()` converts to consistent `ReportGenerationOptions` format
+3. `generateThemeFiles()` accepts `reportOptions` parameter
+4. `processConflictReports()` and `processUnresolvedReports()` check `enabled` flag before generating
+
+**Type Definitions:**
+
+```typescript
+export interface ReportGenerationOptions {
+  conflicts?: boolean; // Generate CSS conflict reports (default: true)
+  unresolved?: boolean; // Generate unresolved variable reports (default: true)
+}
+
+export interface RuntimeGenerationOptions {
+  variants?: boolean;
+  selectors?: boolean;
+  files?: boolean;
+  variables?: boolean;
+  reports?: boolean | ReportGenerationOptions; // NEW
+}
+```
+
+**Normalization Logic:**
+
+The `normalizeReportOptions()` function provides consistent defaults:
+
+- `undefined` → `{ conflicts: true, unresolved: true }` (all enabled)
+- `true` → `{ conflicts: true, unresolved: true }` (all enabled)
+- `false` → `{ conflicts: false, unresolved: false }` (all disabled)
+- `{ conflicts: false }` → `{ conflicts: false, unresolved: true }` (granular control)
+
+This ensures backward compatibility (reports enabled by default) while providing flexibility to disable specific reports or all reports.
+
 ### 3c. Unresolved Variable Detector (`src/v4/parser/unresolved-detector.ts`)
 
 **Purpose** - Detect CSS variables with `var()` references that couldn't be resolved during theme building.

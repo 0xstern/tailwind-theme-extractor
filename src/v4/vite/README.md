@@ -47,8 +47,10 @@ The plugin generates files in your specified `outputDir`.
 - `types.ts` - TypeScript type declarations (always)
 - `theme.ts` - Runtime theme objects (if `generateRuntime` enabled)
 - `index.ts` - Re-exports (if `generateRuntime` enabled)
-- `conflicts.md` - Human-readable conflict report (if CSS conflicts detected)
-- `conflicts.json` - Machine-readable conflict report (if CSS conflicts detected)
+- `conflicts.md` - Human-readable conflict report (if CSS conflicts detected and reports enabled)
+- `conflicts.json` - Machine-readable conflict report (if CSS conflicts detected and reports enabled)
+- `unresolved.md` - Human-readable unresolved variable report (if unresolved variables detected and reports enabled)
+- `unresolved.json` - Machine-readable unresolved variable report (if unresolved variables detected and reports enabled)
 
 ### `types.ts` (Always Generated)
 
@@ -113,9 +115,51 @@ export const selectors = {
 export default base;
 ```
 
+## Report Generation
+
+The plugin generates diagnostic reports to help you identify and resolve issues in your theme configuration. Reports are enabled by default but can be controlled via the `generateRuntime.reports` option.
+
+### Controlling Report Generation
+
+**Disable all reports:**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  generateRuntime: {
+    reports: false, // Disable all diagnostic reports
+  },
+});
+```
+
+**Granular control:**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  generateRuntime: {
+    reports: {
+      conflicts: true, // Enable conflict reports
+      unresolved: false, // Disable unresolved variable reports
+    },
+  },
+});
+```
+
+**Enable all reports (default behavior):**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  generateRuntime: {
+    reports: true, // or omit this option entirely
+  },
+});
+```
+
 ## CSS Conflict Detection
 
-The plugin automatically detects when CSS rules override CSS variables to ensure your runtime theme object matches actual rendered styles.
+The plugin automatically detects when CSS rules override CSS variables to ensure your runtime theme object matches actual rendered styles. This feature generates reports by default unless disabled via the `generateRuntime.reports` option.
 
 ### The Problem
 
@@ -205,6 +249,12 @@ interface VitePluginOptions {
         selectors?: boolean; // CSS selectors (default: true)
         files?: boolean; // Processed files (default: false)
         variables?: boolean; // Raw variables (default: false)
+        reports?:
+          | boolean // Enable/disable all reports (default: true)
+          | {
+              conflicts?: boolean; // CSS conflict reports (default: true)
+              unresolved?: boolean; // Unresolved variable reports (default: true)
+            };
       };
 
   /**

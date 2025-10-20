@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Configurable Report Generation**: Granular control over diagnostic report generation with backward-compatible defaults
+  - New `reports` option in `RuntimeGenerationOptions` (boolean or `{ conflicts?, unresolved? }` object)
+  - CLI flags: `--reports`, `--no-reports`, `--no-conflict-reports`, `--no-unresolved-reports`
+  - Vite plugin configuration via `generateRuntime.reports` option
+  - New `ReportGenerationOptions` interface and `normalizeReportOptions()` utility
+  - Reports enabled by default for backward compatibility
+  - Refactored `generateThemeFiles()` to reduce cyclomatic complexity (11 → 10) via helper extraction
+  - 11 new tests covering option normalization and integration
+  - Updated documentation: CLI README, Vite README, ARCHITECTURE.md, main README
+
 ## [0.2.2] - 2025-01-19
 
 ### Added

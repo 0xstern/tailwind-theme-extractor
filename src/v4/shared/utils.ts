@@ -2,12 +2,47 @@
  * Shared utility functions used across CLI and Vite plugin
  */
 
-import type { RuntimeGenerationOptions } from '../types';
+import type {
+  ReportGenerationOptions,
+  RuntimeGenerationOptions,
+} from '../types';
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { DEFAULT_OUTPUT_DIRS } from './constants';
+
+/**
+ * Normalizes report generation options
+ *
+ * @param reports - The report generation option (boolean, object, or undefined)
+ * @returns Normalized report generation options
+ */
+export function normalizeReportOptions(
+  reports: boolean | ReportGenerationOptions | undefined,
+): ReportGenerationOptions {
+  // If false, disable all reports
+  if (reports === false) {
+    return {
+      conflicts: false,
+      unresolved: false,
+    };
+  }
+
+  // If true or undefined, enable all reports (default behavior)
+  if (reports === true || reports === undefined) {
+    return {
+      conflicts: true,
+      unresolved: true,
+    };
+  }
+
+  // Object - merge with defaults (all enabled)
+  return {
+    conflicts: reports.conflicts ?? true,
+    unresolved: reports.unresolved ?? true,
+  };
+}
 
 /**
  * Normalizes generateRuntime option to RuntimeGenerationOptions
@@ -30,6 +65,7 @@ export function normalizeRuntimeOptions(
       selectors: true,
       files: false,
       variables: false,
+      reports: normalizeReportOptions(undefined),
     };
   }
 
@@ -39,6 +75,7 @@ export function normalizeRuntimeOptions(
     selectors: generateRuntime.selectors ?? true,
     files: generateRuntime.files ?? false,
     variables: generateRuntime.variables ?? false,
+    reports: normalizeReportOptions(generateRuntime.reports),
   };
 }
 

@@ -4,7 +4,10 @@
 
 import type { CSSRuleConflict } from '../parser/conflict-resolver';
 import type { UnresolvedVariable } from '../parser/unresolved-detector';
-import type { RuntimeGenerationOptions } from '../types';
+import type {
+  ReportGenerationOptions,
+  RuntimeGenerationOptions,
+} from '../types';
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -84,13 +87,19 @@ async function findPackageVersion(): Promise<string | undefined> {
  * @param result - Theme resolution result
  * @param outputDir - Output directory path
  * @param relativeSourcePath - Relative path to source file
+ * @param enabled - Whether conflict reports are enabled
  * @returns Conflict info or undefined
  */
 async function processConflictReports(
   result: ReturnType<typeof resolveTheme> extends Promise<infer T> ? T : never,
   outputDir: string,
   relativeSourcePath: string,
+  enabled: boolean,
 ): Promise<{ count: number; reportPath: string } | undefined> {
+  if (!enabled) {
+    return undefined;
+  }
+
   const conflicts =
     result.cssConflicts !== undefined && Array.isArray(result.cssConflicts)
       ? (result.cssConflicts as Array<CSSRuleConflict>)
@@ -119,13 +128,19 @@ async function processConflictReports(
  * @param result - Theme resolution result
  * @param outputDir - Output directory path
  * @param relativeSourcePath - Relative path to source file
+ * @param enabled - Whether unresolved variable reports are enabled
  * @returns Unresolved variable info or undefined
  */
 async function processUnresolvedReports(
   result: ReturnType<typeof resolveTheme> extends Promise<infer T> ? T : never,
   outputDir: string,
   relativeSourcePath: string,
+  enabled: boolean,
 ): Promise<{ count: number; reportPath: string } | undefined> {
+  if (!enabled) {
+    return undefined;
+  }
+
   const unresolved =
     result.unresolvedVariables !== undefined &&
     Array.isArray(result.unresolvedVariables)
@@ -150,6 +165,57 @@ async function processUnresolvedReports(
 }
 
 /**
+ * Normalizes report options to ensure all properties are defined
+ *
+ * @param reportOptions - Report options or undefined
+ * @returns Normalized report options
+ */
+function getNormalizedReportOptions(
+  reportOptions?: ReportGenerationOptions,
+): ReportGenerationOptions {
+  return (
+    reportOptions ?? {
+      conflicts: true,
+      unresolved: true,
+    }
+  );
+}
+
+/**
+ * Generates type declarations and prepares file write operations
+ *
+ * @param result - Theme resolution result
+ * @param outputDir - Output directory path
+ * @param relativeSourcePath - Relative source path
+ * @param runtimeOptions - Runtime generation options
+ * @returns Array of write promises
+ */
+async function prepareTypeAndRuntimeWrites(
+  result: ReturnType<typeof resolveTheme> extends Promise<infer T> ? T : never,
+  outputDir: string,
+  relativeSourcePath: string,
+  runtimeOptions: RuntimeGenerationOptions | false,
+): Promise<Array<Promise<void>>> {
+  const typeDeclarations = generateTypeDeclarations(
+    result,
+    DEFAULT_INTERFACE_NAME,
+    relativeSourcePath,
+  );
+
+  const typesPath = path.join(outputDir, OUTPUT_FILES.TYPES);
+  const writePromises = [fs.writeFile(typesPath, typeDeclarations, 'utf-8')];
+
+  const runtimeWrites = await prepareRuntimeFileWrites(
+    runtimeOptions,
+    result,
+    outputDir,
+  );
+  writePromises.push(...runtimeWrites);
+
+  return writePromises;
+}
+
+/**
  * Generates TypeScript theme type declarations and runtime files from CSS
  *
  * This function is used by both the Vite plugin and the CLI tool to generate
@@ -166,8 +232,8 @@ async function processUnresolvedReports(
  * - Always: types.ts (TypeScript interfaces including Tailwind and DefaultTheme)
  * - Conditional: theme.ts (runtime theme objects, if runtimeOptions is not false)
  * - Conditional: index.ts (re-exports from types.ts and theme.ts, if runtimeOptions is not false)
- * - Conditional: conflicts.md and conflicts.json (if CSS conflicts detected)
- * - Conditional: unresolved.md and unresolved.json (if unresolved variables detected)
+ * - Conditional: conflicts.md and conflicts.json (if CSS conflicts detected and reports enabled)
+ * - Conditional: unresolved.md and unresolved.json (if unresolved variables detected and reports enabled)
  *
  * Type Safety:
  * The types.ts file generates a Tailwind interface that users pass as a generic parameter
@@ -180,6 +246,7 @@ async function processUnresolvedReports(
  * @param includeTailwindDefaults - Whether to include Tailwind CSS defaults from node_modules
  * @param debug - Enable debug logging for troubleshooting
  * @param basePath - Base path for resolving node_modules (defaults to input file's directory)
+ * @param reportOptions - Controls which diagnostic reports to generate
  * @returns Promise resolving to object with files and optional report info
  * @throws Error if input file cannot be read or parsed
  * @throws Error if output files cannot be written
@@ -192,6 +259,7 @@ export async function generateThemeFiles(
   includeTailwindDefaults: boolean,
   debug: boolean = false,
   basePath?: string,
+  reportOptions?: ReportGenerationOptions,
 ): Promise<{
   files: Array<string>;
   conflictCount?: number;
@@ -211,32 +279,27 @@ export async function generateThemeFiles(
     const relativeSourcePath = path.relative(outputDir, inputPath);
     await fs.mkdir(outputDir, { recursive: true });
 
-    const typeDeclarations = generateTypeDeclarations(
-      result,
-      DEFAULT_INTERFACE_NAME,
-      relativeSourcePath,
-    );
-
-    const typesPath = path.join(outputDir, OUTPUT_FILES.TYPES);
-    const writePromises = [fs.writeFile(typesPath, typeDeclarations, 'utf-8')];
-
-    const runtimeWrites = await prepareRuntimeFileWrites(
-      runtimeOptions,
+    const writePromises = await prepareTypeAndRuntimeWrites(
       result,
       outputDir,
+      relativeSourcePath,
+      runtimeOptions,
     );
-    writePromises.push(...runtimeWrites);
+
+    const normalizedReportOptions = getNormalizedReportOptions(reportOptions);
 
     const conflictInfo = await processConflictReports(
       result,
       outputDir,
       relativeSourcePath,
+      normalizedReportOptions.conflicts ?? true,
     );
 
     const unresolvedInfo = await processUnresolvedReports(
       result,
       outputDir,
       relativeSourcePath,
+      normalizedReportOptions.unresolved ?? true,
     );
 
     await Promise.all(writePromises);

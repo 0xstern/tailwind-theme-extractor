@@ -2,7 +2,10 @@
 /**
  * CLI tool for generating Tailwind theme types and runtime objects
  */
-import type { RuntimeGenerationOptions } from '../types';
+import type {
+  ReportGenerationOptions,
+  RuntimeGenerationOptions,
+} from '../types';
 
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -17,6 +20,9 @@ interface CliOptions {
   runtime?: boolean;
   debug?: boolean;
   help?: boolean;
+  reports?: boolean;
+  'no-conflict-reports'?: boolean;
+  'no-unresolved-reports'?: boolean;
 }
 
 const HELP_TEXT = `
@@ -26,12 +32,16 @@ Usage:
   tailwind-resolver [options]
 
 Options:
-  --input, -i <path>     Path to CSS input file (required)
-  --output, -o <path>    Output directory (default: auto-detect)
-  --runtime, -r          Generate runtime theme object (default: true)
-  --no-runtime           Skip runtime generation (types only)
-  --debug, -d            Enable debug mode (logging + include debug data in runtime)
-  --help, -h             Show this help message
+  --input, -i <path>         Path to CSS input file (required)
+  --output, -o <path>        Output directory (default: auto-detect)
+  --runtime, -r              Generate runtime theme object (default: true)
+  --no-runtime               Skip runtime generation (types only)
+  --reports                  Generate diagnostic reports (default: true)
+  --no-reports               Skip all diagnostic reports
+  --no-conflict-reports      Skip CSS conflict reports only
+  --no-unresolved-reports    Skip unresolved variable reports only
+  --debug, -d                Enable debug mode (logging + include debug data in runtime)
+  --help, -h                 Show this help message
 
 Examples:
   # Generate types and runtime (production optimized)
@@ -43,6 +53,12 @@ Examples:
   # Generate types only
   tailwind-resolver -i src/styles.css --no-runtime
 
+  # Disable all diagnostic reports
+  tailwind-resolver -i src/styles.css --no-reports
+
+  # Disable only conflict reports
+  tailwind-resolver -i src/styles.css --no-conflict-reports
+
   # Custom output directory
   tailwind-resolver -i src/styles.css -o src/theme
 
@@ -50,6 +66,8 @@ Generated Files:
   - ${OUTPUT_FILES.TYPES} (TypeScript interface definition)
   - ${OUTPUT_FILES.THEME} (Runtime theme objects, if --runtime enabled)
   - ${OUTPUT_FILES.INDEX} (Re-exports, if --runtime enabled)
+  - conflicts.md/json (CSS conflict reports, if conflicts detected and reports enabled)
+  - unresolved.md/json (Unresolved variable reports, if unresolved vars detected and reports enabled)
 
 Debug Mode (--debug):
   ✓ Show import resolution warnings
@@ -68,6 +86,9 @@ function parseCliOptions(): CliOptions {
       input: { type: 'string', short: 'i' },
       output: { type: 'string', short: 'o' },
       runtime: { type: 'boolean', short: 'r', default: true },
+      reports: { type: 'boolean', default: true },
+      'no-conflict-reports': { type: 'boolean', default: false },
+      'no-unresolved-reports': { type: 'boolean', default: false },
       debug: { type: 'boolean', short: 'd', default: false },
       help: { type: 'boolean', short: 'h' },
     },
@@ -166,6 +187,23 @@ async function main(): Promise<void> {
             variables: options.debug as boolean, // Include when debug mode is on
           };
 
+    // Determine report options from CLI flags
+    // Priority: specific flags > --no-reports > default (all enabled)
+    const reportOptions: ReportGenerationOptions = {
+      conflicts:
+        options['no-conflict-reports'] === true
+          ? false
+          : options.reports === false
+            ? false
+            : true,
+      unresolved:
+        options['no-unresolved-reports'] === true
+          ? false
+          : options.reports === false
+            ? false
+            : true,
+    };
+
     const result = await generateThemeFiles(
       absoluteInputPath,
       absoluteOutputDir,
@@ -174,6 +212,7 @@ async function main(): Promise<void> {
       true, // includeTailwindDefaults
       options.debug as boolean,
       basePath,
+      reportOptions,
     );
 
     logSuccess(

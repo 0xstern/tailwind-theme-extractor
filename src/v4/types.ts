@@ -207,6 +207,25 @@ export interface CSSVariable {
 }
 
 /**
+ * Options for controlling report generation
+ */
+export interface ReportGenerationOptions {
+  /**
+   * Generate CSS conflict reports (conflicts.md and conflicts.json)
+   * Reports CSS rules that override CSS variables
+   * @default true
+   */
+  conflicts?: boolean;
+
+  /**
+   * Generate unresolved variable reports (unresolved.md and unresolved.json)
+   * Reports var() references that could not be resolved
+   * @default true
+   */
+  unresolved?: boolean;
+}
+
+/**
  * Options for controlling what gets generated in runtime files
  */
 export interface RuntimeGenerationOptions {
@@ -237,6 +256,12 @@ export interface RuntimeGenerationOptions {
    * @default false
    */
   variables?: boolean;
+
+  /**
+   * Control generation of diagnostic reports
+   * @default { conflicts: true, unresolved: true }
+   */
+  reports?: boolean | ReportGenerationOptions;
 }
 
 /**
