@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2025-01-19
+
 ### Added
 
 - **Unresolved Variable Detection and Reporting**: Automatically detect and report CSS variables with `var()` references that couldn't be resolved
