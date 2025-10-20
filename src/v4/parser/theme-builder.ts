@@ -7,6 +7,7 @@ import type {
   ColorScale,
   CSSVariable,
   DeprecationWarning,
+  OverrideOptions,
   Theme,
   ThemeColors,
   ThemeFontSizes,
@@ -21,6 +22,10 @@ import {
   detectConflicts,
   filterResolvableConflicts,
 } from './conflict-resolver';
+import {
+  applyThemeOverrides,
+  injectVariableOverrides,
+} from './theme-overrides';
 import { detectUnresolvedVariables } from './unresolved-detector';
 import {
   kebabToCamelCase,
@@ -667,6 +672,22 @@ function getOrCreateVariantResolutionMap(
 }
 
 /**
+ * Logs debug messages to console
+ *
+ * @param logs - Array of log messages
+ * @param debug - Whether debug logging is enabled
+ */
+function logDebugMessages(logs: Array<string>, debug: boolean): void {
+  if (!debug) {
+    return;
+  }
+
+  for (const log of logs) {
+    console.log(log);
+  }
+}
+
+/**
  * Resolves a single variable value with appropriate context
  *
  * @param variable - Variable to resolve
@@ -742,6 +763,8 @@ function resolveVariable(
  * @param keyframes - Map of keyframe name to CSS string
  * @param cssRules - Array of CSS rule overrides from variant selectors
  * @param defaultTheme - Optional Tailwind default theme for var() resolution
+ * @param overrides - Optional theme value overrides
+ * @param debug - Enable debug logging for overrides
  * @returns Object with base theme, variants, deprecation warnings, and conflicts
  */
 export function buildThemes(
@@ -749,6 +772,8 @@ export function buildThemes(
   keyframes: Map<string, string>,
   cssRules: Array<CSSRuleOverride>,
   defaultTheme?: Theme | null,
+  overrides?: OverrideOptions,
+  debug = false,
 ): {
   theme: Theme;
   variants: Record<string, ThemeVariant>;
@@ -757,6 +782,13 @@ export function buildThemes(
   variables: Array<CSSVariable>;
   unresolvedVariables: Array<UnresolvedVariable>;
 } {
+  // Step 1: Inject variable overrides (pre-resolution)
+  // This allows overrides to participate in variable resolution
+  if (overrides !== undefined) {
+    const logs = injectVariableOverrides(variables, overrides, debug);
+    logDebugMessages(logs, debug);
+  }
+
   const { themeVariables, rootVariables, variantVariables } =
     separateVariablesBySource(variables);
 
@@ -838,6 +870,13 @@ export function buildThemes(
     variables,
     resolvedVariables,
   );
+
+  // Step 2: Apply theme overrides (post-resolution)
+  // This mutates the theme objects directly
+  if (overrides !== undefined) {
+    const logs = applyThemeOverrides(theme, variants, overrides, debug);
+    logDebugMessages(logs, debug);
+  }
 
   return {
     theme,

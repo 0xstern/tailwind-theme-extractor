@@ -5,6 +5,7 @@
 import type { CSSRuleConflict } from '../parser/conflict-resolver';
 import type { UnresolvedVariable } from '../parser/unresolved-detector';
 import type {
+  OverrideOptions,
   ReportGenerationOptions,
   RuntimeGenerationOptions,
 } from '../types';
@@ -247,6 +248,7 @@ async function prepareTypeAndRuntimeWrites(
  * @param debug - Enable debug logging for troubleshooting
  * @param basePath - Base path for resolving node_modules (defaults to input file's directory)
  * @param reportOptions - Controls which diagnostic reports to generate
+ * @param overrides - Optional theme value overrides
  * @returns Promise resolving to object with files and optional report info
  * @throws Error if input file cannot be read or parsed
  * @throws Error if output files cannot be written
@@ -260,6 +262,7 @@ export async function generateThemeFiles(
   debug: boolean = false,
   basePath?: string,
   reportOptions?: ReportGenerationOptions,
+  overrides?: OverrideOptions,
 ): Promise<{
   files: Array<string>;
   conflictCount?: number;
@@ -274,6 +277,7 @@ export async function generateThemeFiles(
       includeTailwindDefaults,
       debug,
       basePath,
+      overrides,
     });
 
     const relativeSourcePath = path.relative(outputDir, inputPath);

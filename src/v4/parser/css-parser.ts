@@ -57,6 +57,15 @@ import { extractVariables } from './variable-extractor';
  *   debug: true
  * });
  *
+ * // With theme overrides
+ * const result = await parseCSS({
+ *   input: './src/theme.css',
+ *   overrides: {
+ *     'dark': { 'colors.background': '#000000' },
+ *     '*': { 'fonts.sans': 'Inter, sans-serif' }
+ *   }
+ * });
+ *
  * // With type parameter for full type safety
  * import type { GeneratedTheme } from './generated/tailwindcss';
  *
@@ -74,6 +83,7 @@ export async function parseCSS<TTheme extends Theme = Theme>(
     basePath,
     resolveImports: shouldResolveImports = true,
     debug = false,
+    overrides,
   } = options;
 
   // Validate input
@@ -130,7 +140,14 @@ export async function parseCSS<TTheme extends Theme = Theme>(
     cssConflicts,
     variables,
     unresolvedVariables,
-  } = buildThemes(rawVariables, keyframes, cssRules, defaultTheme);
+  } = buildThemes(
+    rawVariables,
+    keyframes,
+    cssRules,
+    defaultTheme,
+    overrides,
+    debug,
+  );
 
   // Assemble the result with base Theme typing
   const baseResult: ParseResult<Theme> = {

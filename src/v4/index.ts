@@ -69,6 +69,15 @@ import { loadTailwindDefaults, mergeThemes } from './parser/tailwind-defaults';
  * tailwind.files;
  * tailwind.variables;
  *
+ * // With theme overrides
+ * const customTailwind = await resolveTheme<Tailwind>({
+ *   input: './src/theme.css',
+ *   overrides: {
+ *     'dark': { 'colors.background': '#000000' },
+ *     '*': { 'fonts.sans': 'Inter, sans-serif' }
+ *   }
+ * });
+ *
  * // Without type parameter (fallback typing)
  * const result = await resolveTheme({
  *   input: './src/theme.css'
@@ -162,4 +171,7 @@ export type {
   DeprecationWarning,
   TailwindResult,
   UnknownTailwind,
+  OverrideValue,
+  OverrideConfig,
+  OverrideOptions,
 } from './types';

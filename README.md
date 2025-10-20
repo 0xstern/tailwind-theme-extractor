@@ -503,6 +503,242 @@ When unresolved variables are detected, two report files are generated:
 - Variables like `--font-sans: var(--font-sans)`
 - Intentionally skipped to use Tailwind defaults
 
+## Theme Overrides
+
+Apply custom theme value overrides programmatically to fix unresolved variables or conflicts without modifying CSS files.
+
+### When to Use Overrides
+
+- **Inject external variables**: Provide values for variables from Next.js, plugins, or external sources
+- **Fix variant-specific values**: Override theme properties for dark mode or custom themes
+- **Global customization**: Apply consistent values across all variants
+- **Quick prototyping**: Test theme changes without editing CSS
+
+### Configuration
+
+**Vite Plugin:**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  overrides: {
+    // Override default theme
+    default: {
+      'fonts.sans': 'Inter, sans-serif',
+      'radius.lg': '0.5rem',
+    },
+
+    // Override dark variant
+    dark: {
+      'colors.background': '#000000',
+    },
+
+    // Apply to all variants (wildcard)
+    '*': {
+      'fonts.mono': 'JetBrains Mono, monospace',
+    },
+  },
+});
+```
+
+**Runtime API:**
+
+```typescript
+const result = await resolveTheme({
+  input: './styles.css',
+  overrides: {
+    default: {
+      'colors.primary.500': '#custom-blue',
+    },
+  },
+});
+```
+
+### Syntax Options
+
+**Flat Notation** (dot-separated paths):
+
+```typescript
+overrides: {
+  'default': {
+    'colors.primary.500': '#custom-blue',
+    'radius.lg': '0.5rem',
+    'fonts.sans': 'Inter, sans-serif'
+  }
+}
+```
+
+**Nested Notation**:
+
+```typescript
+overrides: {
+  'default': {
+    colors: {
+      primary: {
+        500: '#custom-blue'
+      }
+    },
+    radius: {
+      lg: '0.5rem'
+    }
+  }
+}
+```
+
+**Mix and Match**:
+
+```typescript
+overrides: {
+  'default': {
+    'colors.primary.500': '#custom-blue',
+    radius: { lg: '0.5rem' }
+  }
+}
+```
+
+### Selector Matching
+
+Overrides support multiple selector patterns:
+
+```typescript
+overrides: {
+  // Variant name (use camelCase for multi-word variants)
+  'dark': { 'colors.background': '#000' },
+  'themeInter': { 'fonts.sans': 'Inter, sans-serif' },  // .theme-inter → themeInter
+
+  // CSS selector (verbose, but works)
+  '[data-theme="dark"]': { 'colors.background': '#000' },
+
+  // Default theme
+  'default': { 'radius.lg': '0.5rem' },
+  'base': { 'radius.lg': '0.5rem' }, // Alias for 'default'
+
+  // All variants (wildcard)
+  '*': { 'fonts.sans': 'Inter, sans-serif' }
+}
+```
+
+**Important:** Variant names are automatically converted from kebab-case to camelCase:
+
+- CSS: `.theme-inter` → Override key: `'themeInter'`
+- CSS: `.theme-noto-sans` → Override key: `'themeNotoSans'`
+- CSS: `.dark` → Override key: `'dark'` (no conversion needed)
+
+Use the exact camelCase variant names from your generated types for reliable matching.
+
+### Detailed Control
+
+Use object notation for fine-grained control:
+
+```typescript
+overrides: {
+  'dark': {
+    'radius.lg': {
+      value: '0',
+      force: true,        // Apply even for low-confidence conflicts
+      resolveVars: false  // Skip variable resolution (post-resolution only)
+    }
+  }
+}
+```
+
+### Common Use Cases
+
+**1. Injecting External Variables**
+
+Fix unresolved variables from Next.js, plugins, or external sources:
+
+```typescript
+overrides: {
+  'default': {
+    'fonts.sans': 'var(--font-inter)',  // Next.js font
+    'colors.primary': 'var(--tw-primary)' // Tailwind plugin
+  }
+}
+```
+
+**2. Variant-Specific Overrides**
+
+Customize individual theme variants:
+
+```typescript
+overrides: {
+  'dark': {
+    'colors.background': '#000000',
+    'colors.foreground': '#ffffff'
+  },
+  'compact': {
+    'radius.lg': '0',
+    'spacing.base': '0.125rem'
+  }
+}
+```
+
+**3. Global Overrides**
+
+Apply consistent values across all variants:
+
+```typescript
+overrides: {
+  '*': {
+    'fonts.sans': 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+    'fonts.mono': 'JetBrains Mono, Consolas, monospace'
+  }
+}
+```
+
+**4. Prototyping Without CSS Changes**
+
+Quickly test theme variations:
+
+```typescript
+overrides: {
+  'default': {
+    'colors.primary.500': '#ff6b6b',
+    'radius.lg': '1rem'
+  }
+}
+```
+
+### How It Works
+
+The override system uses a two-phase approach:
+
+1. **Pre-resolution** (Variable Injection)
+   - Injects synthetic CSS variables before variable resolution
+   - Allows overrides to participate in `var()` resolution
+   - Applied to: `'default'`, `'base'`, `'*'` selectors
+
+2. **Post-resolution** (Theme Mutation)
+   - Directly mutates resolved theme objects after building
+   - Overrides final computed values
+   - Applied to: all selector types
+
+This hybrid approach ensures maximum flexibility and correct variable resolution.
+
+### Debug Mode
+
+Enable debug logging to see override activity:
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  debug: true,
+  overrides: {
+    default: { 'radius.lg': '0.5rem' },
+  },
+});
+```
+
+Output:
+
+```
+[Overrides] Injected variable: --radius-lg = 0.5rem
+[Overrides] Injected 1 variables for 'default'
+[Overrides] Applied to 'default': radius.lg = 0.5rem
+[Overrides] Summary for 'default': 1 applied, 0 skipped
+```
+
 ## Debugging
 
 Enable debug mode to see warnings for failed imports:

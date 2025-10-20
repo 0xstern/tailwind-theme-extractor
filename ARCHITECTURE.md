@@ -761,6 +761,236 @@ For nested/compound variants (e.g., `compact.dark`), the theme builder includes 
 
 This mirrors CSS's natural cascade behavior, ensuring that `[data-theme='compact'].dark` can reference variables defined in both `[data-theme='compact']` and `.dark` selectors.
 
+### 4a. Theme Override System (`src/v4/parser/theme-overrides.ts`)
+
+**Purpose** - Apply custom theme value overrides to fix unresolved variables or conflicts programmatically.
+
+**Problem Context:**
+
+Users may encounter CSS variables that reference external sources or have conflicts that need correction:
+
+```css
+@theme {
+  --font-sans: var(--font-inter); /* Injected by Next.js - unresolved */
+  --radius-lg: 1rem;
+}
+
+[data-theme='dark'] {
+  --color-background: #1a1a1a; /* Maybe needs adjustment */
+}
+```
+
+The override system provides a programmatic way to inject or override these values without modifying CSS files.
+
+**Architecture - Hybrid Approach:**
+
+The override system uses a two-phase approach for maximum flexibility:
+
+1. **Pre-resolution** (Variable Injection)
+   - Injects synthetic CSS variables before the variable resolution pipeline
+   - Allows overrides to participate in `var()` resolution
+   - Applied to selectors: `'default'`, `'base'`, `'*'` (wildcard)
+
+2. **Post-resolution** (Theme Mutation)
+   - Directly mutates resolved theme objects after building
+   - Overrides final computed values
+   - Applied to any selector (variant names, CSS selectors, wildcards)
+
+**Syntax Support:**
+
+Both flat notation and nested object notation are supported:
+
+```typescript
+// Flat notation (dot-separated paths)
+overrides: {
+  'default': {
+    'colors.primary.500': '#custom-blue',
+    'radius.lg': '0.5rem'
+  }
+}
+
+// Nested notation
+overrides: {
+  'default': {
+    colors: {
+      primary: {
+        500: '#custom-blue'
+      }
+    },
+    radius: {
+      lg: '0.5rem'
+    }
+  }
+}
+
+// Mix and match
+overrides: {
+  'default': {
+    'colors.primary.500': '#custom-blue',
+    radius: { lg: '0.5rem' }
+  }
+}
+```
+
+**Selector Matching:**
+
+The override system supports multiple selector patterns:
+
+- **Direct variant names**: `'dark'`, `'compact'`, `'themeMono'`
+- **CSS selectors**: `'[data-theme="dark"]'`, `'.dark'`
+- **Special keys**:
+  - `'default'` or `'base'` - Base/default theme only
+  - `'*'` - All variants including default (wildcard)
+
+**Detailed Override Values:**
+
+Override values can be simple strings or objects with control flags:
+
+```typescript
+overrides: {
+  'dark': {
+    // Simple string value
+    'colors.background': '#000000',
+
+    // Detailed control
+    'radius.lg': {
+      value: '0',
+      force: true,        // Apply even for low-confidence conflicts
+      resolveVars: false  // Skip variable resolution (post-resolution only)
+    }
+  }
+}
+```
+
+**Key Functions:**
+
+```typescript
+// Resolve variant/selector names to actual variant names
+export function resolveVariantName(
+  selectorOrVariant: string,
+  variants: Record<string, ThemeVariant>,
+): Array<string>;
+
+// Post-resolution theme mutation
+export function applyThemeOverrides(
+  baseTheme: Theme,
+  variants: Record<string, ThemeVariant>,
+  overrides: OverrideOptions,
+  debug = false,
+): Array<string>; // Returns debug logs
+
+// Pre-resolution variable injection
+export function injectVariableOverrides(
+  variables: Array<CSSVariable>,
+  overrides: OverrideOptions,
+  debug = false,
+): Array<string>; // Returns debug logs
+```
+
+**Integration Flow:**
+
+```
+CSS Parser
+    ↓
+buildThemes() {
+    ↓
+    Step 1: Inject variable overrides (pre-resolution)
+    ├─ Only for 'default', 'base', '*' selectors
+    ├─ Creates synthetic CSSVariable objects
+    └─ Adds to variables array before resolution
+
+    ↓
+    Variable separation & resolution pipeline
+    ↓
+    Theme building & conflict detection
+    ↓
+
+    Step 2: Apply theme overrides (post-resolution)
+    ├─ Applies to all selector types
+    ├─ Navigates theme paths and mutates values
+    └─ Skips non-existent paths gracefully
+}
+```
+
+**Example Use Cases:**
+
+1. **Injecting external variables:**
+
+   ```typescript
+   overrides: {
+     'default': {
+       'fonts.sans': 'var(--font-inter)' // Resolves in pipeline
+     }
+   }
+   ```
+
+2. **Fixing variant-specific values:**
+
+   ```typescript
+   overrides: {
+     'dark': {
+       'colors.background': '#000000'
+     },
+     '[data-theme="compact"]': {
+       'radius.lg': '0'
+     }
+   }
+   ```
+
+3. **Global overrides:**
+   ```typescript
+   overrides: {
+     '*': {
+       'fonts.sans': 'Inter, sans-serif' // Applied to all variants
+     }
+   }
+   ```
+
+**Debug Mode:**
+
+When `debug: true`, the override system logs detailed information:
+
+```
+[Overrides] Injected variable: --fonts-sans = Inter, sans-serif
+[Overrides] Injected 1 variables for 'default'
+[Overrides] Applied to 'dark': colors.background = #000000
+[Overrides] Skipped (path not found) in 'default': nonexistent.property
+[Overrides] Summary for 'dark': 1 applied, 0 skipped
+```
+
+**Complexity Management:**
+
+All functions maintain cyclomatic complexity < 10 through helper extraction:
+
+- `parseOverrideConfig()` - Parses flat/nested notation
+- `applySingleOverride()` - Applies single override with path validation
+- `applyOverridesToVariant()` - Handles single variant application
+- `processSelectorOverrides()` - Processes single selector entry
+- `processVariableInjection()` - Handles variable injection for one config
+
+**Type Definitions:**
+
+```typescript
+export type OverrideValue =
+  | string
+  | {
+      value: string;
+      force?: boolean;
+      resolveVars?: boolean;
+    };
+
+export type OverrideConfig =
+  | Record<string, OverrideValue>
+  | Record<
+      string,
+      Record<string, OverrideValue | Record<string, OverrideValue>>
+    >;
+
+export interface OverrideOptions {
+  [selectorOrVariant: string]: OverrideConfig;
+}
+```
+
 ### 5. Tailwind Defaults Loader (`src/v4/parser/tailwind-defaults.ts`)
 
 **Purpose** - Load and merge Tailwind's default theme from node_modules for var() resolution.
@@ -1260,7 +1490,7 @@ That's it! The pipeline will automatically handle resolution, building, and type
 
 ### Test Coverage
 
-- 546 passing tests (100% pass rate)
+- 614 passing tests (100% pass rate)
 - All core paths covered
 - Updated to use new `TailwindResult` API structure
 - Tests verify both runtime API and generated code consistency
@@ -1270,6 +1500,9 @@ That's it! The pipeline will automatically handle resolution, building, and type
   - 21 unit tests for detection logic (unresolved-detector.test.ts)
   - 7 unit tests for report generation (unresolved-reporter.test.ts)
   - 4 integration tests for full pipeline (unresolved-detection-pipeline.test.ts)
+- Theme override system test coverage:
+  - 43 unit tests for override logic (theme-overrides.test.ts)
+  - 11 integration tests for full override pipeline (override-system.test.ts)
 
 ## Related Documentation
 

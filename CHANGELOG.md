@@ -7,9 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Theme Override System**: Programmatically override theme values without modifying CSS files
+  - Supports flat notation (`'colors.primary.500'`) and nested object notation
+  - Variant-specific overrides (`'dark'`, `'compact'`) and global wildcards (`'*'`)
+  - Flexible selector matching: variant names, CSS selectors, or special keys
+  - Two-phase approach: pre-resolution variable injection + post-resolution mutations
+  - Detailed control: `{ value: string, resolveVars?: boolean, force?: boolean }`
+  - New types: `OverrideValue`, `OverrideConfig`, `OverrideOptions`
+  - Integrated into Runtime API, Vite Plugin, and File Generator
+  - 54 tests (43 unit + 11 integration), comprehensive benchmarks
+  - **Important**: Use camelCase variant names (e.g., `'themeInter'` for `.theme-inter`)
+
+### Performance
+
+- **Theme Overrides**: Added memoization caches for repeated path parsing
+  - `flatPathCache` for dot-separated paths, `variableNameCache` for CSS variable names
+  - ~2% improvement in batch operations with zero cost for cache misses
+
 ### Fixed
 
-- **Documentation**: Added missing unresolved variable report files to generated files list in README and CLI help text
+- **Documentation**: Added unresolved variable report files to generated files list
 
 ## [0.2.3] - 2025-01-19
 

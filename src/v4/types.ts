@@ -265,6 +265,79 @@ export interface RuntimeGenerationOptions {
 }
 
 /**
+ * Represents the value for an override entry
+ * Can be a simple string value or a detailed override with options
+ */
+export type OverrideValue =
+  | string
+  | {
+      /**
+       * The value to override with
+       */
+      value: string;
+      /**
+       * Apply this override even for low-confidence conflicts
+       * Only applicable for conflict overrides
+       * @default false
+       */
+      force?: boolean;
+      /**
+       * Whether to resolve var() references in this value
+       * @default true
+       */
+      resolveVars?: boolean;
+    };
+
+/**
+ * Override configuration for a single variant/selector
+ *
+ * @example
+ * ```typescript
+ * // Flat notation
+ * { 'colors.primary.500': '#ff0000' }
+ *
+ * // Nested notation
+ * { colors: { primary: { 500: '#ff0000' } } }
+ *
+ * // Detailed control
+ * { 'radius.lg': { value: '0', force: true } }
+ * ```
+ */
+export type OverrideConfig =
+  | Record<string, OverrideValue>
+  | Record<
+      string,
+      Record<string, OverrideValue | Record<string, OverrideValue>>
+    >;
+
+/**
+ * Override options for theme values
+ *
+ * Supports variant names ('dark', 'compact'), CSS selectors ('[data-theme="dark"]'),
+ * and special keys ('*' for all, 'default' for base theme)
+ *
+ * @example
+ * ```typescript
+ * {
+ *   // Apply to all variants
+ *   '*': { 'fonts.sans': 'Inter, sans-serif' },
+ *
+ *   // Apply to specific variant (by name)
+ *   'dark': { 'colors.background': '#000' },
+ *
+ *   // Apply to specific variant (by selector)
+ *   '[data-theme="compact"]': { 'radius.lg': '0' },
+ *
+ *   // Apply to default/base theme
+ *   'default': { 'colors.primary.500': '#custom' }
+ * }
+ * ```
+ */
+export interface OverrideOptions {
+  [selectorOrVariant: string]: OverrideConfig;
+}
+
+/**
  * Options for parsing CSS files
  */
 export interface ParseOptions {
@@ -302,6 +375,13 @@ export interface ParseOptions {
    * @default false
    */
   debug?: boolean;
+  /**
+   * Theme value overrides
+   * Apply custom overrides to theme values for specific variants or globally
+   * Supports both flat notation ('colors.primary.500') and nested objects
+   * @default undefined
+   */
+  overrides?: OverrideOptions;
 }
 
 /**

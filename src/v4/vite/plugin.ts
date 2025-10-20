@@ -5,7 +5,7 @@
 
 import type { HmrContext, PluginOption } from 'vite';
 
-import type { RuntimeGenerationOptions } from '../types';
+import type { OverrideOptions, RuntimeGenerationOptions } from '../types';
 
 import { existsSync } from 'node:fs';
 import path from 'node:path';
@@ -69,6 +69,19 @@ export interface VitePluginOptions {
    * @default false
    */
   debug?: boolean;
+
+  /**
+   * Theme value overrides
+   * Apply custom overrides to theme values for specific variants or globally
+   * @default undefined
+   *
+   * @example
+   * overrides: {
+   *   'dark': { 'colors.background': '#000000' },
+   *   '*': { 'fonts.sans': 'Inter, sans-serif' }
+   * }
+   */
+  overrides?: OverrideOptions;
 }
 
 export function tailwindResolver(options: VitePluginOptions): PluginOption {
@@ -78,6 +91,7 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
     generateRuntime = true,
     includeTailwindDefaults = true,
     debug = false,
+    overrides,
   } = options;
 
   const runtimeOptions = normalizeRuntimeOptions(generateRuntime);
@@ -119,6 +133,7 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
       debug,
       basePath,
       reportOptions,
+      overrides,
     );
 
     // Update watched files set
