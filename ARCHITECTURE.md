@@ -1023,12 +1023,91 @@ interface ThemeCache {
 - Vite plugin uses project root automatically
 - Critical for resolving Tailwind defaults when processing files in subdirectories
 
+**Granular Defaults Control:**
+
+The `mergeThemes()` function supports selective merging of Tailwind defaults:
+
+```typescript
+export function mergeThemes(
+  defaultTheme: Theme,
+  userTheme: Theme,
+  options: TailwindDefaultsOptions = {},
+): Theme;
+```
+
+**TailwindDefaultsOptions Interface:**
+
+```typescript
+export interface TailwindDefaultsOptions {
+  colors?: boolean;
+  spacing?: boolean;
+  fonts?: boolean;
+  fontSize?: boolean;
+  fontWeight?: boolean;
+  tracking?: boolean;
+  leading?: boolean;
+  breakpoints?: boolean;
+  containers?: boolean;
+  radius?: boolean;
+  shadows?: boolean;
+  insetShadows?: boolean;
+  dropShadows?: boolean;
+  textShadows?: boolean;
+  blur?: boolean;
+  perspective?: boolean;
+  aspect?: boolean;
+  ease?: boolean;
+  animations?: boolean;
+  defaults?: boolean;
+  keyframes?: boolean;
+}
+```
+
+**Merge Behavior:**
+
+- Each option defaults to `true` (include by default)
+- When `true`: Merges default values with user values (user values override)
+- When `false`: Uses only user values for that category
+- `includeTailwindDefaults` parameter accepts:
+  - `true` → All defaults included (equivalent to empty options object)
+  - `false` → No defaults included
+  - `TailwindDefaultsOptions` → Granular control per category
+
+**Usage:**
+
+```typescript
+// Runtime API
+const result = await resolveTheme({
+  input: './styles.css',
+  includeTailwindDefaults: {
+    colors: true,
+    spacing: true,
+    shadows: false, // Exclude shadows
+  },
+});
+
+// CLI
+// bunx tailwind-resolver -i styles.css --include-defaults colors,spacing
+// bunx tailwind-resolver -i styles.css --exclude-defaults shadows,animations
+
+// Vite Plugin
+tailwindResolver({
+  input: 'src/styles.css',
+  includeTailwindDefaults: {
+    colors: true,
+    spacing: true,
+    shadows: false,
+  },
+});
+```
+
 **Variable Resolution Integration:**
 
 - Default theme is converted back to CSS variables via `themeToVariables()`
 - Combined with user variables for comprehensive `var()` resolution
 - Enables references like `var(--color-blue-300)` to resolve to actual oklch values
 - Self-referential variables (`--font-sans: var(--font-sans)`) are skipped to prefer defaults
+- Selective merging allows excluding unused defaults to reduce bundle size
 
 ## Integration Points
 
@@ -1050,13 +1129,47 @@ handleHotUpdate → Regenerate on CSS changes
 - Vite automatically re-runs when any tracked file changes
 - HMR updates types without full rebuild
 
-### CLI Tool (`src/v4/cli.ts`)
+### CLI Tool (`src/v4/cli/index.ts`)
 
 **One-shot generation:**
 
 ```bash
 tailwind-resolver -i src/styles.css --debug
 ```
+
+**Granular Defaults Control:**
+
+The CLI supports granular control over which Tailwind default categories to include:
+
+```bash
+# Include only specific categories
+tailwind-resolver -i styles.css --include-defaults colors,spacing,fonts
+
+# Include all except specific categories
+tailwind-resolver -i styles.css --exclude-defaults shadows,animations
+
+# Mutual exclusivity enforced - cannot use both flags together
+```
+
+**Report Control:**
+
+The CLI provides unified flags for controlling diagnostic report generation:
+
+```bash
+# Generate only specific reports
+tailwind-resolver -i styles.css --reports conflicts
+
+# Generate all except specific reports
+tailwind-resolver -i styles.css --exclude-reports unresolved
+```
+
+**Implementation:**
+
+- Generic `parseCategories<T>()` function for reusable category parsing
+- Validates category names against known categories
+- Enforces mutual exclusivity (cannot use both include and exclude)
+- Converts comma-separated lists to options objects
+- Applied consistently for both defaults and reports
 
 **basePath Handling:**
 

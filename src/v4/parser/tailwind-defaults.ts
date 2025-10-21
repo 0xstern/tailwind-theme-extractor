@@ -2,7 +2,7 @@
  * Resolves and parses Tailwind's default theme from node_modules
  */
 
-import type { Theme } from '../types';
+import type { TailwindDefaultsOptions, Theme } from '../types';
 
 import { readFile, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -128,31 +128,100 @@ export async function loadTailwindDefaults(
  *
  * @param defaultTheme - The base theme (Tailwind defaults)
  * @param userTheme - The user's theme (overrides)
- * @returns Merged theme with user values overriding defaults
+ * @param options - Controls which properties to merge from defaults (default: all enabled)
+ * @returns Merged theme with user values overriding defaults (only for enabled properties)
  */
-export function mergeThemes(defaultTheme: Theme, userTheme: Theme): Theme {
+// eslint-disable-next-line complexity
+export function mergeThemes(
+  defaultTheme: Theme,
+  userTheme: Theme,
+  options: TailwindDefaultsOptions = {},
+): Theme {
+  // Normalize options - default all to true
+  const {
+    colors = true,
+    fontSize = true,
+    fonts = true,
+    fontWeight = true,
+    spacing = true,
+    breakpoints = true,
+    containers = true,
+    radius = true,
+    shadows = true,
+    insetShadows = true,
+    dropShadows = true,
+    textShadows = true,
+    blur = true,
+    perspective = true,
+    aspect = true,
+    ease = true,
+    animations = true,
+    tracking = true,
+    leading = true,
+    defaults = true,
+    keyframes = true,
+  } = options;
+
   return {
-    colors: mergeColorScales(defaultTheme.colors, userTheme.colors),
-    fontSize: { ...defaultTheme.fontSize, ...userTheme.fontSize },
-    fonts: { ...defaultTheme.fonts, ...userTheme.fonts },
-    fontWeight: { ...defaultTheme.fontWeight, ...userTheme.fontWeight },
-    spacing: { ...defaultTheme.spacing, ...userTheme.spacing },
-    breakpoints: { ...defaultTheme.breakpoints, ...userTheme.breakpoints },
-    containers: { ...defaultTheme.containers, ...userTheme.containers },
-    radius: { ...defaultTheme.radius, ...userTheme.radius },
-    shadows: { ...defaultTheme.shadows, ...userTheme.shadows },
-    insetShadows: { ...defaultTheme.insetShadows, ...userTheme.insetShadows },
-    dropShadows: { ...defaultTheme.dropShadows, ...userTheme.dropShadows },
-    textShadows: { ...defaultTheme.textShadows, ...userTheme.textShadows },
-    blur: { ...defaultTheme.blur, ...userTheme.blur },
-    perspective: { ...defaultTheme.perspective, ...userTheme.perspective },
-    aspect: { ...defaultTheme.aspect, ...userTheme.aspect },
-    ease: { ...defaultTheme.ease, ...userTheme.ease },
-    animations: { ...defaultTheme.animations, ...userTheme.animations },
-    tracking: { ...defaultTheme.tracking, ...userTheme.tracking },
-    leading: { ...defaultTheme.leading, ...userTheme.leading },
-    defaults: { ...defaultTheme.defaults, ...userTheme.defaults },
-    keyframes: { ...defaultTheme.keyframes, ...userTheme.keyframes },
+    colors: colors
+      ? mergeColorScales(defaultTheme.colors, userTheme.colors)
+      : userTheme.colors,
+    fontSize: fontSize
+      ? { ...defaultTheme.fontSize, ...userTheme.fontSize }
+      : userTheme.fontSize,
+    fonts: fonts
+      ? { ...defaultTheme.fonts, ...userTheme.fonts }
+      : userTheme.fonts,
+    fontWeight: fontWeight
+      ? { ...defaultTheme.fontWeight, ...userTheme.fontWeight }
+      : userTheme.fontWeight,
+    spacing: spacing
+      ? { ...defaultTheme.spacing, ...userTheme.spacing }
+      : userTheme.spacing,
+    breakpoints: breakpoints
+      ? { ...defaultTheme.breakpoints, ...userTheme.breakpoints }
+      : userTheme.breakpoints,
+    containers: containers
+      ? { ...defaultTheme.containers, ...userTheme.containers }
+      : userTheme.containers,
+    radius: radius
+      ? { ...defaultTheme.radius, ...userTheme.radius }
+      : userTheme.radius,
+    shadows: shadows
+      ? { ...defaultTheme.shadows, ...userTheme.shadows }
+      : userTheme.shadows,
+    insetShadows: insetShadows
+      ? { ...defaultTheme.insetShadows, ...userTheme.insetShadows }
+      : userTheme.insetShadows,
+    dropShadows: dropShadows
+      ? { ...defaultTheme.dropShadows, ...userTheme.dropShadows }
+      : userTheme.dropShadows,
+    textShadows: textShadows
+      ? { ...defaultTheme.textShadows, ...userTheme.textShadows }
+      : userTheme.textShadows,
+    blur: blur ? { ...defaultTheme.blur, ...userTheme.blur } : userTheme.blur,
+    perspective: perspective
+      ? { ...defaultTheme.perspective, ...userTheme.perspective }
+      : userTheme.perspective,
+    aspect: aspect
+      ? { ...defaultTheme.aspect, ...userTheme.aspect }
+      : userTheme.aspect,
+    ease: ease ? { ...defaultTheme.ease, ...userTheme.ease } : userTheme.ease,
+    animations: animations
+      ? { ...defaultTheme.animations, ...userTheme.animations }
+      : userTheme.animations,
+    tracking: tracking
+      ? { ...defaultTheme.tracking, ...userTheme.tracking }
+      : userTheme.tracking,
+    leading: leading
+      ? { ...defaultTheme.leading, ...userTheme.leading }
+      : userTheme.leading,
+    defaults: defaults
+      ? { ...defaultTheme.defaults, ...userTheme.defaults }
+      : userTheme.defaults,
+    keyframes: keyframes
+      ? { ...defaultTheme.keyframes, ...userTheme.keyframes }
+      : userTheme.keyframes,
   };
 }
 

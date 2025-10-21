@@ -114,7 +114,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepublishOnly": "bun run lint && bun run test && bun run build"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun format && bun lint && bun typecheck && bun test && bun run build"
   },
   "engines": {
     "node": "^21.2.0"

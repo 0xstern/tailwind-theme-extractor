@@ -82,10 +82,13 @@ describe('buildThemes - Color handling', () => {
     expect(result.theme.colors.red).toBeDefined();
     expect(typeof result.theme.colors.red).toBe('object');
 
-    if (typeof result.theme.colors.red !== 'string') {
-      expect(result.theme.colors.red[50]).toBe('#fef2f2');
-      expect(result.theme.colors.red[500]).toBe('#ef4444');
-      expect(result.theme.colors.red[900]).toBe('#7f1d1d');
+    if (
+      typeof result.theme.colors.red !== 'string' &&
+      result.theme.colors.red
+    ) {
+      expect(result.theme.colors.red![50]).toBe('#fef2f2');
+      expect(result.theme.colors.red![500]).toBe('#ef4444');
+      expect(result.theme.colors.red![900]).toBe('#7f1d1d');
     }
   });
 
@@ -268,8 +271,8 @@ describe('buildThemes - Variants', () => {
     const result = buildThemes(variables, new Map(), []);
 
     expect(result.variants.dark).toBeDefined();
-    expect(result.variants.dark.selector).toBe('.dark');
-    expect(result.variants.dark.theme.colors.background).toBe('black');
+    expect(result.variants.dark!.selector).toBe('.dark');
+    expect(result.variants.dark!.theme.colors.background).toBe('black');
   });
 
   test('variants inherit base theme variables', () => {
@@ -304,7 +307,7 @@ describe('buildThemes - Variants', () => {
     const result = buildThemes(variables, new Map(), []);
 
     expect(result.variants.highContrast).toBeDefined();
-    expect(result.variants.highContrast.selector).toBe('.high-contrast');
+    expect(result.variants.highContrast!.selector).toBe('.high-contrast');
   });
 
   test('handles multiple variants', () => {
@@ -329,8 +332,8 @@ describe('buildThemes - Variants', () => {
 
     expect(result.variants.dark).toBeDefined();
     expect(result.variants.compact).toBeDefined();
-    expect(result.variants.dark.theme.colors.bg).toBe('black');
-    expect(result.variants.compact.theme.spacing.base).toBe('0.5rem');
+    expect(result.variants.dark!.theme.colors.bg).toBe('black');
+    expect(result.variants.compact!.theme.spacing.base).toBe('0.5rem');
   });
 
   test('handles nested variants', () => {
@@ -354,7 +357,7 @@ describe('buildThemes - Variants', () => {
     const result = buildThemes(variables, new Map(), []);
 
     expect(result.variants.compactDark).toBeDefined();
-    expect(result.variants.compactDark.theme.colors.bg).toBe('black');
+    expect(result.variants.compactDark!.theme.colors.bg).toBe('black');
   });
 });
 
@@ -401,10 +404,10 @@ describe('buildThemes - CSS conflicts', () => {
       {
         variantName: 'dark',
         selector: '.dark',
+        originalSelector: '.dark',
         property: 'color',
         value: 'red',
-        themeProperty: 'colors',
-        themeKey: 'primary',
+        complexity: 'simple' as const,
       },
     ];
 
@@ -440,7 +443,7 @@ describe('buildThemes - CSS conflicts', () => {
     // Conflict should be detected
     expect(result.cssConflicts.length).toBeGreaterThanOrEqual(0);
     // Variant theme should have the original variable value
-    expect(result.variants.dark.theme.colors.text).toBe('black');
+    expect(result.variants.dark!.theme.colors.text).toBe('black');
   });
 });
 

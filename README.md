@@ -68,8 +68,18 @@ export default defineConfig({
       },
 
       // Optional: Include Tailwind CSS defaults from node_modules
+      // - true: Include all defaults (default)
+      // - false: Exclude all defaults
+      // - object: Granular control over which categories to include
       // Default: true
       includeTailwindDefaults: true,
+      // Or granular control:
+      // includeTailwindDefaults: {
+      //   colors: true,
+      //   spacing: true,
+      //   shadows: false,
+      //   radius: false,
+      // },
 
       // Optional: Enable debug logging for troubleshooting
       // Default: false
@@ -135,8 +145,19 @@ const result = await resolveTheme({
   resolveImports: true,
 
   // Optional: Include Tailwind CSS defaults from node_modules
+  // - true: Include all defaults (default)
+  // - false: Exclude all defaults
+  // - object: Granular control over which categories to include
   // Default: true
   includeTailwindDefaults: true,
+  // Or granular control:
+  // includeTailwindDefaults: {
+  //   colors: true,
+  //   spacing: true,
+  //   fonts: true,
+  //   shadows: false,
+  //   animations: false,
+  // },
 
   // Optional: Enable debug logging
   // Default: false
@@ -187,12 +208,28 @@ npx tailwind-resolver -i src/styles.css
 - `-o, --output <path>` - Output directory (default: auto-detected)
 - `-r, --runtime` - Generate runtime objects (default: true)
 - `--no-runtime` - Types only
-- `--reports` - Generate diagnostic reports (default: true)
-- `--no-reports` - Skip all diagnostic reports
-- `--no-conflict-reports` - Skip CSS conflict reports only
-- `--no-unresolved-reports` - Skip unresolved variable reports only
+- `--include-defaults [categories]` - Include only specified Tailwind default categories (comma-separated)
+- `--exclude-defaults [categories]` - Include all except specified Tailwind default categories (comma-separated)
+- `--reports [categories]` - Generate only specified diagnostic reports (comma-separated: conflicts, unresolved)
+- `--exclude-reports [categories]` - Generate all except specified diagnostic reports (comma-separated)
 - `-d, --debug` - Enable debug mode (logging + include debug data in runtime)
 - `-h, --help` - Show help
+
+**Examples:**
+
+```bash
+# Include only colors and spacing from Tailwind defaults
+bunx tailwind-resolver -i src/styles.css --include-defaults colors,spacing
+
+# Exclude shadows and animations from Tailwind defaults
+bunx tailwind-resolver -i src/styles.css --exclude-defaults shadows,animations
+
+# Generate only conflict reports
+bunx tailwind-resolver -i src/styles.css --reports conflicts
+
+# Generate all reports except unresolved
+bunx tailwind-resolver -i src/styles.css --exclude-reports unresolved
+```
 
 ## Theme Structure
 

@@ -45,10 +45,10 @@ npx tailwind-resolver -i src/styles.css
 - `-o, --output <path>` - Output directory for generated files (default: auto-detected)
 - `-r, --runtime` - Generate runtime objects (default: true)
 - `--no-runtime` - Generate types only, no runtime file
-- `--reports` - Generate diagnostic reports (default: true)
-- `--no-reports` - Skip all diagnostic reports
-- `--no-conflict-reports` - Skip CSS conflict reports only
-- `--no-unresolved-reports` - Skip unresolved variable reports only
+- `--include-defaults [categories]` - Include only specified Tailwind default categories (comma-separated)
+- `--exclude-defaults [categories]` - Include all except specified Tailwind default categories (comma-separated)
+- `--reports [categories]` - Generate only specified diagnostic reports (comma-separated: conflicts, unresolved)
+- `--exclude-reports [categories]` - Generate all except specified diagnostic reports (comma-separated)
 - `-d, --debug` - Enable debug mode (logging + include debug data in runtime)
 - `-h, --help` - Display help message
 
@@ -198,30 +198,34 @@ The CLI generates diagnostic reports to help you identify and resolve issues in 
 
 ### Controlling Report Generation
 
-**Disable all reports:**
+**Generate only specific reports:**
 
 ```bash
-bunx tailwind-resolver -i src/styles.css --no-reports
+# Generate only conflict reports
+bunx tailwind-resolver -i src/styles.css --reports conflicts
+
+# Generate only unresolved variable reports
+bunx tailwind-resolver -i src/styles.css --reports unresolved
+
+# Generate both (same as default)
+bunx tailwind-resolver -i src/styles.css --reports conflicts,unresolved
 ```
 
-**Disable only conflict reports:**
+**Exclude specific reports:**
 
 ```bash
-bunx tailwind-resolver -i src/styles.css --no-conflict-reports
-```
+# Generate all except conflict reports
+bunx tailwind-resolver -i src/styles.css --exclude-reports conflicts
 
-**Disable only unresolved variable reports:**
-
-```bash
-bunx tailwind-resolver -i src/styles.css --no-unresolved-reports
+# Generate all except unresolved reports
+bunx tailwind-resolver -i src/styles.css --exclude-reports unresolved
 ```
 
 **Enable all reports (default behavior):**
 
 ```bash
-bunx tailwind-resolver -i src/styles.css --reports
-# or simply omit the flag:
 bunx tailwind-resolver -i src/styles.css
+# Reports are enabled by default, no flag needed
 ```
 
 ## CSS Conflict Detection
@@ -359,15 +363,41 @@ bunx tailwind-resolver -i src/styles.css --no-imports
 
 ### Tailwind CSS Defaults
 
-The CLI automatically includes Tailwind CSS default colors, fonts, and other theme values from `node_modules/tailwindcss`:
+The CLI automatically includes Tailwind CSS default colors, fonts, and other theme values from `node_modules/tailwindcss`. You can control which default categories to include or exclude.
+
+**Include all defaults (default behavior):**
 
 ```bash
-# Include defaults (default behavior)
 bunx tailwind-resolver -i src/styles.css
-
-# Exclude defaults (user theme only)
-bunx tailwind-resolver -i src/styles.css --no-defaults
 ```
+
+**Include only specific categories:**
+
+```bash
+# Include only colors and spacing
+bunx tailwind-resolver -i src/styles.css --include-defaults colors,spacing
+
+# Include only fonts and typography-related defaults
+bunx tailwind-resolver -i src/styles.css --include-defaults fonts,fontSize,fontWeight,tracking,leading
+```
+
+**Exclude specific categories:**
+
+```bash
+# Include all except shadows and animations
+bunx tailwind-resolver -i src/styles.css --exclude-defaults shadows,animations
+
+# Include all except radius and blur
+bunx tailwind-resolver -i src/styles.css --exclude-defaults radius,blur
+```
+
+**Available categories:**
+
+- `colors`, `spacing`, `fonts`, `fontSize`, `fontWeight`, `tracking`, `leading`
+- `breakpoints`, `containers`, `radius`, `shadows`, `insetShadows`, `dropShadows`, `textShadows`
+- `blur`, `perspective`, `aspect`, `ease`, `animations`, `defaults`, `keyframes`
+
+**How it works:**
 
 This enables `var()` references like:
 
@@ -378,7 +408,7 @@ This enables `var()` references like:
 }
 ```
 
-The CLI resolves `var(--color-blue-500)` to `oklch(0.6 0.2 250)` from Tailwind's defaults.
+The CLI resolves `var(--color-blue-500)` to `oklch(0.6 0.2 250)` from Tailwind's defaults (if `colors` category is included).
 
 ### Base Path Resolution
 

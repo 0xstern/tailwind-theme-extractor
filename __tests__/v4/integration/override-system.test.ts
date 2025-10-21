@@ -3,8 +3,6 @@
  * Tests the complete pipeline from CSS parsing through override application
  */
 
-import type { Tailwind } from '../../../examples/v4/generated/tailwindcss/types';
-
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -49,7 +47,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(TEST_CSS);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: false,
         overrides: {
@@ -59,7 +57,7 @@ describe('Theme Override System - Integration', () => {
         },
       });
 
-      expect(result.variants.default.radius.lg).toBe('0.5rem');
+      expect(result.variants.default!.radius.lg).toBe('0.5rem');
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
@@ -69,7 +67,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(TEST_CSS);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: false,
         overrides: {
@@ -81,7 +79,7 @@ describe('Theme Override System - Integration', () => {
         },
       });
 
-      expect(result.variants.default.radius.lg).toBe('0');
+      expect(result.variants.default!.radius.lg).toBe('0');
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
@@ -91,7 +89,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(TEST_CSS);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: false,
         overrides: {
@@ -105,7 +103,7 @@ describe('Theme Override System - Integration', () => {
       expect(result.variants.dark?.colors.background).toBe('#000000');
 
       // Verify default theme NOT affected
-      expect(result.variants.default.colors.background).toBe('#ffffff');
+      expect(result.variants.default!.colors.background).toBe('#ffffff');
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
@@ -115,7 +113,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(TEST_CSS);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: false,
         overrides: {
@@ -126,7 +124,7 @@ describe('Theme Override System - Integration', () => {
       });
 
       // Verify applied to default
-      expect(result.variants.default.fonts.sans).toBe('Inter, sans-serif');
+      expect(result.variants.default!.fonts.sans).toBe('Inter, sans-serif');
 
       // Verify applied to dark variant
       expect(result.variants.dark?.fonts.sans).toBe('Inter, sans-serif');
@@ -139,7 +137,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(TEST_CSS);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: false,
         overrides: {
@@ -154,8 +152,8 @@ describe('Theme Override System - Integration', () => {
       });
 
       // Verify default overrides
-      expect(result.variants.default.radius.lg).toBe('0.5rem');
-      expect(result.variants.default.fonts.sans).toBe('Roboto, sans-serif');
+      expect(result.variants.default!.radius.lg).toBe('0.5rem');
+      expect(result.variants.default!.fonts.sans).toBe('Roboto, sans-serif');
 
       // Verify dark override
       expect(result.variants.dark?.colors.background).toBe('#0a0a0a');
@@ -175,7 +173,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(cssWithVarRef);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: false,
         overrides: {
@@ -186,7 +184,7 @@ describe('Theme Override System - Integration', () => {
       });
 
       // The injected variable should resolve the var() reference
-      expect(result.variants.default.colors.primary).toBe('#ff0000');
+      expect(result.variants.default!.colors.primary).toBe('#ff0000');
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
@@ -196,7 +194,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(TEST_CSS);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: false,
         overrides: {
@@ -210,7 +208,7 @@ describe('Theme Override System - Integration', () => {
       });
 
       // Post-resolution override should still apply
-      expect(result.variants.default.radius.lg).toBe('0.25rem');
+      expect(result.variants.default!.radius.lg).toBe('0.25rem');
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
@@ -220,7 +218,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(TEST_CSS);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: false,
         overrides: {
@@ -241,7 +239,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(TEST_CSS);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: false,
         overrides: {
@@ -253,10 +251,10 @@ describe('Theme Override System - Integration', () => {
       });
 
       // Valid override should apply
-      expect(result.variants.default.radius.lg).toBe('0.5rem');
+      expect(result.variants.default!.radius.lg).toBe('0.5rem');
 
       // Non-existent property should not break anything
-      expect(() => result.variants.default).not.toThrow();
+      expect(() => result.variants.default!).not.toThrow();
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
@@ -275,7 +273,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(cssWithScale);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: false,
         overrides: {
@@ -288,18 +286,15 @@ describe('Theme Override System - Integration', () => {
       const FIVE_HUNDRED = 500;
 
       // Verify deep nested override
-      if (typeof result.variants.default.colors.gray !== 'string') {
-        expect(result.variants.default.colors.gray[FIVE_HUNDRED]).toBe(
-          '#custom-gray',
-        );
+      const gray = result.variants.default!.colors.gray;
+      if (gray !== undefined && typeof gray !== 'string') {
+        expect(gray[FIVE_HUNDRED]).toBe('#custom-gray');
+
+        // Verify other values unchanged
+        const FIFTY = 50;
+        expect(gray[FIFTY]).toBe('#f9fafb');
       } else {
         throw new Error('Expected gray to be a color scale');
-      }
-
-      // Verify other values unchanged
-      const FIFTY = 50;
-      if (typeof result.variants.default.colors.gray !== 'string') {
-        expect(result.variants.default.colors.gray[FIFTY]).toBe('#f9fafb');
       }
     } finally {
       await rm(tempDir, { recursive: true, force: true });
@@ -310,7 +305,7 @@ describe('Theme Override System - Integration', () => {
     const { tempDir, cssPath } = await createTempCssFile(TEST_CSS);
 
     try {
-      const result = await resolveTheme<Tailwind>({
+      const result = await resolveTheme({
         input: cssPath,
         includeTailwindDefaults: true, // Include Tailwind defaults
         overrides: {
@@ -321,12 +316,12 @@ describe('Theme Override System - Integration', () => {
       });
 
       // Our override should apply
-      expect(result.variants.default.radius.lg).toBe('0');
+      expect(result.variants.default!.radius.lg).toBe('0');
 
       // Tailwind defaults should still be present
-      expect(result.variants.default.colors).toBeDefined();
+      expect(result.variants.default!.colors).toBeDefined();
       expect(
-        Object.keys(result.variants.default.colors).length,
+        Object.keys(result.variants.default!.colors).length,
       ).toBeGreaterThan(1);
     } finally {
       await rm(tempDir, { recursive: true, force: true });

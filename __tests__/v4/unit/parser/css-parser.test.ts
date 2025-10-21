@@ -13,13 +13,13 @@ const FIXTURES_DIR = join(__dirname, '../../fixtures');
 
 describe('parseCSS - Input validation', () => {
   test('throws error when neither input nor css is provided', async () => {
-    await expect(
-      parseCSS({} as Parameters<typeof parseCSS>[0]),
-    ).rejects.toThrow('Either input or css must be provided');
+    expect(parseCSS({} as Parameters<typeof parseCSS>[0])).rejects.toThrow(
+      'Either input or css must be provided',
+    );
   });
 
   test('throws error when input file does not exist', async () => {
-    await expect(
+    expect(
       parseCSS({
         input: '/non/existent/file.css',
       }),
@@ -196,7 +196,7 @@ describe('parseCSS - Debug mode', () => {
 
 describe('parseCSS - PostCSS integration', () => {
   test('handles invalid CSS syntax with error', async () => {
-    await expect(
+    expect(
       parseCSS({
         css: '{ invalid css syntax', // Invalid CSS
       }),
@@ -236,7 +236,7 @@ describe('parseCSS - PostCSS integration', () => {
     });
 
     expect(result.variants.dark).toBeDefined();
-    expect(result.variants.dark.theme.colors.background).toBe('black');
+    expect(result.variants.dark!.theme.colors.background).toBe('black');
   });
 });
 
@@ -339,8 +339,8 @@ describe('parseCSS - Variants', () => {
     });
 
     expect(result.variants.dark).toBeDefined();
-    expect(result.variants.dark.theme.colors.primary).toBe('white');
-    expect(result.variants.dark.selector).toBe('.dark');
+    expect(result.variants.dark!.theme.colors.primary).toBe('white');
+    expect(result.variants.dark!.selector).toBe('.dark');
   });
 
   test('extracts multiple variants', async () => {

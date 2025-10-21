@@ -105,8 +105,12 @@ export async function resolveTheme<TTailwind = UnknownTailwind>(
     if (defaultTheme === null) {
       finalTheme = userResult.theme;
     } else {
+      // Normalize options: true becomes {}, object stays as-is
+      const mergeOptions =
+        includeTailwindDefaults === true ? {} : includeTailwindDefaults;
+
       // Merge: user theme overrides defaults
-      finalTheme = mergeThemes(defaultTheme, userResult.theme);
+      finalTheme = mergeThemes(defaultTheme, userResult.theme, mergeOptions);
     }
   }
 
@@ -174,4 +178,5 @@ export type {
   OverrideValue,
   OverrideConfig,
   OverrideOptions,
+  TailwindDefaultsOptions,
 } from './types';

@@ -207,6 +207,151 @@ export interface CSSVariable {
 }
 
 /**
+ * Options for controlling which Tailwind defaults to include
+ *
+ * When includeTailwindDefaults is an object, you can selectively include
+ * specific categories from Tailwind's default theme. This is useful when
+ * you want to use only certain Tailwind defaults while completely replacing others.
+ *
+ * @example
+ * ```typescript
+ * {
+ *   colors: true,      // Include default Tailwind colors
+ *   spacing: true,     // Include default Tailwind spacing
+ *   shadows: false,    // Don't include default shadows
+ *   fonts: false       // Don't include default font families
+ * }
+ * ```
+ */
+export interface TailwindDefaultsOptions {
+  /**
+   * Include default color definitions
+   * @default true
+   */
+  colors?: boolean;
+
+  /**
+   * Include default spacing scale
+   * @default true
+   */
+  spacing?: boolean;
+
+  /**
+   * Include default font families
+   * @default true
+   */
+  fonts?: boolean;
+
+  /**
+   * Include default font sizes
+   * @default true
+   */
+  fontSize?: boolean;
+
+  /**
+   * Include default font weights
+   * @default true
+   */
+  fontWeight?: boolean;
+
+  /**
+   * Include default letter spacing (tracking)
+   * @default true
+   */
+  tracking?: boolean;
+
+  /**
+   * Include default line heights (leading)
+   * @default true
+   */
+  leading?: boolean;
+
+  /**
+   * Include default breakpoints
+   * @default true
+   */
+  breakpoints?: boolean;
+
+  /**
+   * Include default container sizes
+   * @default true
+   */
+  containers?: boolean;
+
+  /**
+   * Include default border radius values
+   * @default true
+   */
+  radius?: boolean;
+
+  /**
+   * Include default box shadows
+   * @default true
+   */
+  shadows?: boolean;
+
+  /**
+   * Include default inset shadows
+   * @default true
+   */
+  insetShadows?: boolean;
+
+  /**
+   * Include default drop shadows
+   * @default true
+   */
+  dropShadows?: boolean;
+
+  /**
+   * Include default text shadows
+   * @default true
+   */
+  textShadows?: boolean;
+
+  /**
+   * Include default blur values
+   * @default true
+   */
+  blur?: boolean;
+
+  /**
+   * Include default perspective values
+   * @default true
+   */
+  perspective?: boolean;
+
+  /**
+   * Include default aspect ratios
+   * @default true
+   */
+  aspect?: boolean;
+
+  /**
+   * Include default easing functions
+   * @default true
+   */
+  ease?: boolean;
+
+  /**
+   * Include default animations
+   * @default true
+   */
+  animations?: boolean;
+
+  /**
+   * Include default meta/default variables (--default-*)
+   * @default true
+   */
+  defaults?: boolean;
+
+  /**
+   * Include default keyframes
+   * @default true
+   */
+  keyframes?: boolean;
+}
+
+/**
  * Options for controlling report generation
  */
 export interface ReportGenerationOptions {
@@ -364,11 +509,37 @@ export interface ParseOptions {
    */
   resolveImports?: boolean;
   /**
-   * Whether to include Tailwind's default theme
-   * When true, resolves tailwindcss/theme.css from node_modules and merges with user theme
+   * Control inclusion of Tailwind's default theme
+   *
+   * - `true`: Include all Tailwind defaults (default behavior)
+   * - `false`: Don't include any Tailwind defaults
+   * - Object: Selectively include specific categories
+   *
+   * When enabled, resolves tailwindcss/theme.css from node_modules and merges with user theme.
+   * Use an object to granularly control which theme categories to include from Tailwind defaults.
+   *
    * @default true
+   *
+   * @example
+   * ```typescript
+   * // Include all defaults (default)
+   * { includeTailwindDefaults: true }
+   *
+   * // Don't include any defaults
+   * { includeTailwindDefaults: false }
+   *
+   * // Include only colors and spacing from Tailwind defaults
+   * {
+   *   includeTailwindDefaults: {
+   *     colors: true,
+   *     spacing: true,
+   *     shadows: false,
+   *     fonts: false
+   *   }
+   * }
+   * ```
    */
-  includeTailwindDefaults?: boolean;
+  includeTailwindDefaults?: boolean | TailwindDefaultsOptions;
   /**
    * Enable debug logging for troubleshooting
    * When true, logs warnings for failed import resolution and other parsing issues

@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Granular Tailwind Defaults Control**: Enhanced `includeTailwindDefaults` option with object-based configuration for selective category inclusion
+  - New `TailwindDefaultsOptions` interface with 21 boolean properties (colors, spacing, fonts, fontSize, fontWeight, tracking, leading, breakpoints, containers, radius, shadows, insetShadows, dropShadows, textShadows, blur, perspective, aspect, ease, animations, defaults, keyframes)
+  - Updated `mergeThemes()` to accept optional `TailwindDefaultsOptions` parameter for selective merging
+  - Backward compatible: `true` includes all defaults, `false` excludes all, object enables granular control
+  - Applied across Runtime API, Vite Plugin, and File Generator
+  - 6 new tests covering granular defaults functionality
+
+- **CLI Granular Controls**: Unified CLI flag design for consistent include/exclude patterns
+  - **Defaults flags**: `--include-defaults [categories]` and `--exclude-defaults [categories]`
+    - Examples: `--include-defaults colors,spacing`, `--exclude-defaults shadows,animations`
+    - Comma-separated category lists with validation
+    - Mutual exclusivity enforced (cannot use both flags together)
+  - **Reports flags**: Refactored from 4 separate flags to 2 unified flags
+    - Before: `--reports`, `--no-reports`, `--no-conflict-reports`, `--no-unresolved-reports`
+    - After: `--reports [categories]` and `--exclude-reports [categories]`
+    - Examples: `--reports conflicts`, `--exclude-reports unresolved`
+    - Consistent pattern with defaults flags for better DX
+  - Generic `parseCategories<T>()` helper function for code reusability across flag types
+  - Enhanced help text with practical examples
+  - Updated configuration logging to show defaults and reports status
+  - 6 new tests covering report options functionality
+
+### Fixed
+
+- **CLI Console Output**: Unresolved variable reports now displayed in console when CLI finishes (previously only showed conflict reports)
+- **ESLint Compliance**: Reduced `logConfiguration()` complexity from 11 to under threshold by extracting helper functions
+
 ## [0.2.4] - 2025-01-19
 
 ### Added

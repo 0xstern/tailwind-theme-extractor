@@ -5,7 +5,11 @@
 
 import type { HmrContext, PluginOption } from 'vite';
 
-import type { OverrideOptions, RuntimeGenerationOptions } from '../types';
+import type {
+  OverrideOptions,
+  RuntimeGenerationOptions,
+  TailwindDefaultsOptions,
+} from '../types';
 
 import { existsSync } from 'node:fs';
 import path from 'node:path';
@@ -15,9 +19,9 @@ import { generateThemeFiles } from '../shared/file-generator';
 import { normalizeRuntimeOptions } from '../shared/utils';
 
 /**
- * Re-export RuntimeGenerationOptions for convenience
+ * Re-export for convenience
  */
-export type { RuntimeGenerationOptions };
+export type { RuntimeGenerationOptions, TailwindDefaultsOptions };
 
 export interface VitePluginOptions {
   /**
@@ -59,10 +63,27 @@ export interface VitePluginOptions {
   generateRuntime?: boolean | RuntimeGenerationOptions;
 
   /**
-   * Whether to include Tailwind CSS defaults from node_modules
+   * Control inclusion of Tailwind's default theme
+   * - `true`: Include all Tailwind defaults (default)
+   * - `false`: Don't include any Tailwind defaults
+   * - object: Selectively include specific categories
    * @default true
+   *
+   * @example
+   * // Include all defaults (default)
+   * includeTailwindDefaults: true
+   *
+   * // Don't include any defaults
+   * includeTailwindDefaults: false
+   *
+   * // Include only specific categories
+   * includeTailwindDefaults: {
+   *   colors: true,
+   *   spacing: true,
+   *   shadows: false
+   * }
    */
-  includeTailwindDefaults?: boolean;
+  includeTailwindDefaults?: boolean | TailwindDefaultsOptions;
 
   /**
    * Enable debug logging for troubleshooting

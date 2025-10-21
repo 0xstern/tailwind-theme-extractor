@@ -39,7 +39,7 @@ describe('Conflict Detection - Basic Cases', () => {
           radius: {
             lg: '1rem',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -77,7 +77,7 @@ describe('Conflict Detection - Basic Cases', () => {
           radius: {
             lg: '1rem',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -107,7 +107,7 @@ describe('Conflict Detection - Basic Cases', () => {
           radius: {
             lg: '1rem',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -135,7 +135,7 @@ describe('Conflict Detection - Basic Cases', () => {
           radius: {
             lg: '1rem',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -165,14 +165,15 @@ describe('Conflict Detection - Confidence Levels', () => {
           radius: {
             lg: '1rem',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
     const conflicts = detectConflicts(cssRules, variants);
 
-    expect(conflicts[0].confidence).toBe('high');
-    expect(conflicts[0].canResolve).toBe(true);
+    expect(conflicts).toHaveLength(ONE_CONFLICT);
+    expect(conflicts[0]!.confidence).toBe('high');
+    expect(conflicts[0]!.canResolve).toBe(true);
   });
 
   test('assigns medium confidence to simple rules with different units', () => {
@@ -194,14 +195,15 @@ describe('Conflict Detection - Confidence Levels', () => {
           radius: {
             lg: '1rem',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
     const conflicts = detectConflicts(cssRules, variants);
 
-    expect(conflicts[0].confidence).toBe('medium');
-    expect(conflicts[0].canResolve).toBe(true);
+    expect(conflicts).toHaveLength(ONE_CONFLICT);
+    expect(conflicts[0]!.confidence).toBe('medium');
+    expect(conflicts[0]!.canResolve).toBe(true);
   });
 
   test('assigns low confidence to complex rules', () => {
@@ -224,14 +226,15 @@ describe('Conflict Detection - Confidence Levels', () => {
           radius: {
             lg: '1rem',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
     const conflicts = detectConflicts(cssRules, variants);
 
-    expect(conflicts[0].confidence).toBe('low');
-    expect(conflicts[0].canResolve).toBe(false);
+    expect(conflicts).toHaveLength(ONE_CONFLICT);
+    expect(conflicts[0]!.confidence).toBe('low');
+    expect(conflicts[0]!.canResolve).toBe(false);
   });
 
   test('marks complex rules as non-resolvable', () => {
@@ -254,13 +257,14 @@ describe('Conflict Detection - Confidence Levels', () => {
           radius: {
             lg: '1rem',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
     const conflicts = detectConflicts(cssRules, variants);
 
-    expect(conflicts[0].canResolve).toBe(false);
+    expect(conflicts).toHaveLength(ONE_CONFLICT);
+    expect(conflicts[0]!.canResolve).toBe(false);
   });
 });
 
@@ -284,14 +288,14 @@ describe('Conflict Detection - Multiple Properties', () => {
           shadows: {
             lg: '0 10px 15px rgba(0, 0, 0, 0.1)',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
     const conflicts = detectConflicts(cssRules, variants);
 
     expect(conflicts).toHaveLength(ONE_CONFLICT);
-    expect(conflicts[0].themeProperty).toBe('shadows');
+    expect(conflicts[0]!.themeProperty).toBe('shadows');
   });
 
   test('detects conflicts for text-shadow', () => {
@@ -313,14 +317,14 @@ describe('Conflict Detection - Multiple Properties', () => {
           textShadows: {
             lg: '0 2px 4px rgba(0, 0, 0, 0.5)',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
     const conflicts = detectConflicts(cssRules, variants);
 
     expect(conflicts).toHaveLength(ONE_CONFLICT);
-    expect(conflicts[0].themeProperty).toBe('textShadows');
+    expect(conflicts[0]!.themeProperty).toBe('textShadows');
   });
 
   test('detects multiple conflicts in same variant', () => {
@@ -353,7 +357,7 @@ describe('Conflict Detection - Multiple Properties', () => {
           shadows: {
             lg: '0 10px 15px rgba(0, 0, 0, 0.1)',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -369,7 +373,7 @@ describe('Override Application', () => {
       radius: {
         lg: '1rem',
       },
-    } as Theme;
+    } as unknown as Theme;
 
     const conflict = {
       variantName: 'themeMono',
@@ -394,7 +398,7 @@ describe('Override Application', () => {
         lg: '1rem',
         md: '0.5rem',
       },
-    } as Theme;
+    } as unknown as Theme;
 
     const conflicts = [
       {
@@ -490,7 +494,7 @@ describe('Helper Functions', () => {
     const resolvable = filterResolvableConflicts(conflicts);
 
     expect(resolvable).toHaveLength(ONE_CONFLICT);
-    expect(resolvable[0].themeKey).toBe('lg');
+    expect(resolvable[0]!.themeKey).toBe('lg');
   });
 
   test('groupConflictsByVariant groups correctly', () => {
@@ -569,7 +573,7 @@ describe('Edge Cases', () => {
           radius: {
             lg: '1rem',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -615,7 +619,7 @@ describe('Edge Cases', () => {
           radius: {
             lg: { value: '1rem' }, // Object instead of string
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -644,7 +648,7 @@ describe('Edge Cases', () => {
           radius: {
             lg: '1rem',
           },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 

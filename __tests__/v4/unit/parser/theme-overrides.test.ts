@@ -100,7 +100,7 @@ describe('applyThemeOverrides - Flat Notation', () => {
     const baseTheme: Theme = {
       colors: { primary: '##0000ff' },
       radius: { lg: '1rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -121,7 +121,7 @@ describe('applyThemeOverrides - Flat Notation', () => {
         theme: {
           colors: { background: '#000' },
           radius: { lg: '1rem' },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -140,7 +140,7 @@ describe('applyThemeOverrides - Flat Notation', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem', md: '0.5rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -163,7 +163,7 @@ describe('applyThemeOverrides - Flat Notation', () => {
           600: '#0000cc',
         },
       },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -181,7 +181,7 @@ describe('applyThemeOverrides - Flat Notation', () => {
   test('skips override for non-existent path', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -200,7 +200,7 @@ describe('applyThemeOverrides - Nested Notation', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -222,7 +222,7 @@ describe('applyThemeOverrides - Nested Notation', () => {
           500: '#0000ff',
         },
       },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -245,7 +245,7 @@ describe('applyThemeOverrides - Nested Notation', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem', md: '0.5rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -268,7 +268,7 @@ describe('applyThemeOverrides - Wildcard', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const variants = {
       dark: {
@@ -276,14 +276,14 @@ describe('applyThemeOverrides - Wildcard', () => {
         theme: {
           colors: { background: '#000' },
           radius: { lg: '1rem' },
-        } as Theme,
+        } as unknown as Theme,
       },
       light: {
         selector: '[data-theme="light"]',
         theme: {
           colors: { background: '#fff' },
           radius: { lg: '1rem' },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -304,7 +304,7 @@ describe('applyThemeOverrides - Wildcard', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem', md: '0.5rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const variants = {
       dark: {
@@ -312,7 +312,7 @@ describe('applyThemeOverrides - Wildcard', () => {
         theme: {
           colors: { background: '#000' },
           radius: { lg: '1rem', md: '0.5rem' },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -341,7 +341,7 @@ describe('applyThemeOverrides - CSS Selector Matching', () => {
         theme: {
           colors: { background: '#000' },
           radius: { lg: '1rem' },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -363,13 +363,13 @@ describe('applyThemeOverrides - CSS Selector Matching', () => {
         selector: '[data-theme="compact"]',
         theme: {
           radius: { lg: '1rem' },
-        } as Theme,
+        } as unknown as Theme,
       },
       compactDark: {
         selector: '[data-theme="compact"].dark',
         theme: {
           radius: { lg: '1rem' },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -391,7 +391,7 @@ describe('applyThemeOverrides - Detailed Override Values', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -411,7 +411,7 @@ describe('applyThemeOverrides - Detailed Override Values', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -433,7 +433,7 @@ describe('applyThemeOverrides - Debug Logging', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -451,7 +451,7 @@ describe('applyThemeOverrides - Debug Logging', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -467,7 +467,7 @@ describe('applyThemeOverrides - Debug Logging', () => {
   test('logs skipped overrides in debug mode', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {
@@ -486,7 +486,7 @@ describe('applyThemeOverrides - Edge Cases', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {};
 
@@ -500,7 +500,7 @@ describe('applyThemeOverrides - Edge Cases', () => {
         selector: '[data-theme="dark"]',
         theme: {
           radius: { lg: '1rem' },
-        } as Theme,
+        } as unknown as Theme,
       },
     };
 
@@ -519,7 +519,7 @@ describe('applyThemeOverrides - Edge Cases', () => {
     const baseTheme: Theme = {
       colors: { primary: '#0000ff' },
       radius: { lg: '1rem' },
-    } as Theme;
+    } as unknown as Theme;
 
     const overrides: OverrideOptions = {
       default: {},

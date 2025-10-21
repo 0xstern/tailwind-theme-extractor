@@ -259,9 +259,26 @@ interface VitePluginOptions {
 
   /**
    * Include Tailwind CSS defaults from node_modules
+   * - true: Include all defaults (default)
+   * - false: Exclude all defaults
+   * - object: Granular control over which categories to include
    * @default true
+   *
+   * @example
+   * // Include all defaults
+   * includeTailwindDefaults: true
+   *
+   * @example
+   * // Include only specific categories
+   * includeTailwindDefaults: {
+   *   colors: true,
+   *   spacing: true,
+   *   fonts: true,
+   *   shadows: false,
+   *   animations: false,
+   * }
    */
-  includeTailwindDefaults?: boolean;
+  includeTailwindDefaults?: boolean | TailwindDefaultsOptions;
 
   /**
    * Enable debug logging for troubleshooting
@@ -749,14 +766,79 @@ tailwindResolver({
 });
 ```
 
-### Disable Tailwind Defaults
+### Tailwind Defaults Control
+
+**Include all defaults (default behavior):**
 
 ```typescript
 tailwindResolver({
   input: 'src/styles.css',
-  includeTailwindDefaults: false, // Don't include Tailwind CSS defaults
+  includeTailwindDefaults: true,
 });
 ```
+
+**Exclude all defaults:**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  includeTailwindDefaults: false,
+});
+```
+
+**Granular control - include only specific categories:**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  includeTailwindDefaults: {
+    colors: true,
+    spacing: true,
+    fonts: true,
+    fontSize: true,
+    shadows: false, // Exclude shadows
+    animations: false, // Exclude animations
+    // All other categories default to false
+  },
+});
+```
+
+**Granular control - exclude specific categories:**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  includeTailwindDefaults: {
+    colors: true,
+    spacing: true,
+    fonts: true,
+    fontSize: true,
+    fontWeight: true,
+    tracking: true,
+    leading: true,
+    breakpoints: true,
+    containers: true,
+    radius: true,
+    shadows: false, // Exclude only shadows
+    insetShadows: true,
+    dropShadows: true,
+    textShadows: true,
+    blur: true,
+    perspective: true,
+    aspect: true,
+    ease: true,
+    animations: false, // Exclude only animations
+    defaults: true,
+    keyframes: true,
+  },
+});
+```
+
+**Available categories:**
+
+- `colors`, `spacing`, `fonts`, `fontSize`, `fontWeight`, `tracking`, `leading`
+- `breakpoints`, `containers`, `radius`, `shadows`, `insetShadows`, `dropShadows`, `textShadows`
+- `blur`, `perspective`, `aspect`, `ease`, `animations`, `defaults`, `keyframes`
 
 ### Granular Runtime Control
 

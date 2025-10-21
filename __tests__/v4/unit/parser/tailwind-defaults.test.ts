@@ -429,13 +429,14 @@ describe('mergeThemes - Direct function tests', () => {
 
     const merged = mergeThemes(defaultTheme, userTheme);
 
+    expect(merged.colors.red).toBeDefined();
     if (typeof merged.colors.red !== 'string') {
       // Should keep default 50 and 900
-      expect(merged.colors.red[50]).toBe('#fef2f2');
-      expect(merged.colors.red[900]).toBe('#7f1d1d');
+      expect(merged.colors.red![50]).toBe('#fef2f2');
+      expect(merged.colors.red![900]).toBe('#7f1d1d');
       // Should override 500 and add 600
-      expect(merged.colors.red[500]).toBe('#custom-red');
-      expect(merged.colors.red[600]).toBe('#custom-red-dark');
+      expect(merged.colors.red![500]).toBe('#custom-red');
+      expect(merged.colors.red![600]).toBe('#custom-red-dark');
     }
   });
 
@@ -490,10 +491,11 @@ describe('mergeThemes - Direct function tests', () => {
 
     const merged = mergeThemes(defaultTheme, userTheme);
 
+    expect(merged.colors.primary).toBeDefined();
     expect(typeof merged.colors.primary).toBe('object');
     if (typeof merged.colors.primary !== 'string') {
-      expect(merged.colors.primary[500]).toBe('#custom');
-      expect(merged.colors.primary[600]).toBe('#custom-dark');
+      expect(merged.colors.primary![500]).toBe('#custom');
+      expect(merged.colors.primary![600]).toBe('#custom-dark');
     }
   });
 
@@ -779,5 +781,244 @@ describe('mergeThemes - Direct function tests', () => {
     const merged = mergeThemes(defaultTheme, userTheme);
 
     expect(merged.colors.primary).toBe('blue');
+  });
+
+  test('selectively includes properties when options provided', () => {
+    const defaultTheme = {
+      colors: { white: '#fff', black: '#000' },
+      spacing: { '4': '1rem', '8': '2rem' },
+      fonts: { sans: 'Inter' },
+      fontSize: { base: { size: '1rem' } },
+      fontWeight: { bold: '700' },
+      tracking: {},
+      leading: {},
+      breakpoints: {},
+      containers: {},
+      radius: { base: '0.25rem' },
+      shadows: { sm: '0 1px 2px' },
+      insetShadows: {},
+      dropShadows: {},
+      textShadows: {},
+      blur: {},
+      perspective: {},
+      aspect: {},
+      ease: {},
+      animations: {},
+      defaults: {},
+      keyframes: {},
+    };
+
+    const userTheme = {
+      colors: { primary: 'blue' },
+      spacing: { '12': '3rem' },
+      fonts: { mono: 'Fira Code' },
+      fontSize: { lg: { size: '1.5rem' } },
+      fontWeight: {},
+      tracking: {},
+      leading: {},
+      breakpoints: {},
+      containers: {},
+      radius: { lg: '0.5rem' },
+      shadows: {},
+      insetShadows: {},
+      dropShadows: {},
+      textShadows: {},
+      blur: {},
+      perspective: {},
+      aspect: {},
+      ease: {},
+      animations: {},
+      defaults: {},
+      keyframes: {},
+    };
+
+    // Only include colors and spacing from defaults
+    const merged = mergeThemes(defaultTheme, userTheme, {
+      colors: true,
+      spacing: true,
+      fonts: false,
+      fontSize: false,
+      radius: false,
+      shadows: false,
+    });
+
+    // Colors: should have both default and user
+    expect(merged.colors.white).toBe('#fff');
+    expect(merged.colors.black).toBe('#000');
+    expect(merged.colors.primary).toBe('blue');
+
+    // Spacing: should have both default and user
+    expect(merged.spacing['4']).toBe('1rem');
+    expect(merged.spacing['8']).toBe('2rem');
+    expect(merged.spacing['12']).toBe('3rem');
+
+    // Fonts: should only have user (defaults excluded)
+    expect(merged.fonts.sans).toBeUndefined();
+    expect(merged.fonts.mono).toBe('Fira Code');
+
+    // FontSize: should only have user (defaults excluded)
+    expect(merged.fontSize.base).toBeUndefined();
+    expect(merged.fontSize.lg).toEqual({ size: '1.5rem' });
+
+    // Radius: should only have user (defaults excluded)
+    expect(merged.radius.base).toBeUndefined();
+    expect(merged.radius.lg).toBe('0.5rem');
+
+    // Shadows: should only have user (defaults excluded, and user has none)
+    expect(merged.shadows.sm).toBeUndefined();
+  });
+
+  test('includes all properties when options is empty object', () => {
+    const defaultTheme = {
+      colors: { white: '#fff' },
+      spacing: { '4': '1rem' },
+      fonts: {},
+      fontSize: {},
+      fontWeight: {},
+      tracking: {},
+      leading: {},
+      breakpoints: {},
+      containers: {},
+      radius: {},
+      shadows: {},
+      insetShadows: {},
+      dropShadows: {},
+      textShadows: {},
+      blur: {},
+      perspective: {},
+      aspect: {},
+      ease: {},
+      animations: {},
+      defaults: {},
+      keyframes: {},
+    };
+
+    const userTheme = {
+      colors: { primary: 'blue' },
+      spacing: {},
+      fonts: {},
+      fontSize: {},
+      fontWeight: {},
+      tracking: {},
+      leading: {},
+      breakpoints: {},
+      containers: {},
+      radius: {},
+      shadows: {},
+      insetShadows: {},
+      dropShadows: {},
+      textShadows: {},
+      blur: {},
+      perspective: {},
+      aspect: {},
+      ease: {},
+      animations: {},
+      defaults: {},
+      keyframes: {},
+    };
+
+    // Empty options should default all to true
+    const merged = mergeThemes(defaultTheme, userTheme, {});
+
+    expect(merged.colors.white).toBe('#fff');
+    expect(merged.colors.primary).toBe('blue');
+    expect(merged.spacing['4']).toBe('1rem');
+  });
+});
+
+describe('Granular includeTailwindDefaults - Integration tests', () => {
+  test('selectively includes colors only from Tailwind defaults', async () => {
+    const result = await resolveTheme({
+      css: '@theme { --spacing-custom: 5rem; }',
+      includeTailwindDefaults: {
+        colors: true,
+        spacing: false,
+        fonts: false,
+      },
+    });
+
+    // Should have Tailwind default colors (if installed)
+    if (result.variants.default.colors.red !== undefined) {
+      expect(result.variants.default.colors.red).toBeDefined();
+    }
+
+    // Should have user custom spacing
+    expect(result.variants.default.spacing.custom).toBe('5rem');
+
+    // Should NOT have Tailwind default spacing
+    const spacingKeys = Object.keys(result.variants.default.spacing);
+    expect(spacingKeys).toEqual(['custom']);
+  });
+
+  test('selectively includes multiple categories', async () => {
+    const result = await resolveTheme({
+      css: '@theme { --color-brand: #custom; --spacing-custom: 5rem; }',
+      includeTailwindDefaults: {
+        colors: true,
+        spacing: true,
+        shadows: false,
+      },
+    });
+
+    // Should have user colors
+    expect(result.variants.default.colors.brand).toBe('#custom');
+
+    // Should have user spacing
+    expect(result.variants.default.spacing.custom).toBe('5rem');
+
+    // Should have Tailwind default colors and spacing (if installed)
+    if (result.variants.default.colors.red !== undefined) {
+      expect(result.variants.default.colors.red).toBeDefined();
+    }
+
+    if (result.variants.default.spacing['4'] !== undefined) {
+      expect(result.variants.default.spacing['4']).toBeDefined();
+    }
+
+    // Shadows should only have user values (none in this case)
+    const shadowKeys = Object.keys(result.variants.default.shadows);
+    expect(shadowKeys.length).toBe(0);
+  });
+
+  test('excluding all categories is equivalent to includeTailwindDefaults: false', async () => {
+    const resultExcludeAll = await resolveTheme({
+      css: '@theme { --color-primary: #custom; }',
+      includeTailwindDefaults: {
+        colors: false,
+        spacing: false,
+        fonts: false,
+        fontSize: false,
+        fontWeight: false,
+        tracking: false,
+        leading: false,
+        breakpoints: false,
+        containers: false,
+        radius: false,
+        shadows: false,
+        insetShadows: false,
+        dropShadows: false,
+        textShadows: false,
+        blur: false,
+        perspective: false,
+        aspect: false,
+        ease: false,
+        animations: false,
+        defaults: false,
+        keyframes: false,
+      },
+    });
+
+    const resultFalse = await resolveTheme({
+      css: '@theme { --color-primary: #custom; }',
+      includeTailwindDefaults: false,
+    });
+
+    // Both should only have user-defined values
+    expect(Object.keys(resultExcludeAll.variants.default.colors)).toEqual([
+      'primary',
+    ]);
+    expect(Object.keys(resultFalse.variants.default.colors)).toEqual([
+      'primary',
+    ]);
   });
 });

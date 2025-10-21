@@ -56,8 +56,9 @@ describe('CSS Rule Extraction - Simple Rules', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
-    expect(rules[0].complexity).toBe('simple');
-    expect(rules[0].reason).toBeUndefined();
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
+    expect(rules[0]!.complexity).toBe('simple');
+    expect(rules[0]!.reason).toBeUndefined();
   });
 
   test('extracts multiple simple rules', () => {
@@ -90,8 +91,9 @@ describe('CSS Rule Extraction - Complex Rules', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
-    expect(rules[0].complexity).toBe('complex');
-    expect(rules[0].reason).toBe('Pseudo-class selectors');
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
+    expect(rules[0]!.complexity).toBe('complex');
+    expect(rules[0]!.reason).toBe('Pseudo-class selectors');
   });
 
   test('classifies pseudo-element selectors as complex', () => {
@@ -105,8 +107,9 @@ describe('CSS Rule Extraction - Complex Rules', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
-    expect(rules[0].complexity).toBe('complex');
-    expect(rules[0].reason).toBe('Pseudo-element selectors');
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
+    expect(rules[0]!.complexity).toBe('complex');
+    expect(rules[0]!.reason).toBe('Pseudo-element selectors');
   });
 
   test('classifies dynamic values (calc) as complex', () => {
@@ -120,8 +123,9 @@ describe('CSS Rule Extraction - Complex Rules', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
-    expect(rules[0].complexity).toBe('complex');
-    expect(rules[0].reason).toBe('Dynamic CSS function values');
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
+    expect(rules[0]!.complexity).toBe('complex');
+    expect(rules[0]!.reason).toBe('Dynamic CSS function values');
   });
 
   test('classifies var() references as complex', () => {
@@ -135,8 +139,9 @@ describe('CSS Rule Extraction - Complex Rules', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
-    expect(rules[0].complexity).toBe('complex');
-    expect(rules[0].reason).toBe('Dynamic CSS function values');
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
+    expect(rules[0]!.complexity).toBe('complex');
+    expect(rules[0]!.reason).toBe('Dynamic CSS function values');
   });
 
   test('classifies multiple declarations (>3) as complex', () => {
@@ -157,7 +162,7 @@ describe('CSS Rule Extraction - Complex Rules', () => {
 
     const complexRules = rules.filter((r) => r.complexity === 'complex');
     expect(complexRules.length).toBeGreaterThan(0);
-    expect(complexRules[0].reason).toBe(
+    expect(complexRules[0]!.reason).toBe(
       `Multiple property declarations (>${MAX_SIMPLE_DECLARATIONS})`,
     );
   });
@@ -173,8 +178,9 @@ describe('CSS Rule Extraction - Complex Rules', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
-    expect(rules[0].complexity).toBe('complex');
-    expect(rules[0].reason).toBe('Descendant selector');
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
+    expect(rules[0]!.complexity).toBe('complex');
+    expect(rules[0]!.reason).toBe('Descendant selector');
   });
 
   test('classifies child combinator as complex', () => {
@@ -188,8 +194,9 @@ describe('CSS Rule Extraction - Complex Rules', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
-    expect(rules[0].complexity).toBe('complex');
-    expect(rules[0].reason).toBe('Child combinator');
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
+    expect(rules[0]!.complexity).toBe('complex');
+    expect(rules[0]!.reason).toBe('Child combinator');
   });
 
   test('classifies sibling combinator as complex', () => {
@@ -203,8 +210,9 @@ describe('CSS Rule Extraction - Complex Rules', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
-    expect(rules[0].complexity).toBe('complex');
-    expect(rules[0].reason).toBe('Sibling combinator');
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
+    expect(rules[0]!.complexity).toBe('complex');
+    expect(rules[0]!.reason).toBe('Sibling combinator');
   });
 });
 
@@ -222,10 +230,11 @@ describe('CSS Rule Extraction - Media Queries', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
-    expect(rules[0].complexity).toBe('complex');
-    expect(rules[0].reason).toBe('Nested in media query');
-    expect(rules[0].inMediaQuery).toBe(true);
-    expect(rules[0].mediaQuery).toBe('(min-width: 1024px)');
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
+    expect(rules[0]!.complexity).toBe('complex');
+    expect(rules[0]!.reason).toBe('Nested in media query');
+    expect(rules[0]!.inMediaQuery).toBe(true);
+    expect(rules[0]!.mediaQuery).toBe('(min-width: 1024px)');
   });
 
   test('extracts multiple rules from media query', () => {
@@ -297,8 +306,10 @@ describe('Theme Key Extraction', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
     const mapping = mapPropertyToTheme('border-radius');
-    const themeKey = mapping?.keyExtractor(rules[0].selector);
+    expect(mapping).toBeDefined();
+    const themeKey = mapping?.keyExtractor(rules[0]!.selector);
     expect(themeKey).toBe('lg');
   });
 
@@ -313,8 +324,10 @@ describe('Theme Key Extraction', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
     const mapping = mapPropertyToTheme('box-shadow');
-    const themeKey = mapping?.keyExtractor(rules[0].selector);
+    expect(mapping).toBeDefined();
+    const themeKey = mapping?.keyExtractor(rules[0]!.selector);
     expect(themeKey).toBe('xl');
   });
 
@@ -340,7 +353,7 @@ describe('CSS Variable Skipping', () => {
 
     // Should only extract the .rounded-lg rule, not --radius-lg
     expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
-    expect(rules[0].selector).toBe('.rounded-lg');
+    expect(rules[0]!.selector).toBe('.rounded-lg');
   });
 
   test('only extracts rules with theme property mapping', () => {
@@ -357,7 +370,7 @@ describe('CSS Variable Skipping', () => {
 
     // color is not mapped, so only border-radius rule extracted
     expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
-    expect(rules[0].property).toBe('border-radius');
+    expect(rules[0]!.property).toBe('border-radius');
   });
 });
 
@@ -377,7 +390,7 @@ describe('Helper Functions', () => {
 
     expect(allRules).toHaveLength(TWO_RULES);
     expect(resolvable).toHaveLength(SIMPLE_RULE_COUNT);
-    expect(resolvable[0].selector).toBe('.rounded-lg');
+    expect(resolvable[0]!.selector).toBe('.rounded-lg');
   });
 
   test('groupRulesByVariant groups correctly', () => {
@@ -445,7 +458,8 @@ describe('Edge Cases', () => {
     const rule = root.first as postcss.Rule;
     const rules = extractCSSRules(rule, 'theme-test');
 
-    expect(rules[0].originalSelector).toBe('.theme-test .container');
+    expect(rules).toHaveLength(SIMPLE_RULE_COUNT);
+    expect(rules[0]!.originalSelector).toBe('.theme-test .container');
   });
 
   test('handles mixed simple and complex rules', () => {
