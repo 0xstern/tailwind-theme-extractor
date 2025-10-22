@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2025-01-19
+
 ### Added
 
 - **Initial Keyword Support**: Discard default Tailwind theme variables using the `initial` keyword ([#2](https://github.com/0xstern/tailwind-resolver/issues/2))
