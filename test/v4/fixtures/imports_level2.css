@@ -1,0 +1,24 @@
+/**
+ * Second level of nested imports
+ * Tests recursive import resolution
+ */
+
+@import './imports_level3.css';
+
+@theme {
+  /* Level 2 theme additions */
+  --color-level-2: #222222;
+  --spacing-level-2: 2rem;
+  --font-level-2: 'Level2Font', sans-serif;
+}
+
+/* Level 2 variant */
+[data-theme='level-2'] {
+  --color-secondary: #bbbbbb;
+  --color-background: #cccccc;
+}
+
+/* Override level 3 color */
+:root {
+  --color-level-3: #333333;
+}

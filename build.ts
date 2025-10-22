@@ -49,13 +49,13 @@ const entryPoints = [
   },
   {
     name: 'v4-type-generator',
-    path: 'src/v4/shared/type-generator.ts',
-    outputName: 'v4/type-generator',
+    path: 'src/v4/shared/type_generator.ts',
+    outputName: 'v4/type_generator',
   },
   {
-    name: 'v4-spacing-helper',
-    path: 'src/v4/shared/spacing-helper.ts',
-    outputName: 'v4/shared/spacing-helper',
+    name: 'v4-spacing_helper',
+    path: 'src/v4/shared/spacing_helper.ts',
+    outputName: 'v4/shared/spacing_helper',
   },
 ];
 

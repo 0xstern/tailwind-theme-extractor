@@ -55,9 +55,9 @@
       "require": "./dist/v4/vite-plugin.js"
     },
     "./v4/shared/spacing-helper": {
-      "types": "./dist/v4/shared/spacing-helper.d.ts",
-      "import": "./dist/v4/shared/spacing-helper.mjs",
-      "require": "./dist/v4/shared/spacing-helper.js"
+      "types": "./dist/v4/shared/spacing_helper.d.ts",
+      "import": "./dist/v4/shared/spacing_helper.mjs",
+      "require": "./dist/v4/shared/spacing_helper.js"
     }
   },
   "files": [
@@ -105,9 +105,9 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "test:unit": "bun test __tests__/v4/unit",
-    "test:integration": "bun test __tests__/v4/integration",
-    "test:e2e": "bun test __tests__/v4/e2e",
+    "test:unit": "bun test test/v4",
+    "test:integration": "bun test test/v4/integration",
+    "test:e2e": "bun test test/v4/e2e",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
     "lint": "eslint .",

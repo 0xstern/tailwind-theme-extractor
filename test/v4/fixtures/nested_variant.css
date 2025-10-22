@@ -1,0 +1,35 @@
+@import './default_theme.css';
+
+@theme {
+  --color-primary: var(--primary);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-ring: var(--ring);
+}
+
+.theme-mono .theme-container {
+  --primary: var(--color-stone-600);
+  --sidebar-primary: var(--color-stone-600);
+
+  @variant dark {
+    --primary: var(--color-stone-500);
+    --sidebar-primary: var(--color-stone-500);
+  }
+}
+
+.theme-blue .theme-container {
+  --primary: var(--color-blue-700);
+  --ring: var(--color-blue-400);
+
+  @variant dark {
+    --primary: var(--color-blue-500);
+    --ring: var(--color-blue-900);
+  }
+}
+
+.theme-custom {
+  --font-sans: var(--font-mono);
+
+  @variant dark {
+    --font-sans: var(--font-serif);
+  }
+}

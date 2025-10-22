@@ -114,6 +114,19 @@ Test files (`.test.ts`, `.spec.ts`) have relaxed rules:
 - Ignored: `dist/`, `node_modules/`, `.DS_Store`
 - Import alias: `@` maps to `./src`
 
+### File Naming Convention
+
+All files in this project use **snake_case** naming:
+
+- **Source files**: `{module_name}.ts`
+  - Examples: `css_parser.ts`, `theme_builder.ts`, `report_writer.ts`
+- **Test files**: `{module_name}_test.ts` (with `_test` suffix)
+  - Examples: `conflicts_test.ts`, `extractor_test.ts`, `edge_cases_test.ts`
+- **Fixture files**: `{fixture_name}.css`
+  - Examples: `base_theme.css`, `dark_mode.css`, `custom_themes.css`
+
+**Rationale**: snake_case provides better readability and consistency across the codebase, especially for multi-word module names.
+
 ## Additional Notes
 
 - Prefer TypeScript strict mode settings

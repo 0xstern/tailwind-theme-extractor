@@ -49,6 +49,7 @@ This project maintains strict code quality standards:
 - **TypeScript**: No `any` types, use explicit typing
 - **ESLint**: All rules must pass, zero warnings or errors
 - **Prettier**: Consistent formatting with single quotes, 80 character line length
+- **File Naming**: Use snake_case for all files (e.g., `css_parser.ts`, `theme_builder.ts`)
 - **Testing**: All new features must include tests
 - **Documentation**: Update README.md for user-facing changes
 
@@ -60,6 +61,13 @@ This project maintains strict code quality standards:
 - Use optional chaining (`?.`) for safe property access
 - No magic numbers (except -1, 0, 1)
 - Functions should have cyclomatic complexity under 10
+
+### File Naming Conventions
+
+- **Source files**: `{module_name}.ts` (snake_case)
+- **Test files**: `{module_name}_test.ts` (snake_case with `_test` suffix)
+- **Fixture files**: `{fixture_name}.css` (snake_case)
+- **Examples**: `css_parser.ts`, `theme_builder.ts`, `conflicts_test.ts`, `base_theme.css`
 
 ### Commit Messages
 

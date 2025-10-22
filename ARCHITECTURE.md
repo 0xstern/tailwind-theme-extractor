@@ -197,7 +197,7 @@ The type generator also accepts both formats via wrapper functions that detect a
 
 ## Core Modules
 
-### 1. CSS Parser (`src/v4/parser/css-parser.ts`)
+### 1. CSS Parser (`src/v4/core/parser/css.ts`)
 
 **Entry Point** - Main orchestrator of the parsing pipeline.
 
@@ -220,7 +220,7 @@ The type generator also accepts both formats via wrapper functions that detect a
 
 - Pass `debug: true` to enable warning logs for failed imports
 
-### 2. Import Resolver (`src/v4/parser/import-resolver.ts`)
+### 2. Import Resolver (`src/v4/core/parser/imports.ts`)
 
 **Purpose** - Recursively resolves and inlines @import statements.
 
@@ -254,7 +254,7 @@ console.warn('  Resolved path: /absolute/path/to/missing.css');
 console.warn('  Error: ENOENT: no such file or directory');
 ```
 
-### 3. Variable Extractor (`src/v4/parser/variable-extractor.ts`)
+### 3. Variable Extractor (`src/v4/core/parser/extractor.ts`)
 
 **Purpose** - Extract CSS variables and CSS rules from @theme, :root, and variant selectors.
 
@@ -303,7 +303,7 @@ The `extractVariantName()` function intelligently handles different selector pat
 
 This ensures proper CSS cascade behavior where nested selectors can reference variables from their parent selectors.
 
-### 3a. CSS Rule Extractor (`src/v4/parser/css-rule-extractor.ts`)
+### 3a. CSS Rule Extractor (`src/v4/core/extraction/rules.ts`)
 
 **Purpose** - Extract and classify CSS rules within variant selectors that may conflict with CSS variables.
 
@@ -363,7 +363,7 @@ Maps CSS properties to theme namespaces:
 }
 ```
 
-### 3b. Conflict Resolver (`src/v4/parser/conflict-resolver.ts`)
+### 3b. Conflict Resolver (`src/v4/core/analysis/conflicts.ts`)
 
 **Purpose** - Detect and resolve conflicts between CSS rules and theme variables.
 
@@ -474,7 +474,7 @@ The `normalizeReportOptions()` function provides consistent defaults:
 
 This ensures backward compatibility (reports enabled by default) while providing flexibility to disable specific reports or all reports.
 
-### 3c. Unresolved Variable Detector (`src/v4/parser/unresolved-detector.ts`)
+### 3c. Unresolved Variable Detector (`src/v4/core/analysis/unresolved.ts`)
 
 **Purpose** - Detect CSS variables with `var()` references that couldn't be resolved during theme building.
 
@@ -528,7 +528,7 @@ const VAR_REFERENCE_REGEX_TEST = /var\((--[\w-]+)(?:,\s*([^)]+))?\)/;
 
 The non-global pattern is used for testing, global pattern for extraction, preventing `lastIndex` state bugs.
 
-### 3d. Unresolved Variable Reporter (`src/v4/parser/unresolved-reporter.ts`)
+### 3d. Unresolved Variable Reporter (`src/v4/core/reporting/unresolved.ts`)
 
 **Purpose** - Generate human-readable and machine-readable reports for unresolved variables.
 
@@ -608,7 +608,7 @@ Non-intrusive single-line notification:
 ℹ  8 unresolved variables detected (see src/generated/tailwindcss/unresolved.md)
 ```
 
-### 3e. Conflict Reporter (`src/v4/parser/conflict-reporter.ts`)
+### 3e. Conflict Reporter (`src/v4/core/reporting/conflicts.ts`)
 
 **Purpose** - Generate human-readable and machine-readable conflict reports.
 
@@ -683,7 +683,7 @@ Non-intrusive single-line notification:
 ⚠  12 CSS conflicts detected (see src/generated/tailwindcss/conflicts.md)
 ```
 
-### 4. Theme Builder (`src/v4/parser/theme-builder.ts`)
+### 4. Theme Builder (`src/v4/core/theme/builder.ts`)
 
 **Purpose** - Transform flat CSS variables into structured Theme object with var() resolution.
 
@@ -761,7 +761,7 @@ For nested/compound variants (e.g., `compact.dark`), the theme builder includes 
 
 This mirrors CSS's natural cascade behavior, ensuring that `[data-theme='compact'].dark` can reference variables defined in both `[data-theme='compact']` and `.dark` selectors.
 
-### 4a. Theme Override System (`src/v4/parser/theme-overrides.ts`)
+### 4a. Theme Override System (`src/v4/core/theme/overrides.ts`)
 
 **Purpose** - Apply custom theme value overrides to fix unresolved variables or conflicts programmatically.
 
@@ -991,7 +991,7 @@ export interface OverrideOptions {
 }
 ```
 
-### 5. Tailwind Defaults Loader (`src/v4/parser/tailwind-defaults.ts`)
+### 5. Tailwind Defaults Loader (`src/v4/core/theme/defaults.ts`)
 
 **Purpose** - Load and merge Tailwind's default theme from node_modules for var() resolution.
 
@@ -1191,7 +1191,7 @@ Useful for:
 - SSR environments
 - Cross-project theme generation
 
-### Type Generator (`src/v4/shared/type-generator.ts`)
+### Type Generator (`src/v4/shared/type_generator.ts`)
 
 **Output:**
 
@@ -1246,7 +1246,7 @@ result.variants.default.colors.primary[500]; // Fully typed!
 - Shared escaping logic via `escapeStringLiteral()`
 - Reduced from 516 to 460 lines (11% improvement)
 
-### Dynamic Spacing Helper (`src/v4/shared/spacing-helper.ts`)
+### Dynamic Spacing Helper (`src/v4/shared/spacing_helper.ts`)
 
 **Purpose** - Provide a callable helper function that replicates Tailwind's `calc(var(--spacing) * N)` behavior for runtime dynamic spacing calculations.
 
@@ -1307,7 +1307,7 @@ const hasDefaultSpacing =
 if (hasDefaultSpacing) {
   // Import spacing helper
   imports.push(
-    "import { createSpacingHelper } from '@0xstern/tailwind-resolver/v4/shared/spacing-helper';",
+    "import { createSpacingHelper } from '@0xstern/tailwind-resolver/v4/shared/spacing_helper';",
   );
 
   // Apply to default theme and all variants
@@ -1571,7 +1571,7 @@ const NAMESPACE_MAP = {
 };
 ```
 
-3. **Add to type generator** (`src/v4/vite/type-generator.ts`):
+3. **Add to type generator** (`src/v4/vite/type_generator.ts`):
 
 ```typescript
 const THEME_PROPERTY_CONFIGS = [

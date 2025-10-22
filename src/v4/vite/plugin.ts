@@ -15,7 +15,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { DEFAULT_OUTPUT_DIRS } from '../shared/constants';
-import { generateThemeFiles } from '../shared/file-generator';
+import { generateThemeFiles } from '../shared/file_generator';
 import { normalizeRuntimeOptions } from '../shared/utils';
 
 /**

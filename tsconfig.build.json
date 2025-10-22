@@ -9,7 +9,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "__tests__",
+    "test",
     "examples",
     "*.config.js",
     "*.config.ts"

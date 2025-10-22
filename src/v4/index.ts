@@ -26,12 +26,13 @@ import type {
   UnknownTailwind,
 } from './types';
 
-import { parseCSS } from './parser/css-parser';
 import {
   extractInitialExclusions,
   filterThemeByExclusions,
-} from './parser/initial-filter';
-import { loadTailwindDefaults, mergeThemes } from './parser/tailwind-defaults';
+  loadTailwindDefaults,
+  mergeThemes,
+  parseCSS,
+} from './core';
 
 /**
  * Resolves theme variables from Tailwind v4 CSS files with full type safety
@@ -206,10 +207,10 @@ export type {
 } from './types';
 
 // Re-export initial filter utilities for advanced use cases
-export type { InitialExclusion } from './parser/initial-filter';
+export type { InitialExclusion } from './core';
 export {
   extractInitialExclusions,
   filterDefaultsByExclusions,
   filterThemeByExclusions,
   matchesExclusion,
-} from './parser/initial-filter';
+} from './core';

@@ -1,0 +1,64 @@
+/**
+ * Main comprehensive edge case test file
+ * Imports everything and adds additional complexity
+ */
+
+/* Import all sub-files */
+@import './base_theme.css';
+@import './dark_mode.css';
+@import './custom_themes.css';
+@import './media_queries.css';
+@import './overrides.css';
+@import './imports_level1.css';
+
+/* Additional @theme block after imports */
+@theme {
+  /* Main file exclusive variables */
+  --color-main-exclusive: #ff00ff;
+  --spacing-main: 999px;
+  --spacing-main-test: 0.5px;
+
+  /* Main file exclusive colors */
+  --color-white-main: #fefefe;
+}
+
+/* Main file exclusive variant */
+[data-theme='main'] {
+  --color-main-variant: #00ffff;
+  --color-brand-main: #123456;
+}
+
+/* Another dark theme selector - should merge with imported dark */
+[data-theme='dark'] {
+  --color-main-dark-addition: #789abc;
+}
+
+/* Complex selector patterns */
+[data-theme='complex'][data-mode='advanced'] {
+  --color-complex: #abcabc;
+}
+
+/* Class with multiple classes */
+.theme-a.theme-b {
+  --color-multi-class: #defdef;
+}
+
+/* Descendant selector (first class should be detected) */
+.container .child {
+  --color-descendant: #456456;
+}
+
+/* ID selector (should try to resolve) */
+#custom-theme {
+  --color-id-selector: #789789;
+}
+
+/* Attribute selector without data-theme */
+[lang='en'] {
+  --font-language: 'English Font';
+}
+
+/* Final :root override */
+:root {
+  --color-final-override: #fedcba;
+}

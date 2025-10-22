@@ -12,7 +12,7 @@ import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import { OUTPUT_FILES } from '../shared/constants';
-import { generateThemeFiles } from '../shared/file-generator';
+import { generateThemeFiles } from '../shared/file_generator';
 import { autoDetectOutputDir } from '../shared/utils';
 
 interface CliOptions {

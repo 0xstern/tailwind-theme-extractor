@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Exported type guards `isConflictReportJSON()` and `isUnresolvedReportJSON()` from reporting modules for safe JSON report parsing
+
+### Refactored
+
+- **Internal**: Reorganized source directory structure from `src/v4/parser/` to `src/v4/core/` with organized subdirectories
+  - `core/parser/` - CSS parsing and import resolution
+  - `core/analysis/` - Conflict and unresolved variable detection
+  - `core/reporting/` - Report generation (Markdown and JSON)
+  - `core/theme/` - Theme building and defaults
+  - `core/extraction/` - CSS rule extraction
+  - `core/utils/` - Shared utilities and helper functions
+  - `core/constants/` - Constants and formatting
+- **Internal**: All files renamed from kebab-case to snake_case convention
+  - Source: `css-parser.ts` → `css.ts`, `theme-builder.ts` → `builder.ts`
+  - Tests: `{module}.test.ts` → `{module}_test.ts`
+  - Fixtures: `base-theme.css` → `base_theme.css`
+- Code deduplication through extraction of shared utilities (LRU cache, type guards, formatting helpers)
+- Enhanced type safety with runtime type guards and explicit JSON validation
+
 ## [0.2.6] - 2025-01-19
 
 ### Fixed
