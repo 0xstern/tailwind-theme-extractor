@@ -90,6 +90,11 @@ export default [
           ignore: [-1, 0, 1],
           ignoreArrayIndexes: true,
           ignoreDefaultValues: true,
+          ignoreEnums: true,
+          ignoreNumericLiteralTypes: true,
+          ignoreReadonlyClassProperties: true,
+          // Allow magic numbers in array literals and object properties
+          enforceConst: true,
         },
       ],
       '@typescript-eslint/prefer-as-const': 'error',

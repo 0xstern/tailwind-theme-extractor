@@ -305,6 +305,8 @@ export function extractVariables(root: Root): {
         atRule.walkDecls((decl) => {
           if (decl.prop.startsWith('--')) {
             if (!isSelfReferential(decl.prop, decl.value)) {
+              // Always include variables, even with 'initial' value
+              // The 'initial' values will be used to filter defaults, but we need to track them
               variables.push({
                 name: decl.prop,
                 value: decl.value,
