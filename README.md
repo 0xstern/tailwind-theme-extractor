@@ -540,6 +540,116 @@ When unresolved variables are detected, two report files are generated:
 - Variables like `--font-sans: var(--font-sans)`
 - Intentionally skipped to use Tailwind defaults
 
+## Disabling Default Theme Values with `initial`
+
+Remove unwanted Tailwind defaults by setting theme variables to `initial` in `@theme` blocks, matching the official Tailwind CSS v4 behavior ([docs](https://tailwindcss.com/docs/colors#disabling-default-colors)).
+
+```css
+@theme {
+  /* Remove specific theme properties */
+  --color-lime-*: initial;
+  --spacing-4: initial;
+  --radius-lg: initial;
+
+  /* Remove entire categories */
+  --color-*: initial;
+  --spacing-*: initial;
+
+  /* Custom values are always preserved */
+  --color-primary-500: #3b82f6;
+}
+```
+
+### Key Features
+
+- **Works for all theme properties** - Colors, spacing, fonts, shadows, radius, etc.
+- **Supports wildcards** - Use `*` to match multiple values (`--color-lime-*`, `--color-*`)
+- **Preserves custom values** - Only removes Tailwind defaults, never your custom theme
+- **Highest priority** - Takes precedence over `includeTailwindDefaults` configuration
+- **Supports `@theme` and `@theme inline`** blocks
+
+### Relationship with `includeTailwindDefaults`
+
+Use both together for maximum control:
+
+```typescript
+const result = await resolveTheme({
+  css: `
+    @theme {
+      --color-lime-*: initial;
+      --color-fuchsia-*: initial;
+      --spacing-4: initial;
+    }
+  `,
+  includeTailwindDefaults: {
+    colors: true, // Include all colors...
+    spacing: true, // Include all spacing...
+    shadows: false, // Exclude shadows
+  },
+});
+
+// Result:
+// - Colors: All defaults EXCEPT lime and fuchsia (removed by initial)
+// - Spacing: All defaults EXCEPT spacing.4 (removed by initial)
+// - Shadows: Empty (excluded by config)
+```
+
+| Configuration                               | Result                                       |
+| ------------------------------------------- | -------------------------------------------- |
+| `includeTailwindDefaults: true`             | All defaults included                        |
+| `includeTailwindDefaults: false`            | No defaults included                         |
+| `includeTailwindDefaults: { colors: true }` | Only color defaults included                 |
+| `initial` in CSS                            | Removes specific defaults (highest priority) |
+
+### Use Cases
+
+**1. Reduce bundle size** - Remove unused defaults:
+
+```css
+@theme {
+  --color-lime-*: initial;
+  --color-fuchsia-*: initial;
+  --color-pink-*: initial;
+}
+```
+
+**2. Prevent conflicts** - Remove defaults that clash with your brand:
+
+```css
+@theme {
+  --color-blue-*: initial;
+  --color-primary-500: #1e40af; /* Custom brand blue */
+}
+```
+
+**3. Minimal theme** - Start from scratch:
+
+```css
+@theme {
+  --color-*: initial;
+
+  --color-foreground: #000;
+  --color-background: #fff;
+  --color-primary-500: #3b82f6;
+}
+```
+
+**4. Platform-specific themes**:
+
+```typescript
+// Mobile - minimal palette
+const mobile = await resolveTheme({
+  css: '@theme { --color-*: initial; --color-primary-500: blue; }',
+  includeTailwindDefaults: { spacing: true },
+});
+
+// Desktop - full palette
+const desktop = await resolveTheme({
+  css: '@theme { --color-primary-500: blue; }',
+  includeTailwindDefaults: true,
+});
+```
+
 ## Theme Overrides
 
 Apply custom theme value overrides programmatically to fix unresolved variables or conflicts without modifying CSS files.

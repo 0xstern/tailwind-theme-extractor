@@ -1603,7 +1603,8 @@ That's it! The pipeline will automatically handle resolution, building, and type
 
 ### Test Coverage
 
-- 614 passing tests (100% pass rate)
+- 694 passing tests (100% pass rate)
+- 1908 expect() calls
 - All core paths covered
 - Updated to use new `TailwindResult` API structure
 - Tests verify both runtime API and generated code consistency
@@ -1616,6 +1617,9 @@ That's it! The pipeline will automatically handle resolution, building, and type
 - Theme override system test coverage:
   - 43 unit tests for override logic (theme-overrides.test.ts)
   - 11 integration tests for full override pipeline (override-system.test.ts)
+- Initial keyword filtering test coverage:
+  - 37 unit tests for filtering logic (initial-filter.test.ts)
+  - 24 integration tests for end-to-end functionality (initial-keyword.test.ts)
 
 ## Related Documentation
 

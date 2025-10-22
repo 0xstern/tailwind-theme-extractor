@@ -979,6 +979,11 @@ function buildTheme(
   const helpers: ProcessorHelpers = { fontSizeLineHeights };
 
   for (const variable of variables) {
+    // Skip variables with 'initial' value - they are used for filtering defaults only
+    if (variable.value.trim() === 'initial') {
+      continue;
+    }
+
     const resolvedValue = resolveVarReferences(variable.value, allVariablesMap);
     const reference = referenceMap.get(variable.name);
 

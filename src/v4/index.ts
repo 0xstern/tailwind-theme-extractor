@@ -27,6 +27,10 @@ import type {
 } from './types';
 
 import { parseCSS } from './parser/css-parser';
+import {
+  extractInitialExclusions,
+  filterThemeByExclusions,
+} from './parser/initial-filter';
 import { loadTailwindDefaults, mergeThemes } from './parser/tailwind-defaults';
 
 /**
@@ -92,25 +96,47 @@ export async function resolveTheme<TTailwind = UnknownTailwind>(
   // Parse user's theme (returns ParseResult<Theme> from internal parser)
   const userResult = await parseCSS(options);
 
+  // Extract initial exclusions from user's theme variables
+  // These will be used to filter out Tailwind defaults
+  const themeVariables = userResult.variables.filter(
+    (v) => v.source === 'theme',
+  );
+  const initialExclusions = extractInitialExclusions(themeVariables);
+
   let finalTheme: Theme;
 
   // If user doesn't want defaults, use user theme as-is
+  // But still apply initial filtering to remove any initial declarations
   if (includeTailwindDefaults === false) {
-    finalTheme = userResult.theme;
+    finalTheme = filterThemeByExclusions(userResult.theme, initialExclusions);
   } else {
     // Try to load Tailwind's default theme
     const defaultTheme = await loadTailwindDefaults(basePath ?? process.cwd());
 
     // If no defaults found (Tailwind not installed), use user theme
     if (defaultTheme === null) {
-      finalTheme = userResult.theme;
+      finalTheme = filterThemeByExclusions(userResult.theme, initialExclusions);
     } else {
+      // Filter the default theme based on initial exclusions
+      // This takes priority over includeTailwindDefaults options
+      const filteredDefaultTheme = filterThemeByExclusions(
+        defaultTheme,
+        initialExclusions,
+      );
+
       // Normalize options: true becomes {}, object stays as-is
       const mergeOptions =
         includeTailwindDefaults === true ? {} : includeTailwindDefaults;
 
-      // Merge: user theme overrides defaults
-      finalTheme = mergeThemes(defaultTheme, userResult.theme, mergeOptions);
+      // Merge: user theme overrides filtered defaults
+      const mergedTheme = mergeThemes(
+        filteredDefaultTheme,
+        userResult.theme,
+        mergeOptions,
+      );
+
+      // Apply final filtering to remove any initial declarations from merged theme
+      finalTheme = filterThemeByExclusions(mergedTheme, initialExclusions);
     }
   }
 
@@ -180,3 +206,12 @@ export type {
   OverrideOptions,
   TailwindDefaultsOptions,
 } from './types';
+
+// Re-export initial filter utilities for advanced use cases
+export type { InitialExclusion } from './parser/initial-filter';
+export {
+  extractInitialExclusions,
+  filterDefaultsByExclusions,
+  filterThemeByExclusions,
+  matchesExclusion,
+} from './parser/initial-filter';

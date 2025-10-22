@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Initial Keyword Support**: Discard default Tailwind theme variables using the `initial` keyword ([#2](https://github.com/0xstern/tailwind-resolver/issues/2))
+  - Implements Tailwind CSS v4 `initial` keyword behavior per [official docs](https://tailwindcss.com/docs/colors#disabling-default-colors)
+  - Filters default variables set to `initial` in `@theme` and `@theme inline` blocks
+  - Supports wildcard patterns: `--color-*`, `--color-lime-*`, `--spacing-*`, etc.
+  - Works across all theme namespaces (colors, spacing, fonts, shadows, radius, etc.)
+  - Only affects Tailwind defaults from `node_modules/tailwindcss/theme.css`, preserves user-defined values
+  - CSS `initial` declarations take precedence over `includeTailwindDefaults` configuration
+  - New module: `src/v4/parser/initial-filter.ts` with filtering logic
+  - Comprehensive test coverage: 37 unit tests + 24 integration tests (61 total)
+  - Updated documentation: README, ARCHITECTURE, with examples and use cases
+
 - **Granular Tailwind Defaults Control**: Enhanced `includeTailwindDefaults` option with object-based configuration for selective category inclusion
   - New `TailwindDefaultsOptions` interface with 21 boolean properties (colors, spacing, fonts, fontSize, fontWeight, tracking, leading, breakpoints, containers, radius, shadows, insetShadows, dropShadows, textShadows, blur, perspective, aspect, ease, animations, defaults, keyframes)
   - Updated `mergeThemes()` to accept optional `TailwindDefaultsOptions` parameter for selective merging
