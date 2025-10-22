@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2025-01-19
+
 ### Fixed
 
 - **Initial Keyword CSS Cascade Order**: Fixed `initial` keyword to properly respect CSS cascade order, matching Tailwind CSS v4 behavior exactly
