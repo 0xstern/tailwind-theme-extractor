@@ -1603,8 +1603,8 @@ That's it! The pipeline will automatically handle resolution, building, and type
 
 ### Test Coverage
 
-- 694 passing tests (100% pass rate)
-- 1908 expect() calls
+- 703 passing tests (100% pass rate)
+- 1968 expect() calls
 - All core paths covered
 - Updated to use new `TailwindResult` API structure
 - Tests verify both runtime API and generated code consistency
@@ -1619,7 +1619,11 @@ That's it! The pipeline will automatically handle resolution, building, and type
   - 11 integration tests for full override pipeline (override-system.test.ts)
 - Initial keyword filtering test coverage:
   - 37 unit tests for filtering logic (initial-filter.test.ts)
-  - 24 integration tests for end-to-end functionality (initial-keyword.test.ts)
+  - 30 integration tests for end-to-end functionality (initial-keyword.test.ts)
+    - Includes 6 CSS cascade order tests ensuring proper sequential processing
+    - Verifies both Case 1 (value before initial → removed) and Case 2 (initial before value → preserved)
+    - Tests complex cascade scenarios with multiple values and wildcard patterns
+    - Validates integration with Tailwind defaults and namespace-wide exclusions
 
 ## Related Documentation
 

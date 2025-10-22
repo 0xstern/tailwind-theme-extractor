@@ -106,19 +106,19 @@ export async function resolveTheme<TTailwind = UnknownTailwind>(
   let finalTheme: Theme;
 
   // If user doesn't want defaults, use user theme as-is
-  // But still apply initial filtering to remove any initial declarations
+  // Note: initial exclusions only affect defaults, not user theme
   if (includeTailwindDefaults === false) {
-    finalTheme = filterThemeByExclusions(userResult.theme, initialExclusions);
+    finalTheme = userResult.theme;
   } else {
     // Try to load Tailwind's default theme
     const defaultTheme = await loadTailwindDefaults(basePath ?? process.cwd());
 
     // If no defaults found (Tailwind not installed), use user theme
     if (defaultTheme === null) {
-      finalTheme = filterThemeByExclusions(userResult.theme, initialExclusions);
+      finalTheme = userResult.theme;
     } else {
       // Filter the default theme based on initial exclusions
-      // This takes priority over includeTailwindDefaults options
+      // This ONLY affects Tailwind defaults, not user-defined values
       const filteredDefaultTheme = filterThemeByExclusions(
         defaultTheme,
         initialExclusions,
@@ -129,14 +129,12 @@ export async function resolveTheme<TTailwind = UnknownTailwind>(
         includeTailwindDefaults === true ? {} : includeTailwindDefaults;
 
       // Merge: user theme overrides filtered defaults
-      const mergedTheme = mergeThemes(
+      // No need to filter the result - user theme is never affected by initial
+      finalTheme = mergeThemes(
         filteredDefaultTheme,
         userResult.theme,
         mergeOptions,
       );
-
-      // Apply final filtering to remove any initial declarations from merged theme
-      finalTheme = filterThemeByExclusions(mergedTheme, initialExclusions);
     }
   }
 

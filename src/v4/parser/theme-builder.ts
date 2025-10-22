@@ -22,6 +22,7 @@ import {
   detectConflicts,
   filterResolvableConflicts,
 } from './conflict-resolver';
+import { applyInitialExclusionToTheme } from './initial-filter';
 import {
   applyThemeOverrides,
   injectVariableOverrides,
@@ -960,6 +961,10 @@ function processNamespacedVariable(
 /**
  * Builds a structured Theme object from raw CSS variables
  *
+ * This function processes variables in order, respecting CSS cascade rules.
+ * When an `initial` value is encountered, it removes matching properties
+ * from the theme being built, allowing later declarations to override.
+ *
  * @param variables - Array of CSS variables to build theme from
  * @param keyframes - Map of keyframe name to CSS string
  * @param deprecationWarnings - Array to collect deprecation warnings
@@ -979,8 +984,21 @@ function buildTheme(
   const helpers: ProcessorHelpers = { fontSizeLineHeights };
 
   for (const variable of variables) {
-    // Skip variables with 'initial' value - they are used for filtering defaults only
+    // Handle 'initial' values by removing matching properties from theme
+    // This respects CSS cascade order: initial overrides earlier values
     if (variable.value.trim() === 'initial') {
+      const parsed = parseVariableName(variable.name);
+      if (parsed !== null) {
+        const { namespace, key } = parsed;
+        const isWildcard = key.endsWith('-*') || key === '*';
+        const exclusion = {
+          pattern: variable.name,
+          namespace,
+          keyPattern: key,
+          isWildcard,
+        };
+        applyInitialExclusionToTheme(theme, exclusion);
+      }
       continue;
     }
 

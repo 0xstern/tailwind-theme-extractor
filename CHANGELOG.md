@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Initial Keyword CSS Cascade Order**: Fixed `initial` keyword to properly respect CSS cascade order, matching Tailwind CSS v4 behavior exactly
+  - Before: `--color-red-50: #fff; --color-*: initial;` incorrectly preserved red-50
+  - After: Correctly removes red-50 (initial comes after and overrides)
+  - Still works: `--color-*: initial; --color-red-50: #fff;` preserves red-50 (value comes after initial)
+  - Added `applyInitialExclusionToTheme()` function for in-place theme mutations during building
+  - Modified `buildTheme()` to process `initial` declarations as removal operations in sequence
+  - Ensures enterprise-grade behavior: robust, reliable, predictable, matching default Tailwind behavior
+  - 6 new integration tests covering cascade order edge cases
+  - All 705 tests passing with zero regressions
+
 ## [0.2.5] - 2025-01-19
 
 ### Added

@@ -456,3 +456,170 @@ function filterSimpleProperty(
 
   return filtered;
 }
+
+/**
+ * Applies a single initial exclusion to a theme in-place during building
+ *
+ * This is used during theme construction to handle CSS cascade order where
+ * `initial` declarations can override previous specific values.
+ *
+ * Mutates the theme object by removing matching keys.
+ *
+ * @param theme - Theme object being built (will be mutated)
+ * @param exclusion - Single exclusion pattern to apply
+ *
+ * @example
+ * ```typescript
+ * const theme = { colors: { red: { 50: '#fff', 100: '#fee' } } };
+ * const exclusion = { namespace: 'color', keyPattern: 'red-*', isWildcard: true };
+ * applyInitialExclusionToTheme(theme, exclusion);
+ * // theme.colors.red is now undefined (removed)
+ * ```
+ */
+export function applyInitialExclusionToTheme(
+  theme: Theme,
+  exclusion: InitialExclusion,
+): void {
+  // Namespace to theme property mappings
+  const namespaceToProperty: Record<string, keyof Theme> = {
+    color: 'colors',
+    spacing: 'spacing',
+    font: 'fonts',
+    'font-weight': 'fontWeight',
+    text: 'fontSize',
+    tracking: 'tracking',
+    leading: 'leading',
+    breakpoint: 'breakpoints',
+    container: 'containers',
+    radius: 'radius',
+    shadow: 'shadows',
+    'inset-shadow': 'insetShadows',
+    'drop-shadow': 'dropShadows',
+    'text-shadow': 'textShadows',
+    blur: 'blur',
+    perspective: 'perspective',
+    aspect: 'aspect',
+    ease: 'ease',
+    animate: 'animations',
+    default: 'defaults',
+  };
+
+  const property = namespaceToProperty[exclusion.namespace];
+  if (property === undefined) {
+    return;
+  }
+
+  // Handle colors separately (can be flat or color scales)
+  if (property === 'colors') {
+    applyExclusionToColors(theme.colors, exclusion);
+    return;
+  }
+
+  // Handle fontSize separately (structured differently)
+  if (property === 'fontSize') {
+    applyExclusionToFontSizes(theme.fontSize, exclusion);
+    return;
+  }
+
+  // For simple key-value properties
+  applyExclusionToSimpleProperty(
+    theme[property] as Record<string, unknown>,
+    exclusion,
+  );
+}
+
+/**
+ * Applies exclusion to colors, removing matching entries in-place
+ *
+ * @param colors - Theme colors to mutate
+ * @param exclusion - Exclusion pattern to apply
+ */
+function applyExclusionToColors(
+  colors: Theme['colors'],
+  exclusion: InitialExclusion,
+): void {
+  const keysToDelete: Array<string> = [];
+
+  for (const [colorName, colorValue] of Object.entries(colors)) {
+    if (typeof colorValue === 'string') {
+      // Flat color
+      const variableName = `--color-${colorName}`;
+      if (matchesExclusion(variableName, exclusion)) {
+        keysToDelete.push(colorName);
+      }
+    } else {
+      // Color scale - check each variant
+      const variantsToDelete: Array<string | number> = [];
+
+      for (const [variant] of Object.entries(colorValue)) {
+        const variableName = `--color-${colorName}-${variant}`;
+        if (matchesExclusion(variableName, exclusion)) {
+          variantsToDelete.push(variant);
+        }
+      }
+
+      // Remove matching variants
+      for (const variant of variantsToDelete) {
+        delete colorValue[variant];
+      }
+
+      // If all variants removed, mark color for deletion
+      if (Object.keys(colorValue).length === 0) {
+        keysToDelete.push(colorName);
+      }
+    }
+  }
+
+  // Remove marked colors
+  for (const key of keysToDelete) {
+    delete colors[key];
+  }
+}
+
+/**
+ * Applies exclusion to font sizes, removing matching entries in-place
+ *
+ * @param fontSize - Theme font sizes to mutate
+ * @param exclusion - Exclusion pattern to apply
+ */
+function applyExclusionToFontSizes(
+  fontSize: Theme['fontSize'],
+  exclusion: InitialExclusion,
+): void {
+  const keysToDelete: Array<string> = [];
+
+  for (const [key] of Object.entries(fontSize)) {
+    const variableName = `--text-${key}`;
+    if (matchesExclusion(variableName, exclusion)) {
+      keysToDelete.push(key);
+    }
+  }
+
+  for (const key of keysToDelete) {
+    delete fontSize[key];
+  }
+}
+
+/**
+ * Applies exclusion to simple properties, removing matching entries in-place
+ *
+ * @param property - Theme property object to mutate
+ * @param exclusion - Exclusion pattern to apply
+ */
+function applyExclusionToSimpleProperty(
+  property: Record<string, unknown>,
+  exclusion: InitialExclusion,
+): void {
+  const keysToDelete: Array<string> = [];
+
+  for (const [key] of Object.entries(property)) {
+    const variableName = `--${exclusion.namespace}-${key}`;
+    if (matchesExclusion(variableName, exclusion)) {
+      keysToDelete.push(key);
+    }
+  }
+
+  for (const key of keysToDelete) {
+    delete property[key];
+  }
+}
