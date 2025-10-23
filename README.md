@@ -72,14 +72,23 @@ export default defineConfig({
       // - false: Exclude all defaults
       // - object: Granular control over which categories to include
       // Default: true
-      includeTailwindDefaults: true,
+      includeDefaults: true,
       // Or granular control:
-      // includeTailwindDefaults: {
+      // includeDefaults: {
       //   colors: true,
       //   spacing: true,
       //   shadows: false,
       //   radius: false,
       // },
+
+      // Optional: Configure nesting behavior for CSS variable keys
+      // Control how dashes in variable names create nested structures
+      // Default: undefined (unlimited nesting, consecutiveDashes: 'exclude')
+      nesting: {
+        colors: { maxDepth: 2 }, // Limit color nesting to 2 levels
+        shadows: { consecutiveDashes: 'camelcase' }, // Treat -- as camelCase
+        default: { maxDepth: 3 }, // Apply to all other namespaces
+      },
 
       // Optional: Enable debug logging for troubleshooting
       // Default: false
@@ -149,15 +158,23 @@ const result = await resolveTheme({
   // - false: Exclude all defaults
   // - object: Granular control over which categories to include
   // Default: true
-  includeTailwindDefaults: true,
+  includeDefaults: true,
   // Or granular control:
-  // includeTailwindDefaults: {
+  // includeDefaults: {
   //   colors: true,
   //   spacing: true,
   //   fonts: true,
   //   shadows: false,
   //   animations: false,
   // },
+
+  // Optional: Configure nesting behavior for CSS variable keys
+  // Default: undefined (unlimited nesting, consecutiveDashes: 'exclude')
+  nesting: {
+    colors: { maxDepth: 2 },
+    shadows: { consecutiveDashes: 'camelcase' },
+    default: { maxDepth: 3 },
+  },
 
   // Optional: Enable debug logging
   // Default: false
@@ -296,6 +313,438 @@ dark.spacing(8);              // Uses dark theme's spacing base (or falls back t
 - `indent-<n>`, `border-spacing-<n>`, `scroll-m-<n>`
 
 **Note:** If your theme doesn't define `--spacing-base`, the spacing helper won't be generated. Define spacing in your CSS to enable this feature.
+
+## Nesting Configuration
+
+Control how CSS variable names are parsed into nested theme structures. By default, all namespaces use unlimited nesting (every dash creates a new nesting level).
+
+### Default Behavior
+
+Without configuration, CSS variable names are parsed with unlimited nesting:
+
+```css
+@theme {
+  --color-tooltip-outline-50: #fff;
+  /* → colors.tooltip.outline[50] */
+
+  --shadow-elevation-high-focus: 0 0 0;
+  /* → shadows.elevation.high.focus */
+
+  --radius-button-primary-lg: 1rem;
+  /* → radius.button.primary.lg */
+}
+```
+
+### Limiting Nesting Depth
+
+Use `maxDepth` to limit how many nesting levels to create. After the limit, remaining parts are flattened to camelCase:
+
+**Vite Plugin:**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  nesting: {
+    colors: { maxDepth: 2 },
+  },
+});
+```
+
+**Runtime API:**
+
+```typescript
+const result = await resolveTheme({
+  input: './styles.css',
+  nesting: {
+    colors: { maxDepth: 2 },
+  },
+});
+```
+
+**CLI:**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 2
+```
+
+**Result:**
+
+```css
+--color-tooltip-outline-50: #fff;
+/* Before (unlimited nesting): colors.tooltip.outline[50] */
+/* After (maxDepth: 2): colors.tooltip.outline['50'] */
+/* (No change - only 3 parts total, maxDepth allows 2 nesting levels) */
+
+--color-brand-primary-hover-500: #3b82f6;
+/* Before (unlimited nesting): colors.brand.primary.hover[500] */
+/* After (maxDepth: 2): colors.brand.primary.hover500 */
+/* (4 parts total, maxDepth: 2 → 2 nesting levels, rest flattened) */
+```
+
+### Consecutive Dashes Handling
+
+Control how consecutive dashes (`--`) in variable names are processed using the `consecutiveDashes` option:
+
+- **`'exclude'`** (default, matches Tailwind v4) - Skip variables with consecutive dashes entirely
+- **`'nest'`** - Treat consecutive dashes as single dash (nesting boundary)
+- **`'camelcase'`** - Convert consecutive dashes to camelCase boundary
+- **`'literal'`** - Preserve consecutive dashes in keys
+
+**Vite Plugin:**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  nesting: {
+    colors: { consecutiveDashes: 'camelcase' },
+  },
+});
+```
+
+**Runtime API:**
+
+```typescript
+const result = await resolveTheme({
+  input: './styles.css',
+  nesting: {
+    colors: { consecutiveDashes: 'camelcase' },
+  },
+});
+```
+
+**CLI:**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --nesting-consecutive-dashes camelcase
+```
+
+**Results:**
+
+```css
+--color-button--primary: #fff;
+
+/* 'exclude' (default): Not included in theme at all */
+
+/* 'nest': colors.button.primary */
+
+/* 'camelcase': colors.buttonPrimary */
+
+/* 'literal': colors['button-'].primary */
+```
+
+### Flatten Mode
+
+When `maxDepth` is reached, control how remaining parts are flattened using the `flattenMode` option:
+
+- **`'camelcase'`** (default) - Flatten remaining parts to camelCase
+- **`'literal'`** - Flatten remaining parts to a single kebab-case string key
+
+**Vite Plugin:**
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  nesting: {
+    colors: {
+      maxDepth: 2,
+      flattenMode: 'literal',
+    },
+  },
+});
+```
+
+**Runtime API:**
+
+```typescript
+const result = await resolveTheme({
+  input: './styles.css',
+  nesting: {
+    colors: {
+      maxDepth: 2,
+      flattenMode: 'literal',
+    },
+  },
+});
+```
+
+**CLI:**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 2 --nesting-flatten-mode literal
+```
+
+**Results:**
+
+```css
+--color-blue-sky-light-50: #e0f2fe;
+
+/* flattenMode: 'camelcase' (default) with maxDepth: 2 */
+colors.blue.sky.light50
+/* (2 nesting levels: blue, sky; then remaining parts flattened to light50) */
+
+/* flattenMode: 'literal' with maxDepth: 2 */
+colors.blue.sky['light-50']
+/* (2 nesting levels: blue, sky; then remaining parts flattened to 'light-50') */
+```
+
+**Note:** `flattenMode` only applies when `maxDepth` is set and reached. Without `maxDepth`, all parts are nested normally.
+
+### Combining Options
+
+Combine `maxDepth`, `consecutiveDashes`, and `flattenMode` for fine-grained control:
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  nesting: {
+    colors: {
+      maxDepth: 2,
+      consecutiveDashes: 'camelcase',
+      flattenMode: 'literal',
+    },
+  },
+});
+```
+
+```css
+--color-tooltip--outline-hover-50: #fff;
+/* Step 1: Consecutive dashes → tooltipOutline (single part) */
+/* Step 2: Remaining parts → hover, 50 */
+/* Step 3: maxDepth: 2 with flattenMode: 'literal' → colors.tooltipOutline.hover['50'] */
+/* (2 nesting levels: tooltipOutline, hover; then final key: 50) */
+
+/* With flattenMode: 'camelcase' (default) → colors.tooltipOutline.hover['50'] */
+/* (Same result - only 3 parts total, maxDepth: 2 allows 2 levels) */
+```
+
+### Per-Namespace Configuration
+
+Configure nesting differently for each namespace:
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  nesting: {
+    colors: { maxDepth: 3 }, // Deep nesting for colors
+    shadows: { maxDepth: 2 }, // Moderate nesting for shadows
+    spacing: { maxDepth: 1 }, // Flat structure for spacing
+    radius: { consecutiveDashes: 'camelcase' }, // CamelCase for radius
+  },
+});
+```
+
+### Global Default Configuration
+
+Use `default` to apply configuration to all namespaces, with namespace-specific overrides:
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  nesting: {
+    default: { maxDepth: 1 }, // Flat by default
+    colors: { maxDepth: 3 }, // Override for colors only
+  },
+});
+```
+
+### Special Cases
+
+**maxDepth: 0** - Complete flattening:
+
+```css
+--color-brand-primary-dark: #000;
+```
+
+```typescript
+// With flattenMode: 'camelcase' (default)
+nesting: { default: { maxDepth: 0 } }
+// Result: colors.brandPrimaryDark
+
+// With flattenMode: 'literal'
+nesting: { default: { maxDepth: 0, flattenMode: 'literal' } }
+// Result: colors['brand-primary-dark']
+```
+
+**No configuration** - Unlimited nesting, consecutive dashes excluded (default behavior):
+
+```css
+--color-tooltip-outline-50: #fff;
+/* → colors.tooltip.outline[50] */
+
+--color-button--primary: #fff;
+/* → Excluded (not included in theme) */
+```
+
+**Numeric keys** - Preserved when possible:
+
+```css
+--color-red-50: #fef2f2; /* → colors.red[50] */
+--color-red-500: #ef4444; /* → colors.red[500] */
+```
+
+With `maxDepth: 1`:
+
+```css
+--color-red-50: #fef2f2; /* → colors.red['50'] */
+--color-red-500: #ef4444; /* → colors.red['500'] */
+/* (1 nesting level: red; then final key: 50/500) */
+```
+
+### CLI Flags
+
+The CLI provides simple flags for common use cases:
+
+```bash
+# Limit nesting depth for all namespaces
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 2
+
+# Control consecutive dashes handling
+bunx tailwind-resolver -i src/styles.css --nesting-consecutive-dashes camelcase
+
+# Control flatten mode (how parts after maxDepth are flattened)
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 2 --nesting-flatten-mode literal
+
+# Combine all options
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 2 --nesting-consecutive-dashes nest --nesting-flatten-mode literal
+```
+
+**Note:** CLI flags apply globally to all namespaces. For per-namespace control, use the Vite plugin or Runtime API.
+
+### DEFAULT Key for Conflicts
+
+When both a scalar variable and nested variables exist at the same path, the scalar value is automatically moved to a `DEFAULT` key:
+
+**CSS:**
+
+```css
+@theme {
+  --color-card: blue;
+  --color-card-foreground: white;
+}
+```
+
+**Result:**
+
+```typescript
+{
+  colors: {
+    card: {
+      DEFAULT: 'blue',        // Scalar value at DEFAULT
+      foreground: 'white'
+    }
+  }
+}
+```
+
+This matches Tailwind's color scale convention where `DEFAULT` represents the base value:
+
+```typescript
+colors: {
+  blue: {
+    DEFAULT: '#3b82f6',  // Base blue color
+    50: '#eff6ff',
+    500: '#3b82f6'
+  }
+}
+```
+
+**Key Features:**
+
+- **Automatic conflict resolution** - No data loss when both scalar and nested values exist
+- **Works in any order** - Scalar first or nested first, result is the same
+- **All namespaces** - colors, spacing, shadows, radius, etc.
+- **All nesting depths** - Works with `maxDepth`, `flattenMode`, and `consecutiveDashes` options
+- **Variant themes** - Applied consistently across default and variant themes
+
+**Examples:**
+
+```css
+/* Example 1: Scalar first, then nested */
+--color-card: blue;
+--color-card-foreground: white;
+/* Result: { card: { DEFAULT: 'blue', foreground: 'white' } } */
+
+/* Example 2: Nested first, then scalar */
+--color-card-foreground: white;
+--color-card: blue;
+/* Result: { card: { DEFAULT: 'blue', foreground: 'white' } } */
+
+/* Example 3: Multiple nested properties */
+--color-card: blue;
+--color-card-foreground: white;
+--color-card-border: gray;
+/* Result: { card: { DEFAULT: 'blue', foreground: 'white', border: 'gray' } } */
+
+/* Example 4: With color scales */
+--color-blue-500: #3b82f6;
+--color-blue-600: #2563eb;
+--color-blue: #1d4ed8;
+/* Result: { blue: { DEFAULT: '#1d4ed8', 500: '#3b82f6', 600: '#2563eb' } } */
+
+/* Example 5: Deep nesting with DEFAULT at multiple levels */
+--color-theme: blue;
+--color-theme-card: red;
+--color-theme-card-primary: green;
+/* Result: { theme: { DEFAULT: 'blue', card: { DEFAULT: 'red', primary: 'green' } } } */
+```
+
+**With nesting configuration:**
+
+```css
+/* With maxDepth: 2 */
+--color-card-primary-500: blue;
+--color-card-primary: red;
+/* Result: { card: { primary: { DEFAULT: 'red', '500': 'blue' } } } */
+
+/* With flattenMode: 'literal' and maxDepth: 1 */
+--color-card-deep-nested-value: blue;
+--color-card: red;
+/* Result: { card: { DEFAULT: 'red', 'deep-nested-value': 'blue' } } */
+```
+
+The `DEFAULT` key is used automatically whenever there's a conflict between a scalar value and nested properties, ensuring no theme data is lost during the nesting process.
+
+### Use Cases
+
+**1. Consistent Flat Structure**
+
+```typescript
+nesting: {
+  default: { maxDepth: 0 }
+}
+```
+
+```css
+--color-brand-primary-500: #3b82f6; /* → colors.brandPrimary500 */
+--shadow-elevation-high-focus: 0 0 0; /* → shadows.elevationHighFocus */
+```
+
+**2. BEM-Style Naming**
+
+```typescript
+nesting: {
+  default: {
+    maxDepth: 1,
+    consecutiveDashes: 'camelcase'
+  }
+}
+```
+
+```css
+--color-button--primary: #fff; /* → colors.buttonPrimary */
+--color-button--secondary: #eee; /* → colors.buttonSecondary */
+--color-input--error: #f00; /* → colors.inputError */
+```
+
+**3. Controlled Depth by Category**
+
+```typescript
+nesting: {
+  colors: { maxDepth: 3 },     // Deep color scales
+  shadows: { maxDepth: 2 },    // Moderate shadow variants
+  radius: { maxDepth: 1 },     // Flat radius values
+}
+```
 
 > **Other CSS variables:** Tailwind uses different CSS variables for different utilities:
 >
@@ -565,10 +1014,10 @@ Remove unwanted Tailwind defaults by setting theme variables to `initial` in `@t
 - **Works for all theme properties** - Colors, spacing, fonts, shadows, radius, etc.
 - **Supports wildcards** - Use `*` to match multiple values (`--color-lime-*`, `--color-*`)
 - **Preserves custom values** - Only removes Tailwind defaults, never your custom theme
-- **Highest priority** - Takes precedence over `includeTailwindDefaults` configuration
+- **Highest priority** - Takes precedence over `includeDefaults` configuration
 - **Supports `@theme` and `@theme inline`** blocks
 
-### Relationship with `includeTailwindDefaults`
+### Relationship with `includeDefaults`
 
 Use both together for maximum control:
 
@@ -581,7 +1030,7 @@ const result = await resolveTheme({
       --spacing-4: initial;
     }
   `,
-  includeTailwindDefaults: {
+  includeDefaults: {
     colors: true, // Include all colors...
     spacing: true, // Include all spacing...
     shadows: false, // Exclude shadows
@@ -594,12 +1043,12 @@ const result = await resolveTheme({
 // - Shadows: Empty (excluded by config)
 ```
 
-| Configuration                               | Result                                       |
-| ------------------------------------------- | -------------------------------------------- |
-| `includeTailwindDefaults: true`             | All defaults included                        |
-| `includeTailwindDefaults: false`            | No defaults included                         |
-| `includeTailwindDefaults: { colors: true }` | Only color defaults included                 |
-| `initial` in CSS                            | Removes specific defaults (highest priority) |
+| Configuration                       | Result                                       |
+| ----------------------------------- | -------------------------------------------- |
+| `includeDefaults: true`             | All defaults included                        |
+| `includeDefaults: false`            | No defaults included                         |
+| `includeDefaults: { colors: true }` | Only color defaults included                 |
+| `initial` in CSS                    | Removes specific defaults (highest priority) |
 
 ### Use Cases
 
@@ -640,13 +1089,13 @@ const result = await resolveTheme({
 // Mobile - minimal palette
 const mobile = await resolveTheme({
   css: '@theme { --color-*: initial; --color-primary-500: blue; }',
-  includeTailwindDefaults: { spacing: true },
+  includeDefaults: { spacing: true },
 });
 
 // Desktop - full palette
 const desktop = await resolveTheme({
   css: '@theme { --color-primary-500: blue; }',
-  includeTailwindDefaults: true,
+  includeDefaults: true,
 });
 ```
 

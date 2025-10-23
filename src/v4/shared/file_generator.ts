@@ -4,6 +4,7 @@
 
 import type { CSSRuleConflict, UnresolvedVariable } from '../core';
 import type {
+  NestingOptions,
   OverrideOptions,
   ReportGenerationOptions,
   RuntimeGenerationOptions,
@@ -244,11 +245,12 @@ async function prepareTypeAndRuntimeWrites(
  * @param outputDir - Absolute path to the output directory
  * @param resolveImports - Whether to resolve `@import` statements recursively
  * @param runtimeOptions - Controls what gets generated in runtime file (false = no runtime file)
- * @param includeTailwindDefaults - Control inclusion of Tailwind CSS defaults (boolean or granular options)
+ * @param includeDefaults - Control inclusion of Tailwind CSS defaults (boolean or granular options)
  * @param debug - Enable debug logging for troubleshooting
  * @param basePath - Base path for resolving node_modules (defaults to input file's directory)
  * @param reportOptions - Controls which diagnostic reports to generate
  * @param overrides - Optional theme value overrides
+ * @param nesting - Optional nesting configuration for CSS variable keys
  * @returns Promise resolving to object with files and optional report info
  * @throws Error if input file cannot be read or parsed
  * @throws Error if output files cannot be written
@@ -258,11 +260,12 @@ export async function generateThemeFiles(
   outputDir: string,
   resolveImports: boolean,
   runtimeOptions: RuntimeGenerationOptions | false,
-  includeTailwindDefaults: boolean | TailwindDefaultsOptions,
+  includeDefaults: boolean | TailwindDefaultsOptions,
   debug: boolean = false,
   basePath?: string,
   reportOptions?: ReportGenerationOptions,
   overrides?: OverrideOptions,
+  nesting?: NestingOptions,
 ): Promise<{
   files: Array<string>;
   conflictCount?: number;
@@ -274,10 +277,11 @@ export async function generateThemeFiles(
     const result = await resolveTheme({
       input: inputPath,
       resolveImports,
-      includeTailwindDefaults,
+      includeDefaults,
       debug,
       basePath,
       overrides,
+      nesting,
     });
 
     const relativeSourcePath = path.relative(outputDir, inputPath);

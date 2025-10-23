@@ -9,7 +9,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   test('handles --spacing (singular) as spacing.base', async () => {
     const result = await resolveTheme({
       css: '@theme { --spacing: 0.25rem; }',
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.spacing.base).toBe('0.25rem');
@@ -18,7 +18,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   test('handles --blur (singular) as blur.default', async () => {
     const result = await resolveTheme({
       css: '@theme { --blur: 8px; }',
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.blur.default).toBe('8px');
@@ -27,7 +27,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   test('handles --shadow (singular) as shadows.default', async () => {
     const result = await resolveTheme({
       css: '@theme { --shadow: 0 1px 3px rgba(0,0,0,0.1); }',
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.shadows.default).toBe(
@@ -38,7 +38,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   test('handles --radius (singular) as radius.default', async () => {
     const result = await resolveTheme({
       css: '@theme { --radius: 0.25rem; }',
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.radius.default).toBe('0.25rem');
@@ -54,7 +54,7 @@ describe('Singular Variables (Deprecated Format)', () => {
           --radius: 0.25rem;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.spacing.base).toBe('0.25rem');
@@ -74,7 +74,7 @@ describe('Singular Variables (Deprecated Format)', () => {
           --blur-lg: 16px;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.blur.default).toBe('8px');
@@ -85,7 +85,7 @@ describe('Singular Variables (Deprecated Format)', () => {
   test('unknown singular variables use "default" key', async () => {
     const result = await resolveTheme({
       css: '@theme { --custom: some-value; }',
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // Should resolve with 'default' key for unknown namespaces
@@ -105,7 +105,7 @@ describe('Singular Variables (Deprecated Format)', () => {
           --blur: 8px;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // Base theme
@@ -124,7 +124,7 @@ describe('Singular Variables (Deprecated Format)', () => {
           --blur: var(--custom-blur);
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.spacing.base).toBe('calc(0.25rem * 2)');
@@ -141,7 +141,7 @@ describe('Singular Variables (Deprecated Format)', () => {
           --radius: 0.25rem;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.deprecationWarnings).toHaveLength(
@@ -182,7 +182,7 @@ describe('Singular Variables (Deprecated Format)', () => {
           --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.deprecationWarnings).toHaveLength(0);
@@ -199,7 +199,7 @@ describe('Singular Variables (Deprecated Format)', () => {
           --blur: 8px;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // Should have 1 warning (deduplicated across base + variant)

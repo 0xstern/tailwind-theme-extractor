@@ -41,7 +41,7 @@ import {
  * for all theme properties, variants, selectors, files, and variables.
  *
  * Automatically includes Tailwind's default theme and merges with user overrides
- * unless `includeTailwindDefaults: false` is specified.
+ * unless `includeDefaults: false` is specified.
  *
  * Error Handling:
  * - File not found: Throws error if the specified filePath doesn't exist
@@ -92,7 +92,7 @@ import {
 export async function resolveTheme<TTailwind = UnknownTailwind>(
   options: ParseOptions,
 ): Promise<TailwindResult<TTailwind>> {
-  const { includeTailwindDefaults = true, basePath } = options;
+  const { includeDefaults = true, basePath, nesting } = options;
 
   // Parse user's theme (returns ParseResult<Theme> from internal parser)
   const userResult = await parseCSS(options);
@@ -108,26 +108,29 @@ export async function resolveTheme<TTailwind = UnknownTailwind>(
 
   // If user doesn't want defaults, use user theme as-is
   // Note: initial exclusions only affect defaults, not user theme
-  if (includeTailwindDefaults === false) {
+  if (includeDefaults === false) {
     finalTheme = userResult.theme;
   } else {
-    // Try to load Tailwind's default theme
-    const defaultTheme = await loadTailwindDefaults(basePath ?? process.cwd());
+    // Try to load Tailwind's default theme with nesting configuration
+    // This ensures defaults respect the same nesting rules as user variables
+    const defaultsResult = await loadTailwindDefaults(
+      basePath ?? process.cwd(),
+      nesting,
+    );
 
     // If no defaults found (Tailwind not installed), use user theme
-    if (defaultTheme === null) {
+    if (defaultsResult === null) {
       finalTheme = userResult.theme;
     } else {
       // Filter the default theme based on initial exclusions
       // This ONLY affects Tailwind defaults, not user-defined values
       const filteredDefaultTheme = filterThemeByExclusions(
-        defaultTheme,
+        defaultsResult.theme,
         initialExclusions,
       );
 
       // Normalize options: true becomes {}, object stays as-is
-      const mergeOptions =
-        includeTailwindDefaults === true ? {} : includeTailwindDefaults;
+      const mergeOptions = includeDefaults === true ? {} : includeDefaults;
 
       // Merge: user theme overrides filtered defaults
       // No need to filter the result - user theme is never affected by initial

@@ -32,7 +32,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves font sizes with calc() expressions resolved', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Font sizes are stored as objects with resolved calc() expressions
@@ -53,7 +53,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves radius with calc() and resolved variable references', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Variables are resolved before being stored
@@ -67,7 +67,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves complex spacing calculations', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // calc() is preserved but variables are resolved
@@ -79,7 +79,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves unnamespaced variables with resolved values', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Variables without recognized namespaces remain in variables array but are resolved
@@ -98,7 +98,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves min() with resolved variables', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Container namespace maps to "containers" theme property
@@ -110,7 +110,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves max() with viewport units', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       expect(result.variants.default.containers.responsive).toBe(
@@ -121,7 +121,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves nested min/max combinations as raw variables', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // width and height namespaces don't exist in NAMESPACE_MAP, so stored as variables
@@ -143,7 +143,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves fluid typography with clamp() resolved', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Font size with clamp() may resolve to minimum value during resolution
@@ -157,7 +157,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves responsive padding with calc() inside clamp() in raw variables', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // padding-responsive doesn't have a recognized namespace, stored as raw variable
@@ -173,7 +173,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves shadow with resolved variables', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Shadow variables are resolved into theme.shadows
@@ -188,7 +188,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves grid column width with complex calculation', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Grid namespace variables remain in raw form
@@ -204,7 +204,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves heading calculations with resolved variables', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // heading-1, heading-2 don't have recognized namespaces but are resolved
@@ -220,7 +220,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves section gap with resolved variables', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const sectionGapVar = result.variables.find(
@@ -234,7 +234,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves all theme variants', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const variantNames = Object.keys(result.variants);
@@ -255,7 +255,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('dark variant overrides in raw variables (no reference map)', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // --background and --foreground from .dark variant don't have @theme references
@@ -271,7 +271,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('dark variant adjusts spacing with calc() and resolved values', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const darkVars = result.variables.filter((v) => v.variantName === 'dark');
@@ -287,7 +287,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('compact variant reduces all spacing values', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const compactVars = result.variables.filter(
@@ -308,7 +308,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('large variant increases spacing and typography', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const largeVars = result.variables.filter(
@@ -329,7 +329,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('high-contrast variant increases color intensity', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const highContrastVars = result.variables.filter(
@@ -350,7 +350,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('gradient variant defines gradient properties with resolved values', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const gradientVars = result.variables.filter(
@@ -376,7 +376,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('math-heavy variant handles golden ratio calculations with resolved values', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const mathVars = result.variables.filter(
@@ -402,7 +402,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('math-heavy variant handles complex clamp with min/max', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const mathVars = result.variables.filter(
@@ -420,7 +420,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves ultra-complex nested functions - calc(clamp(min/max/calc))', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const edgeCaseVars = result.variables.filter(
@@ -444,7 +444,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves hyper-nested clamp with calc/min/max at all levels', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const edgeCaseVars = result.variables.filter(
@@ -465,7 +465,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves calc with nested clamp and arithmetic operations', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const edgeCaseVars = result.variables.filter(
@@ -488,7 +488,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves mixed units in calc()', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const edgeCaseVars = result.variables.filter(
@@ -506,7 +506,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves multiple min() and max() functions with resolved vars', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const edgeCaseVars = result.variables.filter(
@@ -524,7 +524,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves clamp with all calc() expressions resolved', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const edgeCaseVars = result.variables.filter(
@@ -541,7 +541,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves deeply nested var() references fully resolved', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const edgeCaseVars = result.variables.filter(
@@ -564,7 +564,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves negative values in calc() with resolved vars', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const edgeCaseVars = result.variables.filter(
@@ -585,7 +585,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves chained operations with all vars resolved', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const edgeCaseVars = result.variables.filter(
@@ -606,7 +606,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves compact.dark nested theme', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Check if we have a variant that combines both selectors
@@ -631,7 +631,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves responsive base unit', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       const responsiveVars = result.variables.filter(
@@ -649,7 +649,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('resolves comprehensive theme with all properties', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Verify we have a substantial number of variables
@@ -669,7 +669,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('preserves all CSS function wrappers', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Find variables that should have CSS functions
@@ -692,7 +692,7 @@ describe('Complex CSS Functions and Variables', () => {
     test('handles all variants correctly', async () => {
       const result = await resolveTheme({
         css,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Verify each major variant has variables

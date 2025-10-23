@@ -6,6 +6,7 @@
 import type { HmrContext, PluginOption } from 'vite';
 
 import type {
+  NestingOptions,
   OverrideOptions,
   RuntimeGenerationOptions,
   TailwindDefaultsOptions,
@@ -21,7 +22,11 @@ import { normalizeRuntimeOptions } from '../shared/utils';
 /**
  * Re-export for convenience
  */
-export type { RuntimeGenerationOptions, TailwindDefaultsOptions };
+export type {
+  NestingOptions,
+  RuntimeGenerationOptions,
+  TailwindDefaultsOptions,
+};
 
 export interface VitePluginOptions {
   /**
@@ -71,19 +76,19 @@ export interface VitePluginOptions {
    *
    * @example
    * // Include all defaults (default)
-   * includeTailwindDefaults: true
+   * includeDefaults: true
    *
    * // Don't include any defaults
-   * includeTailwindDefaults: false
+   * includeDefaults: false
    *
    * // Include only specific categories
-   * includeTailwindDefaults: {
+   * includeDefaults: {
    *   colors: true,
    *   spacing: true,
    *   shadows: false
    * }
    */
-  includeTailwindDefaults?: boolean | TailwindDefaultsOptions;
+  includeDefaults?: boolean | TailwindDefaultsOptions;
 
   /**
    * Enable debug logging for troubleshooting
@@ -103,6 +108,38 @@ export interface VitePluginOptions {
    * }
    */
   overrides?: OverrideOptions;
+
+  /**
+   * Configure nesting behavior for CSS variable keys
+   * Control how dashes in variable names create nested structures
+   * @default undefined (uses default behavior: unlimited nesting, consecutiveDashes: 'exclude')
+   *
+   * @example
+   * // Limit color nesting to 2 levels
+   * nesting: {
+   *   colors: { maxDepth: 2 }
+   * }
+   *
+   * @example
+   * // Treat consecutive dashes as camelCase boundary
+   * nesting: {
+   *   colors: { consecutiveDashes: 'camelcase' }
+   * }
+   *
+   * @example
+   * // Exclude variables with consecutive dashes (default)
+   * nesting: {
+   *   colors: { consecutiveDashes: 'exclude' }
+   * }
+   *
+   * @example
+   * // Apply default config to all namespaces
+   * nesting: {
+   *   default: { maxDepth: 1 },
+   *   colors: { maxDepth: 3 } // Override for colors
+   * }
+   */
+  nesting?: NestingOptions;
 }
 
 export function tailwindResolver(options: VitePluginOptions): PluginOption {
@@ -110,9 +147,10 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
     input,
     resolveImports = true,
     generateRuntime = true,
-    includeTailwindDefaults = true,
+    includeDefaults = true,
     debug = false,
     overrides,
+    nesting,
   } = options;
 
   const runtimeOptions = normalizeRuntimeOptions(generateRuntime);
@@ -150,11 +188,12 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
       fullOutputDir,
       resolveImports,
       runtimeOptions,
-      includeTailwindDefaults,
+      includeDefaults,
       debug,
       basePath,
       reportOptions,
       overrides,
+      nesting,
     );
 
     // Update watched files set

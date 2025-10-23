@@ -49,6 +49,9 @@ npx tailwind-resolver -i src/styles.css
 - `--exclude-defaults [categories]` - Include all except specified Tailwind default categories (comma-separated)
 - `--reports [categories]` - Generate only specified diagnostic reports (comma-separated: conflicts, unresolved)
 - `--exclude-reports [categories]` - Generate all except specified diagnostic reports (comma-separated)
+- `--nesting-max-depth <number>` - Limit nesting depth for all namespaces
+- `--nesting-consecutive-dashes <mode>` - Control consecutive dashes handling: 'exclude' (default), 'nest', 'camelcase', or 'literal'
+- `--nesting-flatten-mode <mode>` - Control how parts after maxDepth are flattened: 'camelcase' (default) or 'literal'
 - `-d, --debug` - Enable debug mode (logging + include debug data in runtime)
 - `-h, --help` - Display help message
 
@@ -409,6 +412,105 @@ This enables `var()` references like:
 ```
 
 The CLI resolves `var(--color-blue-500)` to `oklch(0.6 0.2 250)` from Tailwind's defaults (if `colors` category is included).
+
+### Nesting Configuration
+
+The CLI provides flags to control how CSS variable names are parsed into nested theme structures. By default, all namespaces use unlimited nesting (every dash creates a new nesting level), and variables with consecutive dashes (`--`) are excluded (matching Tailwind v4 behavior).
+
+**Limit nesting depth:**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 2
+```
+
+This limits nesting to 2 levels for all namespaces. Remaining parts are flattened to camelCase:
+
+```css
+--color-tooltip-outline-50: #fff;
+/* Without flag: colors.tooltip.outline[50] */
+/* With flag:    colors.tooltip.outline50 */
+
+--shadow-elevation-high-focus: 0 0 0;
+/* Without flag: shadows.elevation.high.focus */
+/* With flag:    shadows.elevation.highFocus */
+```
+
+**Control consecutive dashes handling:**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --nesting-consecutive-dashes camelcase
+```
+
+This controls how consecutive dashes (`--`) in variable names are processed:
+
+- **`'exclude'`** (default) - Skip variables with consecutive dashes entirely (matches Tailwind v4)
+- **`'nest'`** - Treat consecutive dashes as single dash (nesting boundary)
+- **`'camelcase'`** - Convert consecutive dashes to camelCase boundary
+- **`'literal'`** - Preserve consecutive dashes in keys
+
+```css
+--color-button--primary: #fff;
+
+/* 'exclude' (default): Not included in theme at all */
+/* 'nest':              colors.button.primary */
+/* 'camelcase':         colors.buttonPrimary */
+/* 'literal':           colors['button-'].primary */
+```
+
+**Control flatten mode (how parts after maxDepth are flattened):**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 2 --nesting-flatten-mode literal
+```
+
+This controls how remaining parts are flattened after `maxDepth` is reached:
+
+- **`'camelcase'`** (default) - Flatten remaining parts to camelCase
+- **`'literal'`** - Flatten remaining parts to a single kebab-case string key
+
+```css
+--color-blue-sky-light-50: #e0f2fe;
+
+/* flattenMode: 'camelcase' (default) */
+colors.blue.skyLight50
+
+/* flattenMode: 'literal' */
+colors.blue['sky-light-50']
+```
+
+**Note:** `flattenMode` only applies when `maxDepth` is set and reached.
+
+**Combine all options:**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 2 --nesting-consecutive-dashes camelcase --nesting-flatten-mode literal
+```
+
+```css
+--color-tooltip--outline-hover-50: #fff;
+/* Step 1: Consecutive dashes → tooltipOutline */
+/* Step 2: Max depth 2 with flattenMode: 'literal' → colors.tooltipOutline['hover-50'] */
+
+/* With flattenMode: 'camelcase' (default) → colors.tooltipOutline.hover50 */
+```
+
+**Common use cases:**
+
+```bash
+# Flat structure (no nesting)
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 0
+
+# BEM-style naming (single level + camelCase)
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 1 --nesting-consecutive-dashes camelcase
+
+# Include variables with consecutive dashes (legacy behavior)
+bunx tailwind-resolver -i src/styles.css --nesting-consecutive-dashes literal
+
+# Moderate nesting (2 levels)
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 2
+```
+
+**Note:** CLI flags apply globally to all namespaces. For per-namespace control (e.g., different depth for colors vs shadows), use the Vite plugin or Runtime API with the `nesting` option.
 
 ### Base Path Resolution
 

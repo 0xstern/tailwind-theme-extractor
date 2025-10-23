@@ -25,7 +25,7 @@
 /* Main file exclusive variant */
 [data-theme='main'] {
   --color-main-variant: #00ffff;
-  --color-brand-main: #123456;
+  --color-brandMain: #123456;
 }
 
 /* Another dark theme selector - should merge with imported dark */

@@ -16,7 +16,7 @@ describe('Initial keyword - Integration tests', () => {
   test('removes single color scale with wildcard', async () => {
     const result = await resolveTheme({
       css: '@theme { --color-lime-*: initial; }',
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should NOT have lime color scale
@@ -36,7 +36,7 @@ describe('Initial keyword - Integration tests', () => {
           --color-fuchsia-*: initial;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should NOT have lime or fuchsia
@@ -52,7 +52,7 @@ describe('Initial keyword - Integration tests', () => {
   test('removes all colors with namespace wildcard', async () => {
     const result = await resolveTheme({
       css: '@theme { --color-*: initial; }',
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should have empty colors object
@@ -67,7 +67,7 @@ describe('Initial keyword - Integration tests', () => {
   test('removes single color variant', async () => {
     const result = await resolveTheme({
       css: '@theme { --color-lime-500: initial; }',
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // If lime exists, it should not have the 500 variant
@@ -90,7 +90,7 @@ describe('Initial keyword - Integration tests', () => {
           --color-primary-500: #custom;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should NOT have lime
@@ -122,7 +122,7 @@ describe('Initial keyword - Integration tests', () => {
           --color-primary: var(--primary);
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Tailwind defaults should be removed
@@ -158,10 +158,10 @@ describe('Initial keyword - Integration tests', () => {
           --color-foreground: var(--foreground);
           --color-card: var(--card);
           --color-primary: var(--primary);
-          --color-custom-brand: var(--custom-brand);
+          --color-customBrand: var(--custom-brand);
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // User-defined colors should be preserved and var() references resolved
@@ -208,10 +208,10 @@ describe('Initial keyword - Integration tests', () => {
     }
   });
 
-  test('initial takes priority over includeTailwindDefaults', async () => {
+  test('initial takes priority over includeDefaults', async () => {
     const result = await resolveTheme({
       css: '@theme { --color-lime-*: initial; }',
-      includeTailwindDefaults: {
+      includeDefaults: {
         colors: true,
         spacing: true,
       },
@@ -226,7 +226,7 @@ describe('Initial keyword - Integration tests', () => {
     }
   });
 
-  test('initial works with includeTailwindDefaults: false', async () => {
+  test('initial works with includeDefaults: false', async () => {
     const result = await resolveTheme({
       css: `
         @theme {
@@ -234,7 +234,7 @@ describe('Initial keyword - Integration tests', () => {
           --color-primary-600: initial;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // Should have primary with only 500 variant
@@ -251,7 +251,7 @@ describe('Initial keyword - Integration tests', () => {
   test('initial works with spacing namespace', async () => {
     const result = await resolveTheme({
       css: '@theme { --spacing-*: initial; }',
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should have empty spacing
@@ -267,7 +267,7 @@ describe('Initial keyword - Integration tests', () => {
           --radius-lg: initial;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Verify removals
@@ -287,7 +287,7 @@ describe('Initial keyword - Integration tests', () => {
   test('initial in @theme inline context', async () => {
     const result = await resolveTheme({
       css: '@theme inline { --color-lime-*: initial; }',
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should work the same as regular @theme
@@ -307,7 +307,7 @@ describe('Initial keyword - Integration tests', () => {
           --color-green-*: initial;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should NOT have red, blue, or green
@@ -328,19 +328,20 @@ describe('Initial keyword - Integration tests', () => {
           --color-lime-*: initial;
         }
         :root {
-          --color-lime-custom: #custom;
+          --color-limeCustom: #custom;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
-    // Default lime should be removed, but custom value should exist
-    // Note: This depends on how :root variables are mapped
-    // Since :root uses source='root', it won't be filtered by initial
+    // Default lime scale should be removed by initial
     expect(result.variants.default.colors.lime).toBeUndefined();
+
+    // Custom flat color with camelCase should exist
+    expect(result.variants.default.colors.limeCustom).toBe('#custom');
   });
 
-  test('initial with granular includeTailwindDefaults', async () => {
+  test('initial with granular includeDefaults', async () => {
     const result = await resolveTheme({
       css: `
         @theme {
@@ -348,7 +349,7 @@ describe('Initial keyword - Integration tests', () => {
           --spacing-4: initial;
         }
       `,
-      includeTailwindDefaults: {
+      includeDefaults: {
         colors: true,
         spacing: true,
         shadows: false,
@@ -380,7 +381,7 @@ describe('Initial keyword - Integration tests', () => {
           --radius-lg: 1rem;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
       overrides: {
         default: {
           'radius.lg': '0.5rem',
@@ -412,7 +413,7 @@ describe('Initial keyword - Integration tests', () => {
           ;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should still work with whitespace
@@ -427,7 +428,7 @@ describe('Initial keyword - Integration tests', () => {
           --color-blue-600: initial;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Blue should exist but without 500 and 600
@@ -457,7 +458,7 @@ describe('Initial keyword - Integration tests', () => {
           --background: #000;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Default should not have lime
@@ -483,7 +484,7 @@ describe('Initial keyword - CSS Cascade Order', () => {
           --color-*: initial;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // red-50 and red-100 should NOT exist (initial came after and removed them)
@@ -499,7 +500,7 @@ describe('Initial keyword - CSS Cascade Order', () => {
           --color-red-100: #fee;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // red should exist with only 50 and 100 variants (initial came before, then overridden)
@@ -525,7 +526,7 @@ describe('Initial keyword - CSS Cascade Order', () => {
           --color-red-*: initial;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // red should NOT exist (wildcard initial came after and removed all variants)
@@ -541,7 +542,7 @@ describe('Initial keyword - CSS Cascade Order', () => {
           --color-red-500: #custom2;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // red should exist with 400 and 500 (values came after initial)
@@ -569,7 +570,7 @@ describe('Initial keyword - CSS Cascade Order', () => {
           --color-blue-700: #custom;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // Only blue-700 should exist (400, 500, 600 removed by initial, then 700 added)
@@ -591,10 +592,10 @@ describe('Initial keyword - CSS Cascade Order', () => {
       css: `
         @theme {
           --color-*: initial;
-          --color-brand-primary: #user-custom;
+          --color-brandPrimary: #user-custom;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // All defaults removed, only user's custom color preserved
@@ -615,7 +616,7 @@ describe('Initial keyword - Edge cases', () => {
           --: initial;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should not crash, just ignore the malformed pattern
@@ -629,7 +630,7 @@ describe('Initial keyword - Edge cases', () => {
           --nonexistent-value: initial;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should not crash, defaults should still load
@@ -647,7 +648,7 @@ describe('Initial keyword - Edge cases', () => {
           --color-blue-600: initial;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Should have blue with only 500 variant
@@ -672,7 +673,7 @@ describe('Initial keyword - Edge cases', () => {
           --color-primary-500: #custom;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Lime should be removed (defaults)
@@ -698,7 +699,7 @@ describe('Initial keyword - Edge cases', () => {
           --color-blue-500: #0000ff;
         }
       `,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // All default colors should be removed by --color-*: initial

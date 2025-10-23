@@ -9,7 +9,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **DEFAULT Key for Scalar/Nested Conflicts**: Automatically use `DEFAULT` key when both scalar and nested values exist at the same path
+  - Prevents loss of scalar values when nested properties are added
+  - Matches Tailwind's color scale convention (`blue.DEFAULT`, `blue.500`, etc.)
+  - Works across all namespaces (colors, spacing, shadows, etc.)
+  - Handles all nesting configurations (maxDepth, flattenMode, consecutiveDashes)
+  - Example: `--color-card: blue` + `--color-card-foreground: white` → `{ card: { DEFAULT: 'blue', foreground: 'white' } }`
+  - Applied in both directions (scalar first or nested first)
+  - 13 comprehensive integration tests covering all scenarios
+- **Configurable Nesting System**: Control how CSS variable names are parsed into nested theme structures
+  - New `NestingOptions` interface for per-namespace nesting configuration
+  - `maxDepth` option to limit nesting levels (after limit, remaining parts flatten to camelCase)
+  - `consecutiveDashesAsCamelCase` flag to treat consecutive dashes (`--`) as camelCase boundaries
+  - Per-namespace configuration with `default` fallback for global settings
+  - Default behavior: Unlimited nesting for all namespaces (colors, shadows, spacing, etc.)
+  - Backward compatible: Only applies when explicitly configured
+  - Vite plugin support via `nesting` option
+  - CLI support via `--nesting-max-depth <number>` and `--nesting-consecutive-camel` flags
+  - Runtime API support via `nesting` parameter in `resolveTheme()`
+  - New `parseNestedKey()` function with full configuration support
+  - 17 comprehensive integration tests covering all nesting scenarios
+- **Flatten Mode Option**: Control how remaining parts are flattened after `maxDepth` is reached
+  - New `flattenMode` option in `NestingConfig`: `'camelcase'` (default) or `'literal'`
+  - **`'camelcase'`** (default): Flatten remaining parts to camelCase (e.g., `colors.blue.skyLight50`)
+  - **`'literal'`**: Flatten remaining parts to single kebab-case string key (e.g., `colors.blue['sky-light-50']`)
+  - Only applies when `maxDepth` is set and reached
+  - Vite plugin support via `nesting.colors.flattenMode`
+  - CLI support via `--nesting-flatten-mode <mode>` flag
+  - Runtime API support via `nesting.colors.flattenMode`
+  - Comprehensive test coverage for both flattening modes
 - Exported type guards `isConflictReportJSON()` and `isUnresolvedReportJSON()` from reporting modules for safe JSON report parsing
+
+### Fixed
+
+- **Variable Resolution with Tailwind Defaults**: Fixed chained var() resolution when using nesting configuration with Tailwind defaults
+  - Before: Variables like `--color-chart-1: var(--chart-1)` (in @theme) referencing `:root` variables that reference defaults would remain unresolved
+  - Example: `--chart-1: var(--color-blue-300)` would show `"var(--color-blue-300)"` instead of the actual color from defaults
+  - Root cause: Nesting transformations changed variable names (e.g., `blue-300` → `blue300`), breaking var() resolution
+  - After: Original CSS variables from Tailwind defaults are preserved alongside transformed theme structure
+  - Changed `loadTailwindDefaults()` to return both `theme` and original `variables` array
+  - Changed `buildThemes()` to accept original default variables instead of reconstructed ones
+  - Variable resolution now works correctly through the full chain: `@theme` → `:root` → `defaults`
+  - All 745 tests passing with zero regressions
+- **flattenMode with maxDepth: 0**: Fixed bug where `flattenMode` was ignored when `maxDepth: 0`. Now correctly respects both `'camelcase'` and `'literal'` modes when flattening all parts.
+  - Before: `maxDepth: 0` always used camelCase regardless of `flattenMode` setting
+  - After: `maxDepth: 0` with `flattenMode: 'literal'` creates kebab-case keys (e.g., `colors['card-foreground']`)
+  - After: `maxDepth: 0` with `flattenMode: 'camelcase'` (default) creates camelCase keys (e.g., `colors.cardForeground`)
+  - Applies flattening logic consistently across all `maxDepth` values
+
+### Changed
+
+- **Breaking**: Replaced `consecutiveDashesAsCamelCase` boolean with `consecutiveDashes` enum for more flexible handling of consecutive dashes in CSS variable names
+  - Old API: `consecutiveDashesAsCamelCase?: boolean` (default: `false` → preserve consecutive dashes)
+  - New API: `consecutiveDashes?: 'exclude' | 'nest' | 'camelcase' | 'literal'` (default: `'exclude'` → matches Tailwind v4)
+  - **`'exclude'`** (new default): Skip variables with consecutive dashes entirely (matches Tailwind v4 behavior)
+  - **`'nest'`**: Treat consecutive dashes as single dash (nesting boundary)
+  - **`'camelcase'`**: Convert consecutive dashes to camelCase boundary (old `true` behavior)
+  - **`'literal'`**: Preserve consecutive dashes in keys (old `false` behavior)
+  - Example: `--color-button--primary: #fff;`
+    - `'exclude'` (default): Not included in theme
+    - `'nest'`: `colors.button.primary`
+    - `'camelcase'`: `colors.buttonPrimary`
+    - `'literal'`: `colors['button-'].primary`
+  - CLI flag updated: `--nesting-consecutive-camel` → `--nesting-consecutive-dashes <mode>`
+  - Vite plugin option updated: `nesting.colors.consecutiveDashesAsCamelCase` → `nesting.colors.consecutiveDashes`
+  - Runtime API option updated: `nesting.colors.consecutiveDashesAsCamelCase` → `nesting.colors.consecutiveDashes`
+  - Migration: Replace `consecutiveDashesAsCamelCase: true` with `consecutiveDashes: 'camelcase'`
+  - Migration: Replace `consecutiveDashesAsCamelCase: false` (or omitted) with `consecutiveDashes: 'literal'` for old behavior, or omit for new default
+- **Breaking**: Renamed `includeTailwindDefaults` to `includeDefaults` for simpler, shorter API
+  - Old API: `includeTailwindDefaults?: boolean | TailwindDefaultsOptions`
+  - New API: `includeDefaults?: boolean | TailwindDefaultsOptions`
+  - Functionality remains identical - same granular control over Tailwind default theme inclusion
+  - Migration: Replace all instances of `includeTailwindDefaults` with `includeDefaults` in Runtime API, Vite Plugin, and File Generator configurations
 
 ### Refactored
 
@@ -52,12 +123,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Supports wildcard patterns: `--color-*`, `--color-lime-*`, `--spacing-*`, etc.
   - Works across all theme namespaces (colors, spacing, fonts, shadows, radius, etc.)
   - Only affects Tailwind defaults from `node_modules/tailwindcss/theme.css`, preserves user-defined values
-  - CSS `initial` declarations take precedence over `includeTailwindDefaults` configuration
+  - CSS `initial` declarations take precedence over `includeDefaults` configuration
   - New module: `src/v4/parser/initial-filter.ts` with filtering logic
   - Comprehensive test coverage: 37 unit tests + 24 integration tests (61 total)
   - Updated documentation: README, ARCHITECTURE, with examples and use cases
 
-- **Granular Tailwind Defaults Control**: Enhanced `includeTailwindDefaults` option with object-based configuration for selective category inclusion
+- **Granular Tailwind Defaults Control**: Enhanced `includeDefaults` option with object-based configuration for selective category inclusion
   - New `TailwindDefaultsOptions` interface with 21 boolean properties (colors, spacing, fonts, fontSize, fontWeight, tracking, leading, breakpoints, containers, radius, shadows, insetShadows, dropShadows, textShadows, blur, perspective, aspect, ease, animations, defaults, keyframes)
   - Updated `mergeThemes()` to accept optional `TailwindDefaultsOptions` parameter for selective merging
   - Backward compatible: `true` includes all defaults, `false` excludes all, object enables granular control
@@ -337,7 +408,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Individual variant interfaces generated for each theme (e.g., `Dark`, `Midnight`)
 - Full type consistency between generated code and runtime API
 - Comprehensive type safety for all variants with autocomplete support
-- Added `includeTailwindDefaults` option to Vite plugin for consistency with runtime API
+- Added `includeDefaults` option to Vite plugin for consistency with runtime API
   - Default: `true` (matches runtime behavior)
   - Set to `false` to exclude Tailwind CSS defaults from generated types
 - Granular runtime generation control via `RuntimeGenerationOptions`

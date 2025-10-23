@@ -290,6 +290,63 @@ console.warn('  Error: ENOENT: no such file or directory');
 - Nested variant combinations: `[data-theme='compact'].dark` → `'compact.dark'`
 - Descendant selectors: `.theme-default .theme-container` → `'theme-default'` (first part only)
 
+**Variable Parsing Functions:**
+
+The extractor uses configurable parsing functions to convert CSS variable names to nested structures:
+
+- **`parseNestedKey()`** - Configurable nesting parser (NEW)
+  - Supports `maxDepth` to limit nesting levels
+  - Supports `consecutiveDashes` enum to control consecutive dash handling
+  - Used for all namespaces when nesting config is provided
+- **`parseColorScale()`** - Backward-compatible wrapper
+  - Delegates to `parseNestedKey()` with unlimited depth and `consecutiveDashes: 'literal'`
+  - Maintained for compatibility
+
+**Nesting Configuration:**
+
+The parsing behavior is controlled via `NestingOptions`:
+
+```typescript
+interface NestingConfig {
+  maxDepth?: number; // Limit nesting depth (default: Infinity)
+  consecutiveDashes?: 'exclude' | 'nest' | 'camelcase' | 'literal'; // Handle consecutive dashes (default: 'exclude')
+}
+
+interface NestingOptions {
+  default?: NestingConfig; // Global default
+  colors?: NestingConfig; // Per-namespace overrides
+  shadows?: NestingConfig;
+  spacing?: NestingConfig;
+  // ... all other namespaces
+}
+```
+
+**Default Behavior:**
+
+- **Without config**: Unlimited nesting, consecutive dashes excluded (matches Tailwind v4)
+  - `--color-tooltip-outline-50` → `colors.tooltip.outline[50]`
+  - `--color-button--primary` → Excluded (not included in theme)
+- **With `maxDepth: 2`**: Nesting limited to 2 levels
+  - `--color-tooltip-outline-50` → `colors.tooltip.outline50`
+- **With `maxDepth: 0`**: Complete flattening
+  - `flattenMode: 'camelcase'` (default): `--color-brand-primary-dark` → `colors.brandPrimaryDark`
+  - `flattenMode: 'literal'`: `--color-brand-primary-dark` → `colors['brand-primary-dark']`
+- **With `consecutiveDashes: 'camelcase'`**: Consecutive dashes become camelCase
+  - `--color-button--primary` → `colors.buttonPrimary`
+- **With `consecutiveDashes: 'nest'`**: Consecutive dashes treated as single dash
+  - `--color-button--primary` → `colors.button.primary`
+- **With `consecutiveDashes: 'literal'`**: Consecutive dashes preserved in keys
+  - `--color-button--primary` → `colors['button-'].primary`
+
+**Conflict Resolution:**
+
+When a scalar value and nested properties exist at the same path, the scalar value is moved to a `DEFAULT` key:
+
+- `--color-card: blue` + `--color-card-foreground: white` → `{ card: { DEFAULT: 'blue', foreground: 'white' } }`
+- This matches Tailwind's convention for color scales
+- Works across all namespaces and nesting depths
+- Applied in both directions (scalar first or nested first)
+
 **Variant Name Extraction:**
 
 The `extractVariantName()` function intelligently handles different selector patterns:
@@ -705,6 +762,66 @@ const NAMESPACE_MAP: Record<string, NamespaceMapping> = {
 };
 ```
 
+**Nesting Configuration Integration:**
+
+The theme builder accepts optional `NestingOptions` to control how variables are parsed:
+
+```typescript
+export function buildThemes(
+  variables: Array<CSSVariable>,
+  keyframes: Map<string, string>,
+  cssRules: Array<CSSRuleOverride>,
+  defaultTheme?: Theme | null,
+  overrides?: OverrideOptions,
+  nestingConfig?: NestingOptions,
+  debug = false,
+): {
+  /* ... */
+};
+```
+
+**Namespace-Specific Config Resolution:**
+
+```typescript
+const NAMESPACE_TO_NESTING_KEY: Record<
+  string,
+  keyof NestingOptions | undefined
+> = {
+  color: 'colors',
+  shadow: 'shadows',
+  spacing: 'spacing',
+  // ... all namespaces
+};
+
+function resolveNestingConfig(
+  namespace: string,
+  nestingOptions?: NestingOptions,
+): NestingConfig | undefined {
+  if (nestingOptions === undefined) return undefined;
+
+  const nestingKey = NAMESPACE_TO_NESTING_KEY[namespace];
+  if (nestingKey === undefined) return nestingOptions.default;
+
+  return nestingOptions[nestingKey] ?? nestingOptions.default;
+}
+```
+
+**Variable Processing:**
+
+Each variable is processed using the nesting config for its namespace:
+
+```typescript
+function processNestedVariable(
+  target: Record<string, unknown>,
+  key: string,
+  value: string,
+  config?: NestingConfig,
+): void {
+  const parsed = parseNestedKey(key, config);
+  // Build nested structure based on parsed result
+}
+```
+
 **Complexity Metrics:**
 
 - Main function (`buildThemes`): Cyclomatic complexity < 10 (after extracting helpers)
@@ -1068,7 +1185,7 @@ export interface TailwindDefaultsOptions {
 - Each option defaults to `true` (include by default)
 - When `true`: Merges default values with user values (user values override)
 - When `false`: Uses only user values for that category
-- `includeTailwindDefaults` parameter accepts:
+- `includeDefaults` parameter accepts:
   - `true` → All defaults included (equivalent to empty options object)
   - `false` → No defaults included
   - `TailwindDefaultsOptions` → Granular control per category
@@ -1079,7 +1196,7 @@ export interface TailwindDefaultsOptions {
 // Runtime API
 const result = await resolveTheme({
   input: './styles.css',
-  includeTailwindDefaults: {
+  includeDefaults: {
     colors: true,
     spacing: true,
     shadows: false, // Exclude shadows
@@ -1093,7 +1210,7 @@ const result = await resolveTheme({
 // Vite Plugin
 tailwindResolver({
   input: 'src/styles.css',
-  includeTailwindDefaults: {
+  includeDefaults: {
     colors: true,
     spacing: true,
     shadows: false,
@@ -1603,8 +1720,8 @@ That's it! The pipeline will automatically handle resolution, building, and type
 
 ### Test Coverage
 
-- 703 passing tests (100% pass rate)
-- 1968 expect() calls
+- 734 passing tests (100% pass rate)
+- 2034 expect() calls
 - All core paths covered
 - Updated to use new `TailwindResult` API structure
 - Tests verify both runtime API and generated code consistency
@@ -1624,6 +1741,14 @@ That's it! The pipeline will automatically handle resolution, building, and type
     - Verifies both Case 1 (value before initial → removed) and Case 2 (initial before value → preserved)
     - Tests complex cascade scenarios with multiple values and wildcard patterns
     - Validates integration with Tailwind defaults and namespace-wide exclusions
+- Nesting configuration system test coverage:
+  - 17 integration tests for nesting config functionality (nesting_config_test.ts)
+    - Tests `maxDepth` configurations (0, 1, 2, 3, unlimited)
+    - Tests `consecutiveDashes` behavior (all 4 modes: 'exclude', 'nest', 'camelcase', 'literal')
+    - Tests per-namespace configuration and default fallback
+    - Tests numeric key handling with different nesting depths
+    - Tests default behavior (unlimited nesting with consecutiveDashes: 'exclude')
+    - Tests variant inheritance (config applies to all variants)
 
 ## Related Documentation
 

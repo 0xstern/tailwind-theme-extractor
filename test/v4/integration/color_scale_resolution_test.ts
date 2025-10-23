@@ -31,7 +31,7 @@ describe('Color Scale Resolution', () => {
     ).toBe('#1e3a8a');
   });
 
-  test('converts multi-word color names to camelCase', async () => {
+  test('creates nested structure for multi-dash color names', async () => {
     const result = await resolveTheme({
       css: `
         @theme {
@@ -41,14 +41,19 @@ describe('Color Scale Resolution', () => {
       resolveImports: false,
     });
 
-    expect(
-      (
-        result.variants.default.colors.brandPrimary as Record<number, string>
-      )[500],
-    ).toBe('#3b82f6');
+    // With "every dash = nesting" rule, this creates: colors.brand.primary[500]
+    expect(result.variants.default.colors.brand).toBeDefined();
+    const brand = result.variants.default.colors.brand as Record<
+      string,
+      Record<number, string>
+    >;
+    expect(brand.primary).toBeDefined();
+    if (brand.primary !== undefined) {
+      expect(brand.primary[500]).toBe('#3b82f6');
+    }
   });
 
-  test('handles color variants with suffixes', async () => {
+  test('handles deeply nested color structures with numeric keys', async () => {
     const result = await resolveTheme({
       css: `
         @theme {
@@ -59,15 +64,20 @@ describe('Color Scale Resolution', () => {
       resolveImports: false,
     });
 
-    expect(
-      (result.variants.default.colors.button as Record<string, string>)[
-        '500-hover'
-      ],
-    ).toBe('#60a5fa');
-    expect(
-      (result.variants.default.colors.button as Record<string, string>)[
-        '500-active'
-      ],
-    ).toBe('#3b82f6');
+    // With "every dash = nesting" rule, this creates: colors.button[500].hover
+    expect(result.variants.default.colors.button).toBeDefined();
+    const button = result.variants.default.colors.button;
+
+    if (button !== undefined && typeof button !== 'string') {
+      const buttonScale = button as unknown as Record<
+        string,
+        Record<string, string>
+      >;
+      expect(buttonScale['500']).toBeDefined();
+      if (buttonScale['500'] !== undefined) {
+        expect(buttonScale['500'].hover).toBe('#60a5fa');
+        expect(buttonScale['500'].active).toBe('#3b82f6');
+      }
+    }
   });
 });

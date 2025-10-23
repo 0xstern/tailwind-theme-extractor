@@ -96,21 +96,21 @@ group('resolveTheme - with Tailwind defaults', () => {
   bench('minimal + defaults', async () => {
     await resolveTheme({
       css: cssContent.minimal,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
   });
 
   bench('shadcn + defaults', async () => {
     await resolveTheme({
       css: cssContent.large,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
   });
 
   bench('shadcn themes + defaults', async () => {
     await resolveTheme({
       css: cssContent.shadcnThemes,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
   });
 });
@@ -124,14 +124,14 @@ group('realistic production workload', () => {
     `;
     await resolveTheme({
       css: combined,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
   });
 
   bench('multi-tenant app (shadcn + 15 theme variants)', async () => {
     await resolveTheme({
       css: cssContent.shadcnThemes,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
   });
 
@@ -152,7 +152,7 @@ group('cache effectiveness', () => {
   bench('cold run (first resolution)', async () => {
     await resolveTheme({
       css: cssContent.shadcnThemes,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
   });
 
@@ -160,13 +160,13 @@ group('cache effectiveness', () => {
     // Run it once to warm up
     await resolveTheme({
       css: cssContent.shadcnThemes,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
 
     // Benchmark the warm run
     await resolveTheme({
       css: cssContent.shadcnThemes,
-      includeTailwindDefaults: true,
+      includeDefaults: true,
     });
   });
 

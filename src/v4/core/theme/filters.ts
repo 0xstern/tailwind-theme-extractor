@@ -6,7 +6,7 @@
  *
  * Rules:
  * - `initial` only affects default/built-in Tailwind values, NOT user-created custom values
- * - `initial` declarations always take precedent over the `includeTailwindDefaults` option
+ * - `initial` declarations always take precedent over the `includeDefaults` option
  * - Supports wildcard patterns (e.g., `--color-*: initial`)
  */
 

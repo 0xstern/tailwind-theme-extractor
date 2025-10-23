@@ -49,7 +49,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
         overrides: {
           default: {
             'radius.lg': '0.5rem',
@@ -69,7 +69,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
         overrides: {
           default: {
             radius: {
@@ -91,7 +91,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
         overrides: {
           dark: {
             'colors.background': '#000000',
@@ -115,7 +115,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
         overrides: {
           '*': {
             'fonts.sans': 'Inter, sans-serif',
@@ -139,7 +139,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
         overrides: {
           default: {
             'radius.lg': '0.5rem',
@@ -175,7 +175,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
         overrides: {
           default: {
             'colors.primary': '#ff0000',
@@ -196,7 +196,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
         overrides: {
           default: {
             'radius.lg': {
@@ -220,7 +220,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
         overrides: {
           '[data-theme="dark"]': {
             'colors.background': '#111111',
@@ -241,7 +241,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
         overrides: {
           default: {
             'nonexistent.property': 'value',
@@ -275,7 +275,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
         overrides: {
           default: {
             'colors.gray.500': '#custom-gray',
@@ -307,7 +307,7 @@ describe('Theme Override System - Integration', () => {
     try {
       const result = await resolveTheme({
         input: cssPath,
-        includeTailwindDefaults: true, // Include Tailwind defaults
+        includeDefaults: true, // Include Tailwind defaults
         overrides: {
           default: {
             'radius.lg': '0',

@@ -14,12 +14,12 @@
   --color-red-500: oklch(0.63 0.24 25);
   --color-red-900: oklch(0.35 0.18 25);
 
-  /* Multi-word color names with scales */
-  --color-tooltip-outline-50: oklch(0.98 0.02 280);
-  --color-tooltip-outline-500: oklch(0.65 0.2 280);
-  --color-tooltip-outline-900: oklch(0.35 0.15 280);
+  /* Multi-word color names with scales (camelCase base for flat structure) */
+  --color-tooltipOutline-50: oklch(0.98 0.02 280);
+  --color-tooltipOutline-500: oklch(0.65 0.2 280);
+  --color-tooltipOutline-900: oklch(0.35 0.15 280);
 
-  /* Color scale with suffixes (string keys) */
+  /* Nested color example (demonstrates multi-level nesting) */
   --color-interactive-500-hover: oklch(0.6 0.2 250);
   --color-interactive-500-active: oklch(0.55 0.18 250);
   --color-interactive-500-disabled: oklch(0.7 0.1 250);
@@ -29,15 +29,15 @@
   --color-brand-1500: oklch(0.45 0.15 280);
   --color-brand-2000: oklch(0.3 0.12 280);
 
-  /* Flat colors with multi-word names */
-  --color-brand-main: #8b5cf6;
-  --color-error-primary: #ef4444;
-  --color-success-default: #10b981;
-  --color-warning-subtle: #fbbf24;
+  /* Flat colors with multi-word names (camelCase for flat structure) */
+  --color-brandMain: #8b5cf6;
+  --color-errorPrimary: #ef4444;
+  --color-successDefault: #10b981;
+  --color-warningSubtle: #fbbf24;
 
-  /* Complex multi-word flat colors */
-  --color-tooltip-container-background: #1f2937;
-  --color-button-primary-outline: #3b82f6;
+  /* Complex multi-word flat colors (camelCase) */
+  --color-tooltipContainerBackground: #1f2937;
+  --color-buttonPrimaryOutline: #3b82f6;
 
   /* Spacing scale */
   --spacing-0: 0;

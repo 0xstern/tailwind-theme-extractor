@@ -243,6 +243,14 @@ describe('Two-Layer Variable Resolution (shadcn Pattern)', () => {
     expect(result.variants.default.colors.codeForeground).toBe(
       'oklch(0.145 0 0)',
     );
+
+    // :root has: --code-highlight: oklch(0.96 0 0)
+    expect(result.variants.default.colors.codeHighlight).toBe(
+      'oklch(0.96 0 0)',
+    );
+
+    // :root has: --code-number: oklch(0.56 0 0)
+    expect(result.variants.default.colors.codeNumber).toBe('oklch(0.56 0 0)');
   });
 });
 

@@ -3,6 +3,7 @@
  * CLI tool for generating Tailwind theme types and runtime objects
  */
 import type {
+  NestingOptions,
   ReportGenerationOptions,
   RuntimeGenerationOptions,
   TailwindDefaultsOptions,
@@ -23,6 +24,9 @@ interface CliOptions {
   'exclude-defaults'?: string | boolean;
   reports?: string | boolean;
   'exclude-reports'?: string | boolean;
+  'nesting-max-depth'?: string;
+  'nesting-consecutive-camel'?: boolean;
+  'nesting-flatten-mode'?: string;
   debug?: boolean;
   help?: boolean;
 }
@@ -46,6 +50,11 @@ Options:
                                    Optionally specify comma-separated categories
   --exclude-reports [categories]   Exclude diagnostic reports (default: all)
                                    Optionally specify comma-separated categories
+  --nesting-max-depth <number>     Limit nesting depth for all namespaces
+                                   After limit, flatten remaining parts
+  --nesting-flatten-mode <mode>    How to flatten remaining parts after maxDepth
+                                   Options: 'camelcase' (default), 'literal'
+  --nesting-consecutive-camel      Treat consecutive dashes (--) as camelCase boundary
   --debug, -d                      Enable debug mode (logging + include debug data in runtime)
   --help, -h                       Show this help message
 
@@ -91,6 +100,18 @@ Examples:
   # Exclude only conflict reports (generate unresolved only)
   tailwind-resolver -i src/styles.css --exclude-reports conflicts
 
+  # Limit nesting depth to 2 levels with camelCase flattening (default)
+  tailwind-resolver -i src/styles.css --nesting-max-depth 2
+
+  # Limit nesting depth to 2 levels with literal flattening
+  tailwind-resolver -i src/styles.css --nesting-max-depth 2 --nesting-flatten-mode literal
+
+  # Treat consecutive dashes as camelCase boundaries
+  tailwind-resolver -i src/styles.css --nesting-consecutive-camel
+
+  # Combine nesting options
+  tailwind-resolver -i src/styles.css --nesting-max-depth 2 --nesting-flatten-mode literal --nesting-consecutive-camel
+
   # Custom output directory
   tailwind-resolver -i src/styles.css -o src/theme
 
@@ -131,6 +152,9 @@ function parseCliOptions(): CliOptions {
       'exclude-defaults': { type: 'string' },
       reports: { type: 'string' },
       'exclude-reports': { type: 'string' },
+      'nesting-max-depth': { type: 'string' },
+      'nesting-consecutive-camel': { type: 'boolean', default: false },
+      'nesting-flatten-mode': { type: 'string' },
       debug: { type: 'boolean', short: 'd', default: false },
       help: { type: 'boolean', short: 'h' },
     },
@@ -302,10 +326,10 @@ const VALID_REPORT_CATEGORIES: ReadonlyArray<keyof ReportGenerationOptions> = [
 ];
 
 /**
- * Determines includeTailwindDefaults value from CLI options
+ * Determines includeDefaults value from CLI options
  *
  * @param options - CLI options
- * @returns includeTailwindDefaults value (boolean or granular options)
+ * @returns includeDefaults value (boolean or granular options)
  */
 function determineIncludeTailwindDefaults(
   options: CliOptions,
@@ -395,6 +419,86 @@ function determineReportOptions(options: CliOptions): ReportGenerationOptions {
 }
 
 /**
+ * Validates and parses maxDepth option
+ *
+ * @param maxDepthStr - Max depth string from CLI
+ * @returns Parsed max depth or undefined
+ */
+function parseMaxDepth(maxDepthStr: string | undefined): number | undefined {
+  if (maxDepthStr === undefined) {
+    return undefined;
+  }
+
+  const maxDepth = parseInt(maxDepthStr, 10);
+  if (isNaN(maxDepth) || maxDepth < 0) {
+    console.error(
+      `Error: --nesting-max-depth must be a non-negative number (got: ${maxDepthStr})\n`,
+    );
+    process.exit(1);
+  }
+
+  return maxDepth;
+}
+
+/**
+ * Validates and parses flattenMode option
+ *
+ * @param flattenModeStr - Flatten mode string from CLI
+ * @returns Validated flatten mode or undefined
+ */
+function parseFlattenMode(
+  flattenModeStr: string | undefined,
+): 'camelcase' | 'literal' | undefined {
+  if (flattenModeStr === undefined) {
+    return undefined;
+  }
+
+  if (flattenModeStr !== 'camelcase' && flattenModeStr !== 'literal') {
+    console.error(
+      `Error: --nesting-flatten-mode must be 'camelcase' or 'literal' (got: ${flattenModeStr})\n`,
+    );
+    process.exit(1);
+  }
+
+  return flattenModeStr;
+}
+
+/**
+ * Determines nesting options from CLI flags
+ *
+ * @param options - CLI options
+ * @returns NestingOptions object or undefined
+ */
+function determineNestingOptions(
+  options: CliOptions,
+): NestingOptions | undefined {
+  const maxDepth = parseMaxDepth(options['nesting-max-depth']);
+  const consecutiveCamel = options['nesting-consecutive-camel'] ?? false;
+  const flattenMode = parseFlattenMode(options['nesting-flatten-mode']);
+
+  // If no nesting options provided, return undefined
+  if (
+    maxDepth === undefined &&
+    !consecutiveCamel &&
+    flattenMode === undefined
+  ) {
+    return undefined;
+  }
+
+  // Build default config object
+  const defaultConfig = {
+    ...(maxDepth !== undefined && { maxDepth }),
+    ...(consecutiveCamel && { consecutiveDashesAsCamelCase: true }),
+    ...(flattenMode !== undefined && { flattenMode }),
+  };
+
+  // Return nesting options with default config
+  return {
+    default: defaultConfig,
+  };
+}
+
+/**
  * Determines defaults status string for logging
  *
  * @param options - CLI options
@@ -433,6 +537,39 @@ function getReportsStatus(options: CliOptions): string {
 }
 
 /**
+ * Determines nesting status string for logging
+ *
+ * @param options - CLI options
+ * @returns Status string
+ */
+function getNestingStatus(options: CliOptions): string {
+  const maxDepth = options['nesting-max-depth'];
+  const consecutiveCamel = options['nesting-consecutive-camel'] ?? false;
+  const flattenMode = options['nesting-flatten-mode'];
+
+  if (
+    maxDepth === undefined &&
+    !consecutiveCamel &&
+    flattenMode === undefined
+  ) {
+    return 'default';
+  }
+
+  const parts: Array<string> = [];
+  if (maxDepth !== undefined) {
+    parts.push(`maxDepth=${maxDepth}`);
+  }
+  if (flattenMode !== undefined) {
+    parts.push(`flatten=${flattenMode}`);
+  }
+  if (consecutiveCamel) {
+    parts.push('consecutive-camel');
+  }
+
+  return parts.join(', ');
+}
+
+/**
  * Logs the configuration before generation
  *
  * @param options - CLI options
@@ -445,6 +582,7 @@ function logConfiguration(options: CliOptions, outputDir: string): void {
   console.log(`  Runtime:  ${options.runtime ? 'enabled' : 'disabled'}`);
   console.log(`  Defaults: ${getDefaultsStatus(options)}`);
   console.log(`  Reports:  ${getReportsStatus(options)}`);
+  console.log(`  Nesting:  ${getNestingStatus(options)}`);
   console.log(`  Debug:    ${options.debug ? 'enabled' : 'disabled'}\n`);
 }
 
@@ -520,18 +658,23 @@ async function main(): Promise<void> {
     // Determine report options from CLI flags
     const reportOptions = determineReportOptions(options);
 
-    // Determine includeTailwindDefaults value
-    const includeTailwindDefaults = determineIncludeTailwindDefaults(options);
+    // Determine includeDefaults value
+    const includeDefaults = determineIncludeTailwindDefaults(options);
+
+    // Determine nesting options from CLI flags
+    const nestingOptions = determineNestingOptions(options);
 
     const result = await generateThemeFiles(
       absoluteInputPath,
       absoluteOutputDir,
       true, // resolveImports
       runtimeOptions,
-      includeTailwindDefaults,
+      includeDefaults,
       options.debug as boolean,
       basePath,
       reportOptions,
+      undefined, // overrides (not exposed in CLI yet)
+      nestingOptions,
     );
 
     logSuccess(

@@ -2,7 +2,12 @@
  * Resolves and parses Tailwind's default theme from node_modules
  */
 
-import type { TailwindDefaultsOptions, Theme } from '../../types';
+import type {
+  CSSVariable,
+  NestingOptions,
+  TailwindDefaultsOptions,
+  Theme,
+} from '../../types';
 
 import { readFile, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -17,8 +22,10 @@ import { buildThemes } from './builder';
  */
 interface ThemeCache {
   theme: Theme | null;
+  variables: Array<CSSVariable>;
   timestamp: number;
   path: string;
+  nestingKey: string;
 }
 
 /**
@@ -37,30 +44,72 @@ export function clearDefaultThemeCache(): void {
 }
 
 /**
+ * Creates a cache key for nesting configuration
+ * Used to prevent cache collisions when different nesting configs are used
+ *
+ * @param nestingConfig - The nesting configuration options
+ * @returns A string key representing the nesting config
+ */
+function createNestingCacheKey(nestingConfig?: NestingOptions): string {
+  if (nestingConfig === undefined) {
+    return 'default';
+  }
+
+  // Create a stable string representation of the nesting config
+  // Only include properties that affect parsing behavior
+  const keys = Object.keys(nestingConfig).sort();
+  return keys
+    .map((key) => {
+      const config = nestingConfig[key as keyof NestingOptions];
+      if (config === undefined) {
+        return '';
+      }
+      return `${key}:${config.maxDepth ?? 'inf'}-${config.consecutiveDashes ?? 'ex'}-${config.flattenMode ?? 'cc'}`;
+    })
+    .filter((s) => s !== '')
+    .join('|');
+}
+
+/**
  * Attempts to load Tailwind's default theme from node_modules
  *
- * Results are cached per base path with timestamp validation to detect package updates.
- * This significantly improves performance for repeated calls while ensuring updates are detected.
+ * Results are cached per base path and nesting configuration with timestamp validation
+ * to detect package updates. This significantly improves performance for repeated calls
+ * while ensuring updates are detected.
+ *
+ * The nesting configuration affects how CSS variables are parsed into theme structure.
+ * When provided, it applies the same nesting rules to Tailwind defaults as to user variables,
+ * ensuring consistent behavior across the entire theme.
+ *
+ * Returns both the theme object and the original CSS variables to preserve variable names
+ * for resolution. This is critical because nesting transformations can change key names
+ * (e.g., `blue-300` → `blue300`), but we need original names for var() resolution.
  *
  * @param basePath - Base path to start resolution from (usually process.cwd())
- * @returns The default theme, or null if Tailwind is not installed
+ * @param nestingConfig - Optional nesting configuration to apply to default theme variables
+ * @returns Object with theme and original variables, or null if Tailwind is not installed
  */
 export async function loadTailwindDefaults(
   basePath: string = process.cwd(),
-): Promise<Theme | null> {
+  nestingConfig?: NestingOptions,
+): Promise<{ theme: Theme; variables: Array<CSSVariable> } | null> {
   try {
     // Try to resolve tailwindcss/theme.css from node_modules
     const require = createRequire(`${basePath}/package.json`);
     const themePath = require.resolve('tailwindcss/theme.css');
 
-    // Check if we have a valid cache for this base path
-    const cached = defaultThemeCache.get(basePath);
-    if (cached?.path === themePath) {
+    // Create a cache key that includes nesting configuration
+    const nestingKey = createNestingCacheKey(nestingConfig);
+    const cacheKey = `${basePath}:${nestingKey}`;
+
+    // Check if we have a valid cache for this base path and nesting config
+    const cached = defaultThemeCache.get(cacheKey);
+    if (cached?.path === themePath && cached.nestingKey === nestingKey) {
       // Validate cache by checking file modification time
       const stats = await stat(themePath);
       if (stats.mtimeMs === cached.timestamp) {
         // Cache is still valid
-        return cached.theme;
+        return { theme: cached.theme!, variables: cached.variables };
       }
 
       // Cache is stale - read file and reuse stats we just got
@@ -72,18 +121,28 @@ export async function loadTailwindDefaults(
       // Extract variables, keyframes, and CSS rules
       const { variables, keyframes, cssRules } = extractVariables(root);
 
-      // Build theme (only use base theme, ignore variants and deprecation warnings)
-      // Note: No defaultTheme parameter here - we ARE the defaults
-      const { theme } = buildThemes(variables, keyframes, cssRules, null);
+      // Build theme with nesting configuration
+      // Note: No defaultVariables parameter here - we ARE the defaults
+      const { theme } = buildThemes(
+        variables,
+        keyframes,
+        cssRules,
+        undefined,
+        undefined,
+        nestingConfig,
+      );
 
       // Cache the result with timestamp we already have
-      defaultThemeCache.set(basePath, {
+      // Store ORIGINAL variables for resolution (before nesting transformations)
+      defaultThemeCache.set(cacheKey, {
         theme,
+        variables,
         timestamp: stats.mtimeMs,
         path: themePath,
+        nestingKey,
       });
 
-      return theme;
+      return { theme, variables };
     }
 
     // No cache - read file and get stats in parallel
@@ -98,26 +157,40 @@ export async function loadTailwindDefaults(
     // Extract variables, keyframes, and CSS rules
     const { variables, keyframes, cssRules } = extractVariables(root);
 
-    // Build theme (only use base theme, ignore variants and deprecation warnings)
-    // Note: No defaultTheme parameter here - we ARE the defaults
-    const { theme } = buildThemes(variables, keyframes, cssRules, null);
+    // Build theme with nesting configuration
+    // Note: No defaultVariables parameter here - we ARE the defaults
+    const { theme } = buildThemes(
+      variables,
+      keyframes,
+      cssRules,
+      undefined,
+      undefined,
+      nestingConfig,
+    );
 
     // Cache the result with timestamp
-    defaultThemeCache.set(basePath, {
+    // Store ORIGINAL variables for resolution (before nesting transformations)
+    defaultThemeCache.set(cacheKey, {
       theme,
+      variables,
       timestamp: stats.mtimeMs,
       path: themePath,
+      nestingKey,
     });
 
-    return theme;
+    return { theme, variables };
   } catch {
     // Tailwind not installed or theme.css not found
     // This is fine - user might not have Tailwind installed
     // Cache the null result to avoid repeated resolution attempts
-    defaultThemeCache.set(basePath, {
+    const nestingKey = createNestingCacheKey(nestingConfig);
+    const cacheKey = `${basePath}:${nestingKey}`;
+    defaultThemeCache.set(cacheKey, {
       theme: null,
+      variables: [],
       timestamp: 0,
       path: '',
+      nestingKey,
     });
     return null;
   }

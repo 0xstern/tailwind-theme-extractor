@@ -209,7 +209,7 @@ export interface CSSVariable {
 /**
  * Options for controlling which Tailwind defaults to include
  *
- * When includeTailwindDefaults is an object, you can selectively include
+ * When includeDefaults is an object, you can selectively include
  * specific categories from Tailwind's default theme. This is useful when
  * you want to use only certain Tailwind defaults while completely replacing others.
  *
@@ -349,6 +349,228 @@ export interface TailwindDefaultsOptions {
    * @default true
    */
   keyframes?: boolean;
+}
+
+/**
+ * Configuration for controlling nesting behavior when parsing CSS variable keys
+ *
+ * Controls how CSS variable keys with dashes are parsed into nested structures.
+ *
+ * @example
+ * ```typescript
+ * // Unlimited nesting (default)
+ * { maxDepth: Infinity }
+ * // --color-tooltip-outline-50 → colors.tooltip.outline[50]
+ *
+ * // Limit to 2 levels with camelCase flattening (default)
+ * { maxDepth: 2 }
+ * // --color-tooltip-outline-50 → colors.tooltip.outline50
+ *
+ * // Limit to 2 levels with literal flattening
+ * { maxDepth: 2, flattenMode: 'literal' }
+ * // --color-tooltip-outline-50 → colors.tooltip['outline-50']
+ *
+ * // Handle consecutive dashes
+ * { consecutiveDashes: 'camelcase' }
+ * // --color-button--primary → colors.buttonPrimary
+ *
+ * { consecutiveDashes: 'exclude' }
+ * // --color-button--primary → Not included in theme at all
+ * ```
+ */
+export interface NestingConfig {
+  /**
+   * Maximum nesting depth in the result structure
+   * @default Infinity (unlimited nesting)
+   *
+   * Controls how many levels of nesting to create in the result object.
+   * After reaching maxDepth, remaining parts are flattened according to flattenMode.
+   *
+   * @example
+   * ```typescript
+   * // maxDepth: 0 → 0 nesting levels (completely flat)
+   * // --color-blue-sky-50 → colors.blueSky50
+   *
+   * // maxDepth: 1 → 1 nesting level (one object with final key)
+   * // --color-blue-50 → colors.blue['50']
+   * // --color-blue-sky-50 → colors.blue.sky50 (with flattenMode: 'camelcase')
+   *
+   * // maxDepth: 2 → 2 nesting levels (two nested objects with final key)
+   * // --color-blue-sky-50 → colors.blue.sky['50']
+   * // --color-blue-sky-light-50 → colors.blue.sky.light50 (with flattenMode: 'camelcase')
+   *
+   * // maxDepth: Infinity → unlimited nesting (default)
+   * // --color-blue-sky-light-50 → colors.blue.sky.light['50']
+   * ```
+   */
+  maxDepth?: number;
+
+  /**
+   * How to handle variables with consecutive dashes (e.g., button--primary)
+   * @default 'exclude' (matches Tailwind v4 behavior)
+   *
+   * @example
+   * ```typescript
+   * // consecutiveDashes: 'exclude' (DEFAULT - matches Tailwind)
+   * // --color-button--primary → Not parsed, excluded from theme
+   *
+   * // consecutiveDashes: 'nest'
+   * // --color-button--primary → colors.button.primary (-- treated as single -)
+   *
+   * // consecutiveDashes: 'camelcase'
+   * // --color-button--primary → colors.buttonPrimary (-- as camelCase boundary)
+   *
+   * // consecutiveDashes: 'literal'
+   * // --color-button--primary → colors['button-'].primary (dash preserved)
+   * ```
+   */
+  consecutiveDashes?: 'exclude' | 'nest' | 'camelcase' | 'literal';
+
+  /**
+   * How to flatten remaining parts after maxDepth is reached
+   * @default 'camelcase' (maintains backward compatibility)
+   *
+   * This option only applies when maxDepth is set and reached.
+   *
+   * @example
+   * ```typescript
+   * // flattenMode: 'camelcase' (DEFAULT - maintains backward compatibility)
+   * // --color-blue-sky-light-50 with maxDepth: 2 → colors.blue.skyLight50
+   *
+   * // flattenMode: 'literal'
+   * // --color-blue-sky-light-50 with maxDepth: 2 → colors.blue['sky-light-50']
+   * ```
+   */
+  flattenMode?: 'camelcase' | 'literal';
+
+  /**
+   * Custom regex pattern for advanced parsing (future extension)
+   * @experimental Not yet implemented
+   */
+  pattern?: RegExp;
+}
+
+/**
+ * Per-namespace nesting configuration options
+ *
+ * Allows different nesting behavior for different CSS variable namespaces.
+ * The 'default' configuration applies to all namespaces unless overridden.
+ *
+ * @example
+ * ```typescript
+ * {
+ *   default: { maxDepth: 1 },           // All namespaces: flatten after 1 level
+ *   colors: { maxDepth: 3 },            // Colors: allow 3 levels of nesting
+ *   shadows: { maxDepth: Infinity },    // Shadows: unlimited nesting
+ *   spacing: { maxDepth: 1 }            // Spacing: flat structure
+ * }
+ * ```
+ */
+export interface NestingOptions {
+  /**
+   * Default nesting config applied to all namespaces unless overridden
+   */
+  default?: NestingConfig;
+
+  /**
+   * Nesting config for color variables (--color-*)
+   */
+  colors?: NestingConfig;
+
+  /**
+   * Nesting config for shadow variables (--shadow-*)
+   */
+  shadows?: NestingConfig;
+
+  /**
+   * Nesting config for inset shadow variables (--inset-shadow-*)
+   */
+  insetShadows?: NestingConfig;
+
+  /**
+   * Nesting config for drop shadow variables (--drop-shadow-*)
+   */
+  dropShadows?: NestingConfig;
+
+  /**
+   * Nesting config for text shadow variables (--text-shadow-*)
+   */
+  textShadows?: NestingConfig;
+
+  /**
+   * Nesting config for spacing variables (--spacing-*)
+   */
+  spacing?: NestingConfig;
+
+  /**
+   * Nesting config for radius variables (--radius-*)
+   */
+  radius?: NestingConfig;
+
+  /**
+   * Nesting config for blur variables (--blur-*)
+   */
+  blur?: NestingConfig;
+
+  /**
+   * Nesting config for perspective variables (--perspective-*)
+   */
+  perspective?: NestingConfig;
+
+  /**
+   * Nesting config for aspect ratio variables (--aspect-*)
+   */
+  aspect?: NestingConfig;
+
+  /**
+   * Nesting config for easing variables (--ease-*)
+   */
+  ease?: NestingConfig;
+
+  /**
+   * Nesting config for animation variables (--animate-*)
+   */
+  animations?: NestingConfig;
+
+  /**
+   * Nesting config for font variables (--font-*)
+   */
+  fonts?: NestingConfig;
+
+  /**
+   * Nesting config for font size variables (--text-*)
+   */
+  fontSize?: NestingConfig;
+
+  /**
+   * Nesting config for font weight variables (--font-weight-*)
+   */
+  fontWeight?: NestingConfig;
+
+  /**
+   * Nesting config for tracking variables (--tracking-*)
+   */
+  tracking?: NestingConfig;
+
+  /**
+   * Nesting config for leading variables (--leading-*)
+   */
+  leading?: NestingConfig;
+
+  /**
+   * Nesting config for breakpoint variables (--breakpoint-*)
+   */
+  breakpoints?: NestingConfig;
+
+  /**
+   * Nesting config for container variables (--container-*)
+   */
+  containers?: NestingConfig;
+
+  /**
+   * Nesting config for default variables (--default-*)
+   */
+  defaults?: NestingConfig;
 }
 
 /**
@@ -523,14 +745,14 @@ export interface ParseOptions {
    * @example
    * ```typescript
    * // Include all defaults (default)
-   * { includeTailwindDefaults: true }
+   * { includeDefaults: true }
    *
    * // Don't include any defaults
-   * { includeTailwindDefaults: false }
+   * { includeDefaults: false }
    *
    * // Include only colors and spacing from Tailwind defaults
    * {
-   *   includeTailwindDefaults: {
+   *   includeDefaults: {
    *     colors: true,
    *     spacing: true,
    *     shadows: false,
@@ -539,7 +761,7 @@ export interface ParseOptions {
    * }
    * ```
    */
-  includeTailwindDefaults?: boolean | TailwindDefaultsOptions;
+  includeDefaults?: boolean | TailwindDefaultsOptions;
   /**
    * Enable debug logging for troubleshooting
    * When true, logs warnings for failed import resolution and other parsing issues
@@ -553,6 +775,30 @@ export interface ParseOptions {
    * @default undefined
    */
   overrides?: OverrideOptions;
+  /**
+   * Nesting configuration for CSS variable key parsing
+   * Controls how CSS variables with dashes are parsed into nested structures
+   * @default undefined (unlimited nesting with current behavior)
+   *
+   * @example
+   * ```typescript
+   * // Limit color nesting to 2 levels
+   * {
+   *   nesting: {
+   *     colors: { maxDepth: 2 }
+   *   }
+   * }
+   *
+   * // Apply default max depth with colors override
+   * {
+   *   nesting: {
+   *     default: { maxDepth: 1 },
+   *     colors: { maxDepth: 3 }
+   *   }
+   * }
+   * ```
+   */
+  nesting?: NestingOptions;
 }
 
 /**

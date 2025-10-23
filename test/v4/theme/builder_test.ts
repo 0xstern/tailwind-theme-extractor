@@ -92,7 +92,7 @@ describe('buildThemes - Color handling', () => {
     }
   });
 
-  test('converts kebab-case color names to camelCase', () => {
+  test('creates nested structure for kebab-case color names', () => {
     const variables: Array<CSSVariable> = [
       {
         name: '--color-brand-primary',
@@ -103,7 +103,13 @@ describe('buildThemes - Color handling', () => {
 
     const result = buildThemes(variables, new Map(), []);
 
-    expect(result.theme.colors.brandPrimary).toBe('#3b82f6');
+    // With "every dash = nesting" rule, this creates: colors.brand.primary
+    expect(result.theme.colors.brand).toBeDefined();
+    expect(typeof result.theme.colors.brand).toBe('object');
+    if (typeof result.theme.colors.brand !== 'string') {
+      const brand = result.theme.colors.brand as Record<string, string>;
+      expect(brand.primary).toBe('#3b82f6');
+    }
   });
 
   test('handles mixed flat and scale colors', () => {
@@ -448,30 +454,11 @@ describe('buildThemes - CSS conflicts', () => {
 });
 
 describe('buildThemes - Default theme integration', () => {
-  test('uses default theme for var() resolution', () => {
-    const defaultTheme = {
-      colors: {},
-      spacing: {},
-      fonts: {},
-      fontSize: {},
-      fontWeight: {},
-      tracking: {},
-      leading: {},
-      breakpoints: {},
-      containers: {},
-      radius: { base: '0.5rem' },
-      shadows: {},
-      insetShadows: {},
-      dropShadows: {},
-      textShadows: {},
-      blur: {},
-      perspective: {},
-      aspect: {},
-      ease: {},
-      animations: {},
-      defaults: {},
-      keyframes: {},
-    };
+  test('uses default variables for var() resolution', () => {
+    // Provide default variables (preserves original variable names)
+    const defaultVariables: Array<CSSVariable> = [
+      { name: '--radius-base', value: '0.5rem', source: 'theme' },
+    ];
 
     const variables: Array<CSSVariable> = [
       { name: '--color-primary', value: 'red', source: 'theme' },
@@ -479,14 +466,14 @@ describe('buildThemes - Default theme integration', () => {
       { name: '--radius', value: '1rem', source: 'root' },
     ];
 
-    const result = buildThemes(variables, new Map(), [], defaultTheme);
+    const result = buildThemes(variables, new Map(), [], defaultVariables);
 
     expect(result.theme.colors.primary).toBe('red');
     // Should resolve var() using provided values, not defaults
     expect(result.theme.radius.lg).toBe('1rem');
   });
 
-  test('can build theme without default theme', () => {
+  test('can build theme without default variables', () => {
     const variables: Array<CSSVariable> = [
       { name: '--color-primary', value: 'red', source: 'theme' },
     ];
@@ -566,7 +553,10 @@ describe('buildThemes - All theme properties', () => {
     expect(result.theme.blur.sm).toBe('4px');
     expect(result.theme.perspective.normal).toBe('1000px');
     expect(result.theme.aspect.square).toBe('1/1');
-    expect(result.theme.ease['in-out']).toBe('cubic-bezier(0.4, 0, 0.2, 1)');
+    // --ease-in-out becomes ease.in.out (nested structure with unlimited nesting)
+    expect(
+      (result.theme.ease.in as unknown as Record<string, string>).out,
+    ).toBe('cubic-bezier(0.4, 0, 0.2, 1)');
     expect(result.theme.animations.spin).toBe('spin 1s linear infinite');
   });
 });
