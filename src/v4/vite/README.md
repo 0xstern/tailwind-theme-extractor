@@ -56,7 +56,7 @@ export default defineConfig({
 **3. Use the generated theme:**
 
 ```typescript
-import { defaultTheme, dark } from './generated/tailwindcss';
+import { dark, defaultTheme } from './generated/tailwindcss';
 
 const primary = defaultTheme.colors.primary[500];
 const darkBg = dark.colors.background;
@@ -210,13 +210,13 @@ Control which Tailwind CSS default theme values are included.
 **Include All Defaults (Default):**
 
 ```typescript
-includeDefaults: true
+includeDefaults: true;
 ```
 
 **Exclude All Defaults:**
 
 ```typescript
-includeDefaults: false
+includeDefaults: false;
 ```
 
 **Selective Inclusion:**
@@ -421,6 +421,7 @@ overrides: {
 ```
 
 **Note:** Multi-word variant names are automatically converted to camelCase:
+
 - CSS: `.theme-noto-sans` → Override key: `'themeNotoSans'`
 
 See [main README - Theme Overrides Details](../../../README.md#theme-overrides-details) for comprehensive documentation.
@@ -537,6 +538,7 @@ Automatically detects when CSS rules override CSS variables to ensure your runti
 **Solution:**
 
 The plugin:
+
 1. Detects all conflicts between CSS rules and variables
 2. Applies high-confidence overrides automatically
 3. Reports complex cases for manual review
@@ -567,6 +569,7 @@ src/generated/tailwindcss/
 
 ```typescript
 import { Chart } from 'chart.js';
+
 import { defaultTheme } from './generated/tailwindcss';
 
 new Chart(ctx, {
@@ -587,7 +590,7 @@ new Chart(ctx, {
 ### Dynamic Theme Switching
 
 ```typescript
-import { defaultTheme, dark, selectors } from './generated/tailwindcss';
+import { dark, defaultTheme, selectors } from './generated/tailwindcss';
 
 function applyTheme(mode: 'light' | 'dark') {
   const theme = mode === 'light' ? defaultTheme : dark;

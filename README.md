@@ -237,6 +237,7 @@ For dynamic scenarios like CLI tools, server-side rendering, or runtime theme sw
 
 ```typescript
 import type { Tailwind } from './generated/tailwindcss';
+
 import { resolveTheme } from 'tailwind-resolver';
 
 const result = await resolveTheme<Tailwind>({

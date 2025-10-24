@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Keyword Variants in Color Scales**: Color scales now support keyword variants (base, dark, light, etc.) creating properly nested structures ([#4](https://github.com/0xstern/tailwind-resolver/issues/4))
+  - Before: `--color-green-base` → `colors.greenBase` (flat, incorrect)
+  - After: `--color-green-base` → `colors.green.base` (nested, correct)
+  - Solved via configurable nesting system with unlimited depth by default
+  - Works for all keyword variants: base, dark, light, DEFAULT, or any custom keywords
+  - Example: `--color-green-500`, `--color-green-base`, `--color-green-dark` all nest under `colors.green`
 - **Variable Resolution with Tailwind Defaults**: Fixed chained var() resolution when using nesting configuration with Tailwind defaults
   - Before: Variables like `--color-chart-1: var(--chart-1)` (in @theme) referencing `:root` variables that reference defaults would remain unresolved
   - Example: `--chart-1: var(--color-blue-300)` would show `"var(--color-blue-300)"` instead of the actual color from defaults

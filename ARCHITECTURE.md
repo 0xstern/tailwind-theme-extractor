@@ -178,12 +178,13 @@ export interface ParseResult<TTheme extends Theme = Theme> {
 **Usage Patterns**
 
 ```typescript
+// With generated types (full type safety)
+
+import type { Tailwind } from './generated/tailwindcss';
+
 // Without generated types (fallback to unknown structure)
 const result = await resolveTheme({ input: './styles.css' });
 result.variants.default;
-
-// With generated types (full type safety)
-import type { Tailwind } from './generated/tailwindcss';
 
 const result = await resolveTheme<Tailwind>({ input: './styles.css' });
 result.variants.default.colors.primary[500]; // Fully typed!
@@ -1039,6 +1040,10 @@ Generates TypeScript type declarations and runtime objects.
 Uses TypeScript generics for type-safe theme access:
 
 ```typescript
+// Usage
+
+import type { Tailwind } from './generated/tailwindcss';
+
 // Generated types.ts
 export interface DefaultTheme {
   colors: { primary: { 500: 'oklch(...)' } };
@@ -1059,9 +1064,6 @@ export interface Tailwind {
   files: Array<string>;
   variables: Array<{ name: string; value: string; source: string }>;
 }
-
-// Usage
-import type { Tailwind } from './generated/tailwindcss';
 
 const result = await resolveTheme<Tailwind>({ input: './styles.css' });
 result.variants.default.colors.primary[500]; // Fully typed!

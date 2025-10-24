@@ -373,6 +373,7 @@ Then use the generated `Tailwind` type with runtime overrides:
 
 ```typescript
 import type { Tailwind } from './generated/tailwindcss';
+
 import { resolveTheme } from 'tailwind-resolver';
 
 const result = await resolveTheme<Tailwind>({
@@ -438,6 +439,7 @@ overrides: {
 ```
 
 **Note:** Variant names are automatically converted from kebab-case to camelCase:
+
 - CSS: `.theme-inter` → Override key: `'themeInter'`
 - CSS: `.theme-noto-sans` → Override key: `'themeNotoSans'`
 
@@ -490,6 +492,7 @@ const inlineStyles = `background-color: ${defaultTheme.colors.background};`;
 
 ```typescript
 import type { Tailwind } from './generated/tailwindcss';
+
 import { resolveTheme } from 'tailwind-resolver';
 
 const result = await resolveTheme<Tailwind>({
