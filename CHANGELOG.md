@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-10-23
+
 ### Added
 
 - **DEFAULT Key for Scalar/Nested Conflicts**: Automatically use `DEFAULT` key when both scalar and nested values exist at the same path
@@ -110,7 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code deduplication through extraction of shared utilities (LRU cache, type guards, formatting helpers)
 - Enhanced type safety with runtime type guards and explicit JSON validation
 
-## [0.2.6] - 2025-01-19
+## [0.2.6] - 2025-10-19
 
 ### Fixed
 
@@ -124,7 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 6 new integration tests covering cascade order edge cases
   - All 705 tests passing with zero regressions
 
-## [0.2.5] - 2025-01-19
+## [0.2.5] - 2025-10-19
 
 ### Added
 
@@ -166,7 +168,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CLI Console Output**: Unresolved variable reports now displayed in console when CLI finishes (previously only showed conflict reports)
 - **ESLint Compliance**: Reduced `logConfiguration()` complexity from 11 to under threshold by extracting helper functions
 
-## [0.2.4] - 2025-01-19
+## [0.2.4] - 2025-10-19
 
 ### Added
 
@@ -191,7 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Documentation**: Added unresolved variable report files to generated files list
 
-## [0.2.3] - 2025-01-19
+## [0.2.3] - 2025-10-19
 
 ### Added
 
@@ -205,7 +207,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 11 new tests covering option normalization and integration
   - Updated documentation: CLI README, Vite README, ARCHITECTURE.md, main README
 
-## [0.2.2] - 2025-01-19
+## [0.2.2] - 2025-10-19
 
 ### Added
 
@@ -232,7 +234,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Unresolved Variable Detection**: Added benchmark suite showing optimal performance (~5-7 µs for small datasets, ~40-60 µs for realistic workloads)
 
-## [0.2.1] - 2025-01-19
+## [0.2.1] - 2025-10-19
 
 ### Added
 
@@ -250,7 +252,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Exported via package.json: `@0xstern/tailwind-resolver/v4/shared/spacing-helper`
   - Comprehensive test coverage: 17 tests in `__tests__/v4/unit/shared/spacing-helper.test.ts`
 
-## [0.2.0] - 2025-01-19
+## [0.2.0] - 2025-10-19
 
 ### Fixed
 
@@ -260,7 +262,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Selectors can now be used with `querySelector` and other DOM APIs without errors
   - Improves developer experience with valid, usable CSS selectors in runtime theme objects
 
-## [0.1.9] - 2025-01-18
+## [0.1.9] - 2025-10-18
 
 ### Added
 
@@ -280,7 +282,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move type-generator to `src/v4/shared/` and extract shared code (constants, utils, file-generator)
 - Fix cross-module dependencies between CLI and Vite plugin for better separation of concerns
 
-## [0.1.8] - 2025-01-18
+## [0.1.8] - 2025-10-18
 
 ### Added
 
@@ -324,7 +326,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Minimal overhead**: Conflict detection only runs when CSS rules are found
 - **Efficient reporting**: Report generation only occurs when conflicts are detected
 
-## [0.1.7] - 2025-01-18
+## [0.1.7] - 2025-10-18
 
 ### Added
 
@@ -386,7 +388,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both CLI and Vite plugin now import from shared type definitions
   - Cleaner separation of concerns between implementation-specific and shared code
 
-## [0.1.6] - 2025-01-18
+## [0.1.6] - 2025-10-18
 
 ### Changed
 
@@ -438,7 +440,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Variable resolution includes parent variant variables for proper CSS cascade behavior
   - Descendant selectors (e.g., `.theme-default .theme-container`) only extract first part
 
-## [0.1.5] - 2025-01-17
+## [0.1.5] - 2025-10-17
 
 ### Changed
 
@@ -466,7 +468,7 @@ npm install tailwind-resolver
 + npx tailwind-resolver --input theme.css
 ```
 
-## [0.1.4] - 2025-01-17
+## [0.1.4] - 2025-10-17
 
 ### Changed
 
@@ -494,7 +496,7 @@ npm install tailwind-theme-resolver
 + npx tailwind-theme-resolver --input theme.css
 ```
 
-## [0.1.4-legacy] - 2025-01-17
+## [0.1.4-legacy] - 2025-10-17
 
 ### Fixed
 
