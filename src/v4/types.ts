@@ -215,11 +215,53 @@ export interface CSSVariable {
  *
  * @example
  * ```typescript
+ * // Include only colors and spacing from Tailwind defaults
  * {
  *   colors: true,      // Include default Tailwind colors
  *   spacing: true,     // Include default Tailwind spacing
  *   shadows: false,    // Don't include default shadows
  *   fonts: false       // Don't include default font families
+ * }
+ *
+ * // Include only typography-related defaults
+ * {
+ *   fontSize: true,
+ *   fontWeight: true,
+ *   fonts: true,
+ *   leading: true,
+ *   tracking: true,
+ *   colors: false,
+ *   spacing: false
+ * }
+ *
+ * // Include everything except animations and keyframes
+ * {
+ *   colors: true,
+ *   spacing: true,
+ *   fonts: true,
+ *   fontSize: true,
+ *   fontWeight: true,
+ *   tracking: true,
+ *   leading: true,
+ *   breakpoints: true,
+ *   containers: true,
+ *   radius: true,
+ *   shadows: true,
+ *   insetShadows: true,
+ *   dropShadows: true,
+ *   textShadows: true,
+ *   blur: true,
+ *   perspective: true,
+ *   aspect: true,
+ *   ease: true,
+ *   animations: false,  // Exclude animations
+ *   keyframes: false,   // Exclude keyframes
+ *   defaults: true
+ * }
+ *
+ * // Minimal: only include colors
+ * {
+ *   colors: true
  * }
  * ```
  */
@@ -458,11 +500,52 @@ export interface NestingConfig {
  *
  * @example
  * ```typescript
+ * // Basic: Set max depth for all namespaces
+ * {
+ *   default: { maxDepth: 1 }
+ * }
+ *
+ * // Per-namespace configuration
  * {
  *   default: { maxDepth: 1 },           // All namespaces: flatten after 1 level
  *   colors: { maxDepth: 3 },            // Colors: allow 3 levels of nesting
  *   shadows: { maxDepth: Infinity },    // Shadows: unlimited nesting
  *   spacing: { maxDepth: 1 }            // Spacing: flat structure
+ * }
+ *
+ * // Complete configuration with all options
+ * {
+ *   default: {
+ *     maxDepth: 0,                      // Completely flat
+ *     flattenMode: 'camelcase',         // Use camelCase for flattened keys
+ *     consecutiveDashes: 'exclude'      // Skip variables with -- (matches Tailwind v4)
+ *   },
+ *   colors: {
+ *     maxDepth: 2,                      // 2 levels: colors.blue.sky['50']
+ *     flattenMode: 'literal',           // Use kebab-case for remaining parts
+ *     consecutiveDashes: 'nest'         // Treat -- as single -
+ *   }
+ * }
+ *
+ * // Flatten mode comparison
+ * {
+ *   // With flattenMode: 'camelcase' (default)
+ *   // --color-blue-sky-light-50 → colors.blue.skyLight50
+ *   colors: { maxDepth: 2, flattenMode: 'camelcase' }
+ *
+ *   // With flattenMode: 'literal'
+ *   // --color-blue-sky-light-50 → colors.blue['sky-light-50']
+ *   // colors: { maxDepth: 2, flattenMode: 'literal' }
+ * }
+ *
+ * // Consecutive dashes handling
+ * {
+ *   colors: {
+ *     consecutiveDashes: 'exclude',     // --color-button--primary → excluded
+ *     // consecutiveDashes: 'nest',     // --color-button--primary → colors.button.primary
+ *     // consecutiveDashes: 'camelcase',// --color-button--primary → colors.buttonPrimary
+ *     // consecutiveDashes: 'literal',  // --color-button--primary → colors['button-'].primary
+ *   }
  * }
  * ```
  */
@@ -575,6 +658,33 @@ export interface NestingOptions {
 
 /**
  * Options for controlling report generation
+ *
+ * @example
+ * ```typescript
+ * // Generate all reports (default)
+ * {
+ *   conflicts: true,
+ *   unresolved: true
+ * }
+ *
+ * // Only generate conflict reports
+ * {
+ *   conflicts: true,
+ *   unresolved: false
+ * }
+ *
+ * // Only generate unresolved variable reports
+ * {
+ *   conflicts: false,
+ *   unresolved: true
+ * }
+ *
+ * // Skip all reports
+ * {
+ *   conflicts: false,
+ *   unresolved: false
+ * }
+ * ```
  */
 export interface ReportGenerationOptions {
   /**
@@ -594,6 +704,53 @@ export interface ReportGenerationOptions {
 
 /**
  * Options for controlling what gets generated in runtime files
+ *
+ * @example
+ * ```typescript
+ * // Production build (minimal bundle, no debug data)
+ * {
+ *   variants: true,    // Include theme variants
+ *   selectors: true,   // Include CSS selectors
+ *   files: false,      // Exclude file list (reduces bundle size)
+ *   variables: false,  // Exclude raw variables (reduces bundle size)
+ *   reports: true      // Generate diagnostic reports
+ * }
+ *
+ * // Development build (include everything for debugging)
+ * {
+ *   variants: true,
+ *   selectors: true,
+ *   files: true,       // Include for debugging
+ *   variables: true,   // Include for debugging
+ *   reports: true
+ * }
+ *
+ * // Minimal build (only theme data, no extras)
+ * {
+ *   variants: true,
+ *   selectors: false,
+ *   files: false,
+ *   variables: false,
+ *   reports: false
+ * }
+ *
+ * // Granular report control
+ * {
+ *   variants: true,
+ *   selectors: true,
+ *   reports: {
+ *     conflicts: true,    // Generate CSS conflict reports
+ *     unresolved: false   // Skip unresolved variable reports
+ *   }
+ * }
+ *
+ * // Disable all reports
+ * {
+ *   variants: true,
+ *   selectors: true,
+ *   reports: false        // No diagnostic reports generated
+ * }
+ * ```
  */
 export interface RuntimeGenerationOptions {
   /**
@@ -626,6 +783,9 @@ export interface RuntimeGenerationOptions {
 
   /**
    * Control generation of diagnostic reports
+   * - `true`: Generate all reports (conflicts.md, unresolved.md, and JSON versions)
+   * - `false`: Skip all report generation
+   * - Object: Granular control over which reports to generate
    * @default { conflicts: true, unresolved: true }
    */
   reports?: boolean | ReportGenerationOptions;
@@ -705,26 +865,12 @@ export interface OverrideOptions {
 }
 
 /**
- * Options for parsing CSS files
+ * Shared configuration options for theme parsing and resolution
+ *
+ * These options are common to both runtime parsing (ParseOptions) and
+ * build-time generation (VitePluginOptions).
  */
-export interface ParseOptions {
-  /**
-   * Path to the CSS file to parse (relative to current working directory, or absolute)
-   * Use this for file-based parsing (most common)
-   */
-  input?: string;
-  /**
-   * Raw CSS content to parse
-   * Use this for string-based parsing (when you already have CSS in memory)
-   * Requires basePath if you need `@import` resolution
-   */
-  css?: string;
-  /**
-   * Base path for resolving `@import` statements
-   * Only needed when using css parameter with `@import` statements
-   * @default process.cwd()
-   */
-  basePath?: string;
+export interface SharedThemeOptions {
   /**
    * Whether to resolve `@import` statements recursively
    * @default true
@@ -771,34 +917,227 @@ export interface ParseOptions {
   /**
    * Theme value overrides
    * Apply custom overrides to theme values for specific variants or globally
-   * Supports both flat notation ('colors.primary.500') and nested objects
+   * Supports flat notation, nested notation, and detailed control with force/resolveVars flags
    * @default undefined
+   *
+   * @example
+   * ```typescript
+   * // Basic: Apply to all variants
+   * {
+   *   overrides: {
+   *     '*': { 'fonts.sans': 'Inter, sans-serif' }
+   *   }
+   * }
+   *
+   * // Per-variant overrides
+   * {
+   *   overrides: {
+   *     'dark': { 'colors.background': '#000' },
+   *     'default': { 'colors.primary.500': '#custom' }
+   *   }
+   * }
+   *
+   * // Nested notation
+   * {
+   *   overrides: {
+   *     '*': {
+   *       fonts: { sans: 'Inter' },
+   *       colors: { primary: { 500: '#ff0000' } }
+   *     }
+   *   }
+   * }
+   *
+   * // Detailed control with force and resolveVars
+   * {
+   *   overrides: {
+   *     'dark': {
+   *       'radius.lg': { value: '0', force: true },
+   *       'colors.card': { value: 'var(--custom)', resolveVars: true }
+   *     }
+   *   }
+   * }
+   *
+   * // Complete example
+   * {
+   *   overrides: {
+   *     '*': { 'fonts.sans': 'Inter' },
+   *     'dark': {
+   *       'colors.background': '#000',
+   *       'colors.foreground': { value: '#fff', force: true }
+   *     },
+   *     '[data-theme="compact"]': { 'radius.lg': '0' }
+   *   }
+   * }
+   * ```
    */
   overrides?: OverrideOptions;
   /**
    * Nesting configuration for CSS variable key parsing
    * Controls how CSS variables with dashes are parsed into nested structures
-   * @default undefined (unlimited nesting with current behavior)
+   * @default undefined (unlimited nesting, consecutiveDashes: 'exclude')
    *
    * @example
    * ```typescript
-   * // Limit color nesting to 2 levels
+   * // Basic: Limit nesting depth
    * {
    *   nesting: {
    *     colors: { maxDepth: 2 }
    *   }
    * }
    *
-   * // Apply default max depth with colors override
+   * // Per-namespace with all options
    * {
    *   nesting: {
    *     default: { maxDepth: 1 },
-   *     colors: { maxDepth: 3 }
+   *     colors: {
+   *       maxDepth: 2,
+   *       flattenMode: 'literal',
+   *       consecutiveDashes: 'exclude'
+   *     }
+   *   }
+   * }
+   *
+   * // Flatten mode: camelCase vs literal
+   * {
+   *   nesting: {
+   *     colors: {
+   *       maxDepth: 2,
+   *       flattenMode: 'camelcase'  // blue-sky-light → blueSkyLight
+   *       // flattenMode: 'literal'  // blue-sky-light → 'blue-sky-light'
+   *     }
+   *   }
+   * }
+   *
+   * // Consecutive dashes handling
+   * {
+   *   nesting: {
+   *     colors: {
+   *       consecutiveDashes: 'exclude'    // button--primary → excluded (default)
+   *       // consecutiveDashes: 'nest'    // button--primary → button.primary
+   *       // consecutiveDashes: 'camelcase' // button--primary → buttonPrimary
+   *       // consecutiveDashes: 'literal' // button--primary → 'button-'.primary
+   *     }
+   *   }
+   * }
+   *
+   * // Complete example
+   * {
+   *   nesting: {
+   *     default: { maxDepth: 0, flattenMode: 'camelcase' },
+   *     colors: { maxDepth: 2, flattenMode: 'literal', consecutiveDashes: 'exclude' },
+   *     shadows: { maxDepth: 1, flattenMode: 'camelcase', consecutiveDashes: 'nest' }
    *   }
    * }
    * ```
    */
   nesting?: NestingOptions;
+}
+
+/**
+ * Options for parsing CSS files
+ *
+ * Extends SharedThemeOptions with parse-specific configuration.
+ *
+ * @example
+ * ```typescript
+ * // Basic usage: parse from file
+ * {
+ *   input: './src/theme.css'
+ * }
+ *
+ * // Parse from string with base path for imports
+ * {
+ *   css: '@import "./colors.css"; @theme { --color-primary: blue; }',
+ *   basePath: './src'
+ * }
+ *
+ * // Disable Tailwind defaults
+ * {
+ *   input: './theme.css',
+ *   includeDefaults: false
+ * }
+ *
+ * // Selective Tailwind defaults (only colors and spacing)
+ * {
+ *   input: './theme.css',
+ *   includeDefaults: {
+ *     colors: true,
+ *     spacing: true,
+ *     shadows: false,
+ *     fonts: false
+ *   }
+ * }
+ *
+ * // With nesting configuration
+ * {
+ *   input: './theme.css',
+ *   nesting: {
+ *     default: { maxDepth: 0, flattenMode: 'camelcase' },
+ *     colors: { maxDepth: 2, flattenMode: 'literal' }
+ *   }
+ * }
+ *
+ * // With theme overrides
+ * {
+ *   input: './theme.css',
+ *   overrides: {
+ *     '*': {
+ *       'fonts.sans': 'Inter, sans-serif'
+ *     },
+ *     'dark': {
+ *       'colors.background': '#000'
+ *     }
+ *   }
+ * }
+ *
+ * // Complete configuration
+ * {
+ *   input: './theme.css',
+ *   basePath: './src',
+ *   resolveImports: true,
+ *   includeDefaults: true,
+ *   debug: true,
+ *   nesting: {
+ *     default: { maxDepth: 1, flattenMode: 'camelcase' }
+ *   },
+ *   overrides: {
+ *     '*': { 'fonts.sans': 'Inter' }
+ *   }
+ * }
+ *
+ * // Disable imports resolution
+ * {
+ *   input: './theme.css',
+ *   resolveImports: false
+ * }
+ *
+ * // Debug mode
+ * {
+ *   input: './theme.css',
+ *   debug: true  // Logs import resolution warnings
+ * }
+ * ```
+ */
+export interface ParseOptions extends SharedThemeOptions {
+  /**
+   * Path to the CSS file to parse (relative to current working directory, or absolute)
+   * Use this for file-based parsing (most common)
+   */
+  input?: string;
+
+  /**
+   * Raw CSS content to parse
+   * Use this for string-based parsing (when you already have CSS in memory)
+   * Requires basePath if you need `@import` resolution
+   */
+  css?: string;
+
+  /**
+   * Base path for resolving `@import` statements
+   * Only needed when using css parameter with `@import` statements
+   * @default process.cwd()
+   */
+  basePath?: string;
 }
 
 /**
