@@ -1,6 +1,27 @@
-# Contributing to Tailwind v4 Theme Resolver
+# Contributing to Tailwind Theme Resolver
 
 Thank you for your interest in contributing to this project. This document outlines the process and guidelines for contributing.
+
+## Table of Contents
+
+- [Development Setup](#development-setup)
+- [Development Workflow](#development-workflow)
+  - [Running Tests](#running-tests)
+  - [Linting](#linting)
+  - [Formatting](#formatting)
+  - [Building](#building)
+- [Code Standards](#code-standards)
+  - [TypeScript Guidelines](#typescript-guidelines)
+  - [File Naming Conventions](#file-naming-conventions)
+  - [Commit Messages](#commit-messages)
+- [Pull Request Process](#pull-request-process)
+  - [Pull Request Guidelines](#pull-request-guidelines)
+- [Reporting Issues](#reporting-issues)
+- [Feature Requests](#feature-requests)
+- [Code Review](#code-review)
+- [License](#license)
+
+---
 
 ## Development Setup
 
@@ -13,6 +34,8 @@ Thank you for your interest in contributing to this project. This document outli
    ```bash
    bun test
    ```
+
+---
 
 ## Development Workflow
 
@@ -41,6 +64,8 @@ bun run format:check  # Check without modifying
 ```bash
 bun run build
 ```
+
+---
 
 ## Code Standards
 
@@ -83,7 +108,9 @@ test(integration): add tests for variant resolution
 refactor(types): simplify theme interface structure
 ```
 
-Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
+**Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
+
+---
 
 ## Pull Request Process
 
@@ -104,6 +131,8 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
 - Ensure CI passes before requesting review
 - Link any related issues
 
+---
+
 ## Reporting Issues
 
 When reporting bugs, please include:
@@ -114,6 +143,8 @@ When reporting bugs, please include:
 - Your environment (Node.js/Bun version, OS)
 - Minimal reproduction case if possible
 
+---
+
 ## Feature Requests
 
 Feature requests are welcome. Please provide:
@@ -121,6 +152,8 @@ Feature requests are welcome. Please provide:
 - Clear use case and motivation
 - Proposed API or implementation approach
 - Any alternative solutions considered
+
+---
 
 ## Code Review
 
@@ -130,6 +163,8 @@ All contributions go through code review. Reviewers will check for:
 - Test coverage and quality
 - Documentation completeness
 - Potential edge cases or issues
+
+---
 
 ## License
 

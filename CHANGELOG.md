@@ -81,6 +81,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New API: `includeDefaults?: boolean | TailwindDefaultsOptions`
   - Functionality remains identical - same granular control over Tailwind default theme inclusion
   - Migration: Replace all instances of `includeTailwindDefaults` with `includeDefaults` in Runtime API, Vite Plugin, and File Generator configurations
+- **Documentation**: Restructured all documentation with improved navigation and organization
+  - Added table of contents to ARCHITECTURE.md, bench/README.md, and CONTRIBUTING.md for easier navigation
+  - Improved formatting and section structure in test/README.md
+  - Better logical flow with horizontal separators between major sections
+  - Consistent structure across all documentation files
 
 ### Refactored
 
