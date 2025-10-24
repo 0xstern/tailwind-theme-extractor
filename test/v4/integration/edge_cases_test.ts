@@ -83,23 +83,23 @@ describe('Color Resolution', () => {
     ).toBe('oklch(0.65 0.2 280)');
   });
 
-  test('handles color variants with suffixes as string keys', () => {
+  test('handles multi-level nested colors (demonstrates deep nesting)', () => {
+    // --color-interactive-500-hover → colors.interactive['500'].hover
     expect(result.variants.default.colors.interactive).toBeDefined();
-    expect(
-      (result.variants.default.colors.interactive as Record<string, string>)[
-        '500-hover'
-      ],
-    ).toBe('oklch(0.6 0.2 250)');
-    expect(
-      (result.variants.default.colors.interactive as Record<string, string>)[
-        '500-active'
-      ],
-    ).toBe('oklch(0.55 0.18 250)');
-    expect(
-      (result.variants.default.colors.interactive as Record<string, string>)[
-        '500-disabled'
-      ],
-    ).toBe('oklch(0.7 0.1 250)');
+    const interactive = result.variants.default.colors.interactive;
+
+    if (interactive !== undefined && typeof interactive !== 'string') {
+      const interactiveScale = interactive as unknown as Record<
+        string,
+        Record<string, string>
+      >;
+      expect(interactiveScale['500']).toBeDefined();
+      if (interactiveScale['500'] !== undefined) {
+        expect(interactiveScale['500'].hover).toBe('oklch(0.6 0.2 250)');
+        expect(interactiveScale['500'].active).toBe('oklch(0.55 0.18 250)');
+        expect(interactiveScale['500'].disabled).toBe('oklch(0.7 0.1 250)');
+      }
+    }
   });
 
   test('supports custom numeric variants', () => {
@@ -230,10 +230,11 @@ describe('Font Resolution', () => {
       'ui-serif, Georgia, serif',
     );
     expect(result.variants.default.fonts.display).toBe("'Poppins', sans-serif");
-    // --font-body-text becomes fonts['body-text'] (kebab case preserved in namespace)
-    expect(result.variants.default.fonts['body-text']).toBe(
-      "'Inter', sans-serif",
-    );
+    // --font-body-text becomes fonts.body.text (nested structure with unlimited nesting)
+    expect(
+      (result.variants.default.fonts.body as unknown as Record<string, string>)
+        .text,
+    ).toBe("'Inter', sans-serif");
   });
 
   test('resolves font sizes with line heights', () => {
@@ -294,14 +295,29 @@ describe('Border & Effects', () => {
   test('resolves border radius', () => {
     expect(result.variants.default.radius.sm).toBe('0.125rem');
     expect(result.variants.default.radius.full).toBe('9999px');
-    // --radius-custom-button becomes radius['custom-button']
-    expect(result.variants.default.radius['custom-button']).toBeDefined();
+    // --radius-custom-button becomes radius.custom.button (nested structure with unlimited nesting)
+    expect(
+      (
+        result.variants.default.radius.custom as unknown as Record<
+          string,
+          string
+        >
+      ).button,
+    ).toBeDefined();
   });
 
   test('resolves box shadows', () => {
     expect(result.variants.default.shadows.sm).toBeDefined();
     expect(result.variants.default.shadows.md).toBeDefined();
-    expect(result.variants.default.shadows['elevation-1']).toBeDefined();
+    // --shadow-elevation-1 becomes shadows.elevation[1] (nested structure with unlimited nesting)
+    expect(
+      (
+        result.variants.default.shadows.elevation as unknown as Record<
+          string,
+          string
+        >
+      )[1],
+    ).toBeDefined();
   });
 
   test('shadow namespaces exist', () => {
@@ -331,8 +347,11 @@ describe('Animations & Transforms', () => {
 
   test('resolves easing functions', () => {
     expect(result.variants.default.ease.linear).toBe('linear');
-    // --ease-in-out becomes ease['in-out']
-    expect(result.variants.default.ease['in-out']).toBeDefined();
+    // --ease-in-out becomes ease.in.out (nested structure with unlimited nesting)
+    expect(
+      (result.variants.default.ease.in as unknown as Record<string, string>)
+        .out,
+    ).toBeDefined();
     expect(result.variants.default.ease.fluid).toBe(
       'cubic-bezier(0.3, 0, 0, 1)',
     );

@@ -6,8 +6,10 @@
 import type { HmrContext, PluginOption } from 'vite';
 
 import type {
+  NestingOptions,
   OverrideOptions,
   RuntimeGenerationOptions,
+  SharedThemeOptions,
   TailwindDefaultsOptions,
 } from '../types';
 
@@ -21,9 +23,81 @@ import { normalizeRuntimeOptions } from '../shared/utils';
 /**
  * Re-export for convenience
  */
-export type { RuntimeGenerationOptions, TailwindDefaultsOptions };
+export type {
+  NestingOptions,
+  OverrideOptions,
+  RuntimeGenerationOptions,
+  SharedThemeOptions,
+  TailwindDefaultsOptions,
+};
 
-export interface VitePluginOptions {
+/**
+ * Vite plugin configuration options
+ *
+ * @example
+ * ```typescript
+ * // Minimal configuration
+ * {
+ *   input: 'src/theme.css'
+ * }
+ *
+ * // Production configuration
+ * {
+ *   input: 'src/theme.css',
+ *   outputDir: 'src/generated/tailwindcss',
+ *   generateRuntime: true,
+ *   includeDefaults: true
+ * }
+ *
+ * // Development configuration with all debug data
+ * {
+ *   input: 'src/theme.css',
+ *   debug: true,
+ *   generateRuntime: {
+ *     variants: true,
+ *     selectors: true,
+ *     files: true,
+ *     variables: true,
+ *     reports: true
+ *   }
+ * }
+ *
+ * // Complete configuration showing all options
+ * {
+ *   input: 'src/theme.css',
+ *   outputDir: 'src/generated/tailwindcss',
+ *   resolveImports: true,
+ *   generateRuntime: {
+ *     variants: true,
+ *     selectors: true,
+ *     files: false,
+ *     variables: false,
+ *     reports: {
+ *       conflicts: true,
+ *       unresolved: true
+ *     }
+ *   },
+ *   includeDefaults: {
+ *     colors: true,
+ *     spacing: true,
+ *     fonts: true,
+ *     fontSize: true,
+ *     fontWeight: true,
+ *     shadows: false
+ *   },
+ *   overrides: {
+ *     '*': { 'fonts.sans': 'Inter' },
+ *     'dark': { 'colors.background': '#000' }
+ *   },
+ *   nesting: {
+ *     default: { maxDepth: 1, flattenMode: 'camelcase' },
+ *     colors: { maxDepth: 2, flattenMode: 'literal', consecutiveDashes: 'exclude' }
+ *   },
+ *   debug: false
+ * }
+ * ```
+ */
+export interface VitePluginOptions extends SharedThemeOptions {
   /**
    * Path to your CSS input file (relative to Vite project root)
    */
@@ -36,19 +110,14 @@ export interface VitePluginOptions {
   outputDir?: string;
 
   /**
-   * Whether to resolve `@import` statements
-   * @default true
-   */
-  resolveImports?: boolean;
-
-  /**
    * Control what gets generated in the runtime file
    * - `false`: No runtime file (types only)
-   * - `true`: Generate variants and selectors (optimized for production, excludes debug data)
-   * - object: Granular control - set `files: true` and `variables: true` for debugging
+   * - `true`: Generate variants and selectors (optimized for production)
+   * - object: Granular control over variants, selectors, files, variables, and reports
    * @default true
    *
    * @example
+   * ```typescript
    * // Production (default)
    * generateRuntime: true
    *
@@ -56,53 +125,22 @@ export interface VitePluginOptions {
    * generateRuntime: {
    *   variants: true,
    *   selectors: true,
-   *   files: true,      // Include processed file list
-   *   variables: true,  // Include raw CSS variables
+   *   files: true,
+   *   variables: true,
+   *   reports: { conflicts: true, unresolved: true }
    * }
+   *
+   * // Minimal (no reports)
+   * generateRuntime: {
+   *   variants: true,
+   *   selectors: true,
+   *   files: false,
+   *   variables: false,
+   *   reports: false
+   * }
+   * ```
    */
   generateRuntime?: boolean | RuntimeGenerationOptions;
-
-  /**
-   * Control inclusion of Tailwind's default theme
-   * - `true`: Include all Tailwind defaults (default)
-   * - `false`: Don't include any Tailwind defaults
-   * - object: Selectively include specific categories
-   * @default true
-   *
-   * @example
-   * // Include all defaults (default)
-   * includeTailwindDefaults: true
-   *
-   * // Don't include any defaults
-   * includeTailwindDefaults: false
-   *
-   * // Include only specific categories
-   * includeTailwindDefaults: {
-   *   colors: true,
-   *   spacing: true,
-   *   shadows: false
-   * }
-   */
-  includeTailwindDefaults?: boolean | TailwindDefaultsOptions;
-
-  /**
-   * Enable debug logging for troubleshooting
-   * @default false
-   */
-  debug?: boolean;
-
-  /**
-   * Theme value overrides
-   * Apply custom overrides to theme values for specific variants or globally
-   * @default undefined
-   *
-   * @example
-   * overrides: {
-   *   'dark': { 'colors.background': '#000000' },
-   *   '*': { 'fonts.sans': 'Inter, sans-serif' }
-   * }
-   */
-  overrides?: OverrideOptions;
 }
 
 export function tailwindResolver(options: VitePluginOptions): PluginOption {
@@ -110,9 +148,10 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
     input,
     resolveImports = true,
     generateRuntime = true,
-    includeTailwindDefaults = true,
+    includeDefaults = true,
     debug = false,
     overrides,
+    nesting,
   } = options;
 
   const runtimeOptions = normalizeRuntimeOptions(generateRuntime);
@@ -150,11 +189,12 @@ export function tailwindResolver(options: VitePluginOptions): PluginOption {
       fullOutputDir,
       resolveImports,
       runtimeOptions,
-      includeTailwindDefaults,
+      includeDefaults,
       debug,
       basePath,
       reportOptions,
       overrides,
+      nesting,
     );
 
     // Update watched files set

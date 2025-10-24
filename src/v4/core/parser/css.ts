@@ -17,6 +17,36 @@ import { extractVariables } from './extractor';
 import { resolveImports } from './imports';
 
 /**
+ * Reads CSS content from either a file or inline string
+ * @param options - Parse options with input or css
+ * @returns CSS content, base directory, and initial processed files
+ */
+async function readCSSContent(options: ParseOptions): Promise<{
+  cssContent: string;
+  baseDir: string;
+  processedFiles: Array<string>;
+}> {
+  const { input, css, basePath } = options;
+
+  if (input === undefined && css === undefined) {
+    throw new Error('Either input or css must be provided');
+  }
+
+  if (input !== undefined) {
+    const cssContent = await readFile(input, 'utf-8');
+    const baseDir = dirname(resolve(input));
+    const processedFiles = [resolve(input)];
+    return { cssContent, baseDir, processedFiles };
+  }
+
+  return {
+    cssContent: css as string,
+    baseDir: basePath ?? process.cwd(),
+    processedFiles: [],
+  };
+}
+
+/**
  * Parses CSS file(s) and resolves Tailwind v4 theme variables
  *
  * This is the main entry point for CSS parsing. It handles:
@@ -78,45 +108,29 @@ export async function parseCSS<TTheme extends Theme = Theme>(
   options: ParseOptions,
 ): Promise<ParseResult<TTheme>> {
   const {
-    input,
-    css,
     basePath,
     resolveImports: shouldResolveImports = true,
     debug = false,
     overrides,
+    nesting,
   } = options;
 
-  // Validate input
-  if (input === undefined && css === undefined) {
-    throw new Error('Either input or css must be provided');
-  }
-
-  let cssContent: string;
-  let baseDir: string;
-  const processedFiles: Array<string> = [];
-
-  // Read CSS content
-  if (input !== undefined) {
-    cssContent = await readFile(input, 'utf-8');
-    baseDir = dirname(resolve(input));
-    processedFiles.push(resolve(input));
-  } else {
-    cssContent = css as string;
-    baseDir = basePath ?? process.cwd();
-  }
+  // Read CSS content from file or inline string
+  const { cssContent, baseDir, processedFiles } = await readCSSContent(options);
 
   // Parse CSS with PostCSS
   const root = postcss.parse(cssContent);
 
   // Run independent async operations in parallel for better performance
-  const [importedFiles, defaultTheme] = await Promise.all([
+  const [importedFiles, defaultsResult] = await Promise.all([
     shouldResolveImports
       ? resolveImports(root, baseDir, new Set(processedFiles), debug)
       : Promise.resolve([]),
-    // Load Tailwind defaults for var() resolution
+    // Load Tailwind defaults for var() resolution with nesting config
     // Use basePath if provided, otherwise fall back to process.cwd()
     // (baseDir is the CSS file's directory, not the project root)
-    loadTailwindDefaults(basePath ?? process.cwd()),
+    // Pass nesting config to ensure defaults respect the same nesting rules as user variables
+    loadTailwindDefaults(basePath ?? process.cwd(), nesting),
   ]);
 
   // Track imported files
@@ -131,6 +145,9 @@ export async function parseCSS<TTheme extends Theme = Theme>(
     cssRules,
   } = extractVariables(root);
 
+  // Extract default variables for resolution (preserves original variable names)
+  const defaultVariables = defaultsResult?.variables;
+
   // Build structured theme objects (base + variants) and resolve all variables
   // Detects and applies CSS rule overrides and unresolved variable references
   const {
@@ -144,8 +161,9 @@ export async function parseCSS<TTheme extends Theme = Theme>(
     rawVariables,
     keyframes,
     cssRules,
-    defaultTheme,
+    defaultVariables,
     overrides,
+    nesting,
     debug,
   );
 

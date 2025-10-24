@@ -54,7 +54,7 @@
   color: black;
 
   /* But CSS variables should be resolved */
-  --color-mixed-valid: #555555;
+  --color-mixedValid: #555555;
   --spacing-mixed: 2rem;
 }
 

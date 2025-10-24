@@ -77,7 +77,7 @@ describe('Vite Plugin - Full Integration', () => {
       input: inputFile,
       outputDir,
       generateRuntime: true,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -140,7 +140,7 @@ describe('Vite Plugin - Full Integration', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -204,7 +204,7 @@ describe('Vite Plugin - Full Integration', () => {
       input: mainFile,
       outputDir,
       resolveImports: true,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -266,7 +266,7 @@ describe('Vite Plugin - Full Integration', () => {
       input: inputFile,
       outputDir: viteOutputDir,
       generateRuntime: true,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -348,7 +348,7 @@ describe('Vite Plugin - Full Integration', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {

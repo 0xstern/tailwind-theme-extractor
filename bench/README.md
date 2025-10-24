@@ -1,74 +1,115 @@
 # Benchmark Suite
 
-This directory contains performance benchmarks for the tailwind-resolver library using [Mitata](https://github.com/evanwashere/mitata).
+Performance benchmarks for the tailwind-resolver library using [Mitata](https://github.com/evanwashere/mitata).
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Benchmark Files](#benchmark-files)
+  - [Core Modules](#core-modules)
+  - [Analysis and Reporting](#analysis-and-reporting)
+  - [Features](#features)
+  - [End-to-End](#end-to-end)
+- [Running Benchmarks](#running-benchmarks)
+- [Benchmark Structure](#benchmark-structure)
+  - [File Naming](#file-naming)
+  - [File Template](#file-template)
+  - [Organization Patterns](#organization-patterns)
+- [Best Practices](#best-practices)
+- [Interpreting Results](#interpreting-results)
+  - [Time Metrics](#time-metrics)
+  - [Performance Goals](#performance-goals)
+  - [Regression Detection](#regression-detection)
+- [Adding New Benchmarks](#adding-new-benchmarks)
+- [Benchmark Data Sources](#benchmark-data-sources)
+  - [Test Fixtures](#test-fixtures)
+  - [Synthetic Data](#synthetic-data)
+- [Performance Optimization Tips](#performance-optimization-tips)
+- [References](#references)
+
+---
 
 ## Overview
 
 Benchmarks are organized by module and measure performance characteristics of the parsing and theme resolution pipeline. Each benchmark file focuses on a specific aspect of the system.
 
+---
+
 ## Benchmark Files
 
 ### Core Modules
 
-- **`builder_bench.ts`** - Theme building performance
-  - Scale: minimal (10 vars) � large (300+ vars)
-  - Variant resolution with caching
-  - `var()` reference resolution (1-3 levels deep)
-  - Realistic shadcn UI workloads
+**`builder_bench.ts`** - Theme building performance
 
-- **`parser_bench.ts`** - CSS parser (parseCSS) entry point
-  - Scale: simple (8 vars) � large (150 vars)
-  - Import resolution enabled/disabled
-  - Debug mode overhead
-  - Realistic production workloads
+- Scale: minimal (10 vars) → large (300+ vars)
+- Variant resolution with caching
+- `var()` reference resolution (1-3 levels deep)
+- Realistic shadcn UI workloads
 
-- **`extractor_bench.ts`** - Variable extraction from CSS AST
-  - Single-pass AST traversal
-  - Theme vs root vs variant extraction
-  - Namespace mapping performance
+**`parser_bench.ts`** - CSS parser (parseCSS) entry point
 
-- **`imports_bench.ts`** - @import resolution
-  - Recursive import resolution
-  - Circular dependency detection
-  - Import depth (1-3 levels)
+- Scale: simple (8 vars) → large (150 vars)
+- Import resolution enabled/disabled
+- Debug mode overhead
+- Realistic production workloads
 
-- **`defaults_bench.ts`** - Tailwind defaults loading
-  - Cache effectiveness
-  - Merge operations
-  - Granular defaults filtering
+**`extractor_bench.ts`** - Variable extraction from CSS AST
 
-### Analysis & Reporting
+- Single-pass AST traversal
+- Theme vs root vs variant extraction
+- Namespace mapping performance
 
-- **`conflicts_bench.ts`** - CSS rule conflict detection
-  - Conflict detection algorithms
-  - Confidence scoring
-  - Report generation (Markdown + JSON)
+**`imports_bench.ts`** - @import resolution
 
-- **`unresolved_bench.ts`** - Unresolved variable detection
-  - Pattern matching performance
-  - Categorization (external/self-referential/unknown)
-  - Report generation
+- Recursive import resolution
+- Circular dependency detection
+- Import depth (1-3 levels)
 
-- **`rules_bench.ts`** - CSS rule extraction
-  - Complexity classification
-  - Property-to-namespace mapping
-  - Selector parsing
+**`defaults_bench.ts`** - Tailwind defaults loading
+
+- Cache effectiveness
+- Merge operations
+- Granular defaults filtering
+
+### Analysis and Reporting
+
+**`conflicts_bench.ts`** - CSS rule conflict detection
+
+- Conflict detection algorithms
+- Confidence scoring
+- Report generation (Markdown + JSON)
+
+**`unresolved_bench.ts`** - Unresolved variable detection
+
+- Pattern matching performance
+- Categorization (external/self-referential/unknown)
+- Report generation
+
+**`rules_bench.ts`** - CSS rule extraction
+
+- Complexity classification
+- Property-to-namespace mapping
+- Selector parsing
 
 ### Features
 
-- **`overrides_bench.ts`** - Theme override system
-  - Pre-resolution variable injection
-  - Post-resolution theme mutation
-  - Flat vs nested notation parsing
+**`overrides_bench.ts`** - Theme override system
+
+- Pre-resolution variable injection
+- Post-resolution theme mutation
+- Flat vs nested notation parsing
 
 ### End-to-End
 
-- **`end_to_end_bench.ts`** - Complete theme resolution pipeline
-  - Uses real fixtures from `test/v4/fixtures/`
-  - Fixture scale: minimal � large (17-402 lines)
-  - Feature complexity benchmarks
-  - Realistic production scenarios
-  - Cache effectiveness (cold vs warm runs)
+**`end_to_end_bench.ts`** - Complete theme resolution pipeline
+
+- Uses real fixtures from `test/v4/fixtures/`
+- Fixture scale: minimal → large (17-402 lines)
+- Feature complexity benchmarks
+- Realistic production scenarios
+- Cache effectiveness (cold vs warm runs)
+
+---
 
 ## Running Benchmarks
 
@@ -100,10 +141,12 @@ Mitata provides detailed statistics:
 benchmark                                   time (avg)             (min & max)
 -----------------------------------------------------------------------
 buildThemes - scale
-  minimal theme (10 variables)           42.11 �s/iter  (37.75 �s & 125 �s)
-  medium theme (100 variables)           421.5 �s/iter    (389 �s & 1.2 ms)
+  minimal theme (10 variables)           42.11 µs/iter  (37.75 µs & 125 µs)
+  medium theme (100 variables)           421.5 µs/iter    (389 µs & 1.2 ms)
   large theme (300+ variables)           1.25 ms/iter   (1.15 ms & 2.1 ms)
 ```
+
+---
 
 ## Benchmark Structure
 
@@ -156,59 +199,62 @@ await run();
 
 Benchmarks are typically organized into groups by:
 
-1. **Scale** - Test with increasing data sizes
+**1. Scale** - Test with increasing data sizes
 
-   ```typescript
-   group('module - scale', () => {
-     bench('minimal (10 items)', () => {
-       /* ... */
-     });
-     bench('medium (100 items)', () => {
-       /* ... */
-     });
-     bench('large (1000 items)', () => {
-       /* ... */
-     });
-   });
-   ```
+```typescript
+group('module - scale', () => {
+  bench('minimal (10 items)', () => {
+    /* ... */
+  });
+  bench('medium (100 items)', () => {
+    /* ... */
+  });
+  bench('large (1000 items)', () => {
+    /* ... */
+  });
+});
+```
 
-2. **Options** - Test different configuration options
+**2. Options** - Test different configuration options
 
-   ```typescript
-   group('module - options', () => {
-     bench('with option enabled', () => {
-       /* ... */
-     });
-     bench('with option disabled', () => {
-       /* ... */
-     });
-   });
-   ```
+```typescript
+group('module - options', () => {
+  bench('with option enabled', () => {
+    /* ... */
+  });
+  bench('with option disabled', () => {
+    /* ... */
+  });
+});
+```
 
-3. **Features** - Test specific feature complexity
+**3. Features** - Test specific feature complexity
 
-   ```typescript
-   group('module - feature complexity', () => {
-     bench('simple case', () => {
-       /* ... */
-     });
-     bench('complex case (nested)', () => {
-       /* ... */
-     });
-   });
-   ```
+```typescript
+group('module - feature complexity', () => {
+  bench('simple case', () => {
+    /* ... */
+  });
+  bench('complex case (nested)', () => {
+    /* ... */
+  });
+});
+```
 
-4. **Realistic Workloads** - Test production scenarios
-   ```typescript
-   group('realistic workload', () => {
-     bench('typical SaaS app', () => {
-       /* ... */
-     });
-     bench('design system', () => {
-       /* ... */
-     });
-   });
-   ```
+**4. Realistic Workloads** - Test production scenarios
+
+```typescript
+group('realistic workload', () => {
+  bench('typical SaaS app', () => {
+    /* ... */
+  });
+  bench('design system', () => {
+    /* ... */
+  });
+});
+```
+
+---
 
 ## Best Practices
 
@@ -277,7 +323,7 @@ Mirror production data characteristics:
 - Realistic nesting levels (1-3 deep)
 - Production-like CSS complexity
 
-### 6. Document Scale & Context
+### 6. Document Scale and Context
 
 Include context in benchmark names:
 
@@ -291,15 +337,17 @@ bench('minimal theme (10 variables)', () => {
 });
 ```
 
+---
+
 ## Interpreting Results
 
 ### Time Metrics
 
-- **�s (microseconds)**: 1,000 �s = 1 millisecond
+- **µs (microseconds)**: 1,000 µs = 1 millisecond
 - **ms (milliseconds)**: 1,000 ms = 1 second
 - **Acceptable ranges**:
-  - Minimal themes: < 100 �s
-  - Medium themes: 100 �s - 1 ms
+  - Minimal themes: &lt; 100 µs
+  - Medium themes: 100 µs - 1 ms
   - Large themes: 1-5 ms
 
 ### Performance Goals
@@ -308,10 +356,10 @@ Based on real-world usage patterns:
 
 | Theme Size | Variables | Target Time | Use Case       |
 | ---------- | --------- | ----------- | -------------- |
-| Minimal    | < 50      | < 100 �s    | Simple sites   |
-| Medium     | 50-200    | < 1 ms      | Typical apps   |
-| Large      | 200-500   | < 5 ms      | Design systems |
-| Enterprise | 500+      | < 10 ms     | Multi-tenant   |
+| Minimal    | &lt; 50   | &lt; 100 µs | Simple sites   |
+| Medium     | 50-200    | &lt; 1 ms   | Typical apps   |
+| Large      | 200-500   | &lt; 5 ms   | Design systems |
+| Enterprise | 500+      | &lt; 10 ms  | Multi-tenant   |
 
 ### Regression Detection
 
@@ -328,6 +376,8 @@ bun bench/v4/builder_bench.ts > current.txt
 diff baseline.txt current.txt
 ```
 
+---
+
 ## Adding New Benchmarks
 
 When adding a new benchmark:
@@ -340,6 +390,8 @@ When adding a new benchmark:
 6. **Document context**: Include scale/complexity in names
 7. **Call `await run()`**: Execute at end of file
 8. **Update this README**: Document the new benchmark file
+
+---
 
 ## Benchmark Data Sources
 
@@ -365,6 +417,8 @@ Module-specific benchmarks generate synthetic data:
 - **Spacing**: 15 values (0-96)
 - **Variants**: 1-15 variants with realistic names
 
+---
+
 ## Performance Optimization Tips
 
 Based on benchmark results:
@@ -375,7 +429,9 @@ Based on benchmark results:
 4. **Module Constants**: Avoid recreating config objects
 5. **Parallel Builds**: Promise.all() for independent ops
 
-## Related Documentation
+---
+
+## References
 
 - [ARCHITECTURE.md](../ARCHITECTURE.md) - Performance characteristics section
 - [test/README.md](../test/README.md) - Test organization

@@ -22,8 +22,8 @@
   --color-interactive-500-active: oklch(0.8 0.2 250);
 
   /* Override brand colors */
-  --color-brand-main: #a78bfa;
-  --color-error-primary: #f87171;
+  --color-brandMain: #a78bfa;
+  --color-errorPrimary: #f87171;
 
   /* New dark-mode only colors */
   --color-dark-surface: #111827;

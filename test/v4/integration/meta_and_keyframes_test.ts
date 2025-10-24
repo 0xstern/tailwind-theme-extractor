@@ -16,7 +16,7 @@ describe('Meta Variables (--default-*)', () => {
           --default-font-family: var(--font-sans);
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.defaults.transitionDuration).toBe('150ms');
@@ -36,7 +36,7 @@ describe('Meta Variables (--default-*)', () => {
           --default-line-height-base: 1.5;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.defaults.fontFeatureSettings).toBe(
@@ -53,7 +53,7 @@ describe('Meta Variables (--default-*)', () => {
           --default-spacing-unit: 0.25rem;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.defaults.borderWidth).toBe('1px');
@@ -67,7 +67,7 @@ describe('Meta Variables (--default-*)', () => {
           --default-font-family: --theme(--font-sans, sans-serif);
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.defaults.fontFamily).toBe(
@@ -91,7 +91,7 @@ describe('@keyframes Resolution', () => {
           }
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.keyframes.spin).toBeDefined();
@@ -115,7 +115,7 @@ describe('@keyframes Resolution', () => {
           }
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.keyframes.bounce).toBeDefined();
@@ -135,7 +135,7 @@ describe('@keyframes Resolution', () => {
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(Object.keys(result.variants.default.keyframes)).toHaveLength(
@@ -164,7 +164,7 @@ describe('@keyframes Resolution', () => {
           75%, 100% { transform: scale(2); opacity: 0; }
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // Animation variables
@@ -194,7 +194,7 @@ describe('Meta Variables + Keyframes Combined', () => {
           50% { opacity: 0.5; }
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // Meta variables
@@ -214,7 +214,7 @@ describe('Meta Variables + Keyframes Combined', () => {
           --color-primary: #3b82f6;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.defaults).toEqual({});
@@ -235,7 +235,7 @@ describe('Tailwind v4 Real-World Examples', () => {
           --default-font-variation-settings: normal;
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(result.variants.default.defaults).toEqual({
@@ -280,7 +280,7 @@ describe('Tailwind v4 Real-World Examples', () => {
           }
         }
       `,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(Object.keys(result.variants.default.keyframes)).toHaveLength(

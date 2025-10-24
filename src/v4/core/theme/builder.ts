@@ -4,9 +4,10 @@
  */
 
 import type {
-  ColorScale,
   CSSVariable,
   DeprecationWarning,
+  NestingConfig,
+  NestingOptions,
   OverrideOptions,
   Theme,
   ThemeColors,
@@ -25,13 +26,12 @@ import {
 import { detectUnresolvedVariables } from '../analysis/unresolved';
 import {
   kebabToCamelCase,
-  parseColorScale,
   parseFontSizeLineHeight,
+  parseNestedKey,
   parseVariableName,
   variantNameToCamelCase,
 } from '../parser/extractor';
 import { LRUCache } from '../utils/lru_cache';
-import { isString } from '../utils/type_guards';
 import { applyInitialExclusionToTheme } from './filters';
 import { applyThemeOverrides, injectVariableOverrides } from './overrides';
 
@@ -214,6 +214,63 @@ function createVariablesMap(
  */
 interface ProcessorHelpers {
   fontSizeLineHeights: Map<string, string>;
+  nestingConfig?: NestingOptions;
+}
+
+/**
+ * Maps namespace-specific property names to their nesting config keys in NestingOptions
+ * This allows looking up the correct nesting config for each namespace
+ */
+const NAMESPACE_TO_NESTING_KEY: Record<
+  string,
+  keyof NestingOptions | undefined
+> = {
+  color: 'colors',
+  shadow: 'shadows',
+  'inset-shadow': 'insetShadows',
+  'drop-shadow': 'dropShadows',
+  'text-shadow': 'textShadows',
+  spacing: 'spacing',
+  radius: 'radius',
+  blur: 'blur',
+  perspective: 'perspective',
+  aspect: 'aspect',
+  ease: 'ease',
+  animate: 'animations',
+  font: 'fonts',
+  text: 'fontSize',
+  'font-weight': 'fontWeight',
+  tracking: 'tracking',
+  leading: 'leading',
+  breakpoint: 'breakpoints',
+  container: 'containers',
+  default: 'defaults',
+};
+
+/**
+ * Resolves the nesting configuration for a given namespace
+ * Falls back to default config if namespace-specific config is not provided
+ *
+ * @param namespace - The CSS variable namespace (e.g., 'color', 'shadow')
+ * @param nestingOptions - The nesting options object
+ * @returns The resolved nesting config, or undefined if none specified
+ */
+function resolveNestingConfig(
+  namespace: string,
+  nestingOptions?: NestingOptions,
+): NestingConfig | undefined {
+  if (nestingOptions === undefined) {
+    return undefined;
+  }
+
+  // Look up the nesting key for this namespace
+  const nestingKey = NAMESPACE_TO_NESTING_KEY[namespace];
+  if (nestingKey === undefined) {
+    return nestingOptions.default;
+  }
+
+  // Return namespace-specific config, or fall back to default
+  return nestingOptions[nestingKey] ?? nestingOptions.default;
 }
 
 /**
@@ -236,8 +293,9 @@ interface NamespaceMapping {
 const NAMESPACE_MAP: Record<string, NamespaceMapping> = {
   color: {
     property: 'colors',
-    processor: (theme, key, value) => {
-      processColorVariable(theme.colors, key, value);
+    processor: (theme, key, value, helpers) => {
+      const config = resolveNestingConfig('color', helpers.nestingConfig);
+      processColorVariable(theme.colors, key, value, config);
     },
   },
   text: {
@@ -306,120 +364,6 @@ function createEmptyTheme(): Theme {
     defaults: {},
     keyframes: {},
   };
-}
-
-/**
- * Generates namespace to property reverse mappings from NAMESPACE_MAP
- * Excludes special processors (color, text, default) that handle their own conversion
- *
- * @returns Array of property-to-namespace mappings for simple theme properties
- */
-function getPropertyToNamespaceMappings(): Array<{
-  property: keyof Theme;
-  namespace: string;
-}> {
-  const mappings: Array<{ property: keyof Theme; namespace: string }> = [];
-
-  for (const [namespace, config] of Object.entries(NAMESPACE_MAP)) {
-    // Skip properties with custom processors - they handle their own conversion
-    if (config.processor !== undefined) {
-      continue;
-    }
-    mappings.push({ property: config.property, namespace });
-  }
-
-  return mappings;
-}
-
-/**
- * Converts color properties to CSS variables
- * @param colors - Theme colors object
- * @param variables - Array to push variables into
- */
-function convertColorsToVariables(
-  colors: ThemeColors,
-  variables: Array<CSSVariable>,
-): void {
-  for (const [key, value] of Object.entries(colors)) {
-    if (isString(value)) {
-      variables.push({ name: `--color-${key}`, value, source: 'theme' });
-    } else {
-      for (const [variant, colorValue] of Object.entries(value)) {
-        if (isString(colorValue)) {
-          variables.push({
-            name: `--color-${key}-${variant}`,
-            value: colorValue,
-            source: 'theme',
-          });
-        }
-      }
-    }
-  }
-}
-
-/**
- * Converts font size properties to CSS variables
- * @param fontSize - Theme font sizes object
- * @param variables - Array to push variables into
- */
-function convertFontSizesToVariables(
-  fontSize: ThemeFontSizes,
-  variables: Array<CSSVariable>,
-): void {
-  for (const [key, value] of Object.entries(fontSize)) {
-    if (typeof value === 'object') {
-      variables.push({
-        name: `--text-${key}`,
-        value: value.size,
-        source: 'theme',
-      });
-      if (value.lineHeight !== undefined) {
-        variables.push({
-          name: `--text-${key}--line-height`,
-          value: value.lineHeight,
-          source: 'theme',
-        });
-      }
-    }
-  }
-}
-
-/**
- * Converts a Theme object back into an array of CSSVariable objects
- * Used to make Tailwind default theme variables available for var() resolution
- *
- * @param theme - Theme object to convert
- * @returns Array of CSSVariable objects with source='theme'
- */
-function themeToVariables(theme: Theme): Array<CSSVariable> {
-  const variables: Array<CSSVariable> = [];
-
-  convertColorsToVariables(theme.colors, variables);
-  convertFontSizesToVariables(theme.fontSize, variables);
-
-  // Convert defaults
-  for (const [key, value] of Object.entries(theme.defaults)) {
-    if (isString(value)) {
-      variables.push({ name: `--default-${key}`, value, source: 'theme' });
-    }
-  }
-
-  // Convert all other properties using generated mappings
-  const propertyMappings = getPropertyToNamespaceMappings();
-  for (const { property, namespace } of propertyMappings) {
-    const values = theme[property] as Record<string, unknown>;
-    for (const [key, value] of Object.entries(values)) {
-      if (isString(value)) {
-        variables.push({
-          name: `--${namespace}-${key}`,
-          value,
-          source: 'theme',
-        });
-      }
-    }
-  }
-
-  return variables;
 }
 
 /**
@@ -615,6 +559,8 @@ interface VariantBuildConfig {
     warnings: Array<DeprecationWarning>;
     /** Reference map for variable resolution */
     references: Map<string, VariableReference>;
+    /** Optional nesting configuration */
+    nestingConfig?: NestingOptions;
   };
 }
 
@@ -652,6 +598,7 @@ function buildVariantTheme(config: VariantBuildConfig): ThemeVariant {
       config.context.warnings,
       config.context.references,
       variantVariablesMap,
+      config.context.nestingConfig,
     ),
   };
 }
@@ -789,8 +736,9 @@ function resolveVariable(
  * @param variables - Array of CSS variables resolved from parsing
  * @param keyframes - Map of keyframe name to CSS string
  * @param cssRules - Array of CSS rule overrides from variant selectors
- * @param defaultTheme - Optional Tailwind default theme for var() resolution
+ * @param defaultVariables - Optional original CSS variables from Tailwind defaults (preserves variable names for resolution)
  * @param overrides - Optional theme value overrides
+ * @param nestingConfig - Optional nesting configuration for parsing variable keys
  * @param debug - Enable debug logging for overrides
  * @returns Object with base theme, variants, deprecation warnings, and conflicts
  */
@@ -798,8 +746,9 @@ export function buildThemes(
   variables: Array<CSSVariable>,
   keyframes: Map<string, string>,
   cssRules: Array<CSSRuleOverride>,
-  defaultTheme?: Theme | null,
+  defaultVariables?: Array<CSSVariable>,
   overrides?: OverrideOptions,
+  nestingConfig?: NestingOptions,
   debug = false,
 ): {
   theme: Theme;
@@ -822,13 +771,14 @@ export function buildThemes(
   const dedupedThemeVars = deduplicateByName(themeVariables);
   const dedupedRootVars = deduplicateByName(rootVariables);
 
-  const defaultVariables =
-    defaultTheme !== undefined && defaultTheme !== null
-      ? themeToVariables(defaultTheme)
-      : [];
+  // Use original default variables if provided (preserves variable names)
+  // This is critical for var() resolution when nesting transforms keys
+  const dedupedDefaultVars = defaultVariables
+    ? deduplicateByName(defaultVariables)
+    : [];
 
   const allVariables = [
-    ...defaultVariables,
+    ...dedupedDefaultVars,
     ...dedupedThemeVars,
     ...dedupedRootVars,
   ];
@@ -844,6 +794,7 @@ export function buildThemes(
     deprecationWarnings,
     referenceMap,
     allVariablesMap,
+    nestingConfig,
   );
 
   const variants: Record<string, ThemeVariant> = {};
@@ -860,12 +811,13 @@ export function buildThemes(
       baseVars: {
         theme: dedupedThemeVars,
         root: dedupedRootVars,
-        defaults: defaultVariables,
+        defaults: dedupedDefaultVars,
       },
       context: {
         keyframes: emptyKeyframes,
         warnings: deprecationWarnings,
         references: referenceMap,
+        nestingConfig,
       },
     });
   }
@@ -889,7 +841,7 @@ export function buildThemes(
     resolveVariable(
       variable,
       variantGroups,
-      defaultVariables,
+      dedupedDefaultVars,
       dedupedThemeVars,
       dedupedRootVars,
       allVariablesMap,
@@ -984,7 +936,17 @@ function processNamespacedVariable(
   if (mapping.processor !== undefined) {
     mapping.processor(theme, key, resolvedValue, helpers);
   } else {
-    (theme[mapping.property] as Record<string, string>)[key] = resolvedValue;
+    // Check if nesting config is provided for this namespace
+    const config = resolveNestingConfig(namespace, helpers.nestingConfig);
+
+    // Use processNestedVariable for all namespaces (with or without config)
+    // When config is undefined, parseNestedKey uses unlimited nesting by default
+    processNestedVariable(
+      theme[mapping.property] as Record<string, unknown>,
+      key,
+      resolvedValue,
+      config,
+    );
   }
 }
 
@@ -1000,6 +962,7 @@ function processNamespacedVariable(
  * @param deprecationWarnings - Array to collect deprecation warnings
  * @param referenceMap - Map of var() references to resolve
  * @param allVariablesMap - Map of all variables for O(1) recursive resolution
+ * @param nestingConfig - Optional nesting configuration for parsing variable keys
  * @returns Structured theme object matching Tailwind v4 namespaces
  */
 function buildTheme(
@@ -1008,10 +971,11 @@ function buildTheme(
   deprecationWarnings: Array<DeprecationWarning>,
   referenceMap: Map<string, VariableReference>,
   allVariablesMap: Map<string, string>,
+  nestingConfig?: NestingOptions,
 ): Theme {
   const theme = createEmptyTheme();
   const fontSizeLineHeights = new Map<string, string>();
-  const helpers: ProcessorHelpers = { fontSizeLineHeights };
+  const helpers: ProcessorHelpers = { fontSizeLineHeights, nestingConfig };
 
   for (const variable of variables) {
     // Handle 'initial' values by removing matching properties from theme
@@ -1069,46 +1033,148 @@ function buildTheme(
 }
 
 /**
+ * Navigates through nested structure, creating objects as needed
+ * Handles conflicts where scalar values need to become nested
+ *
+ * @param target - Starting object
+ * @param parts - Array of path parts to navigate
+ * @returns The deepest nested object
+ */
+function navigateNestedStructure(
+  target: Record<string, unknown>,
+  parts: Array<string>,
+): Record<string, unknown> {
+  let current: Record<string, unknown> = target;
+
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+    if (part === undefined) {
+      continue;
+    }
+
+    // Handle conflict: scalar value exists, but we need to nest deeper
+    if (typeof current[part] === 'string') {
+      // Move scalar value to DEFAULT key
+      const existingValue = current[part] as string;
+      current[part] = { DEFAULT: existingValue };
+    } else if (current[part] === undefined) {
+      // Initialize as nested object
+      current[part] = {};
+    }
+
+    current = current[part] as Record<string, unknown>;
+  }
+
+  return current;
+}
+
+/**
+ * Sets value on the final key, handling numeric keys and conflicts
+ *
+ * @param current - The object to set the value on
+ * @param lastPart - The final key part
+ * @param value - The value to set
+ */
+function setFinalValue(
+  current: Record<string, unknown>,
+  lastPart: string,
+  value: string,
+): void {
+  // Try to use numeric key if the last part is purely numeric
+  const numericValue = parseInt(lastPart, 10);
+  const finalKey =
+    !isNaN(numericValue) && numericValue.toString() === lastPart
+      ? numericValue
+      : lastPart;
+
+  // Handle conflict: nested object exists, but we're setting a scalar
+  const existing = current[finalKey];
+  if (
+    existing !== undefined &&
+    typeof existing === 'object' &&
+    existing !== null &&
+    !Array.isArray(existing)
+  ) {
+    // Nested object already exists, move scalar to DEFAULT
+    (current[finalKey] as Record<string, unknown>).DEFAULT = value;
+  } else {
+    // No conflict, set normally
+    current[finalKey] = value;
+  }
+}
+
+/**
+ * Processes a variable with nested structure (used for all namespaces that support nesting)
+ * Handles both flat values and nested structures based on parseNestedKey result
+ *
+ * @param target - The target object to add to (e.g., colors, shadows, spacing)
+ * @param key - The variable key (without namespace prefix)
+ * @param value - The CSS value
+ * @param config - Optional nesting configuration
+ * @param config.maxDepth - Maximum nesting depth before flattening
+ * @param config.consecutiveDashes - How to handle consecutive dashes
+ * @param config.flattenMode - How to flatten remaining parts after maxDepth
+ *
+ * @example
+ * processNestedVariable(colors, 'red-500', '#ef4444') // colors.red[500] = '#ef4444'
+ * processNestedVariable(shadows, 'lg-hover', '0 10px 15px...') // shadows.lg.hover = '...'
+ * processNestedVariable(spacing, 'xs', '0.5rem', { maxDepth: 1 }) // spacing.xs = '0.5rem'
+ */
+function processNestedVariable(
+  target: Record<string, unknown>,
+  key: string,
+  value: string,
+  config?: {
+    maxDepth?: number;
+    consecutiveDashes?: 'exclude' | 'nest' | 'camelcase' | 'literal';
+    flattenMode?: 'camelcase' | 'literal';
+  },
+): void {
+  const parsed = parseNestedKey(key, config);
+
+  if (parsed !== null) {
+    // It's a nested value (e.g., "red-500", "tooltip-outline-dark")
+    const { parts } = parsed;
+
+    // Navigate/create nested structure for all parts except the last
+    const current = navigateNestedStructure(target, parts);
+
+    // Set the value on the last part
+    const lastPart = parts[parts.length - 1];
+    if (lastPart !== undefined) {
+      setFinalValue(current, lastPart, value);
+    }
+  } else {
+    // It's a flat value (e.g., "white", "black", or custom like "primary")
+    // Convert to camelCase for consistency
+    const camelKey: string = kebabToCamelCase(key);
+    target[camelKey] = value;
+  }
+}
+
+/**
  * Processes a color variable and adds it to the colors object
- * Handles both flat colors (e.g., "white") and color scales (e.g., "red-500")
+ * Handles both flat colors (e.g., "white") and nested color scales (e.g., "red-500", "tooltip-outline-dark")
  *
  * @param colors - The colors object to add to
  * @param key - The variable key (without namespace prefix)
  * @param value - The CSS value
+ * @param config - Optional nesting configuration
+ * @param config.maxDepth - Maximum nesting depth before flattening
+ * @param config.consecutiveDashes - How to handle consecutive dashes
+ * @param config.flattenMode - How to flatten remaining parts after maxDepth
  */
 function processColorVariable(
   colors: ThemeColors,
   key: string,
   value: string,
+  config?: {
+    maxDepth?: number;
+    consecutiveDashes?: 'exclude' | 'nest' | 'camelcase' | 'literal';
+    flattenMode?: 'camelcase' | 'literal';
+  },
 ): void {
-  const colorScale = parseColorScale(key);
-
-  if (colorScale !== null) {
-    // It's a color scale variant (e.g., "red-500")
-    const { colorName, variant } = colorScale;
-
-    if (
-      colors[colorName] === undefined ||
-      typeof colors[colorName] === 'string'
-    ) {
-      // Initialize as a ColorScale object
-      colors[colorName] = {} as ColorScale;
-    }
-
-    // Try to use numeric key if the variant is purely numeric
-    const numericVariant = parseInt(variant, 10);
-    const variantKey =
-      !isNaN(numericVariant) && numericVariant.toString() === variant
-        ? numericVariant
-        : variant;
-
-    (colors[colorName] as ColorScale)[variantKey] = value;
-  } else {
-    // It's a flat color (e.g., "white", "black", or custom like "primary")
-    // Convert to camelCase for consistency
-    const camelKey: string = kebabToCamelCase(key);
-    colors[camelKey] = value;
-  }
+  processNestedVariable(colors, key, value, config);
 }
 
 /**

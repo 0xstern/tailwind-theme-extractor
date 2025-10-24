@@ -42,7 +42,6 @@ const DATA_ATTR_REGEX = /\[data-[\w-]+\s*=\s*['"]([^'"]+)['"]\]/;
 const CLASS_NAME_REGEX = /\.([a-z][\w-]*)/gi;
 const MEDIA_COLOR_SCHEME_REGEX = /prefers-color-scheme:\s*(\w+)/;
 const SELF_REFERENTIAL_REGEX = /^var\((--[\w-]+)\)$/;
-const COLOR_SCALE_REGEX = /^(.+?)-(\d+(?:-.+)?)$/;
 const FONT_SIZE_LINE_HEIGHT_REGEX = /^(.+)--line-height$/;
 const KEBAB_TO_CAMEL_REGEX = /-([a-z0-9])/g;
 
@@ -584,42 +583,201 @@ export function variantNameToCamelCase(variantName: string): string {
 }
 
 /**
- * Checks if a key represents a color scale variant with flexible naming
+ * Handles consecutive dash processing for camelCase merging
  *
- * This function handles complex color names and variants:
- * - Simple: "red-500" → { colorName: "red", variant: "500" }
- * - Complex: "tooltip-outline-50" → { colorName: "tooltipOutline", variant: "50" }
- * - With suffix: "brand-500-hover" → { colorName: "brand", variant: "500-hover" }
+ * @param parts - Array of split parts
+ * @param normalizedParts - Array being built
+ * @param currentIndex - Current position in parts array
+ * @returns New index after processing consecutive dashes
+ */
+function handleConsecutiveDashesAsCamelCase(
+  parts: Array<string>,
+  normalizedParts: Array<string>,
+  currentIndex: number,
+): number {
+  // Find next non-empty part
+  let nextPartIndex = currentIndex + 1;
+  while (nextPartIndex < parts.length && parts[nextPartIndex] === '') {
+    nextPartIndex++;
+  }
+
+  if (nextPartIndex < parts.length && normalizedParts.length > 0) {
+    const nextPart = parts[nextPartIndex];
+    if (nextPart !== undefined && nextPart !== '') {
+      // Capitalize next part and merge with previous
+      const lastIndex = normalizedParts.length - 1;
+      const prevPart = normalizedParts[lastIndex] ?? '';
+      const capitalizedNext =
+        nextPart.charAt(0).toUpperCase() + nextPart.slice(1);
+      normalizedParts[lastIndex] = prevPart + capitalizedNext;
+      // Return the index we've consumed
+      return nextPartIndex;
+    }
+  }
+
+  return currentIndex;
+}
+
+/**
+ * Parses a CSS variable key into nested path parts with configurable nesting behavior
+ *
+ * This function enables configurable nesting depth and dash handling:
+ * - No dashes: null (flat key, e.g., "primary" → colors.primary)
+ * - One dash: ["red", "500"] → colors.red[500]
+ * - Two dashes: ["tooltip", "outline", "50"] → colors.tooltip.outline[50]
+ * - Multiple dashes: ["a", "b", "c", "d"] → colors.a.b.c.d
+ *
+ * With maxDepth configuration (controls nesting levels in result structure):
+ * - maxDepth: 0 → 0 nesting levels = completely flat
+ *   - "a-b-c-d" → ["aBC D"] (all parts flattened to one key)
+ * - maxDepth: 1 → 1 nesting level = one object with final key
+ *   - "a-b-c-d" → ["a", "bCD"] (first part as object, rest flattened)
+ * - maxDepth: 2 → 2 nesting levels = two nested objects with final key
+ *   - "a-b-c-d" → ["a", "b", "cD"] (two parts as nested objects, rest flattened)
+ * - maxDepth: Infinity → unlimited nesting (default)
+ *   - "a-b-c-d" → ["a", "b", "c", "d"] (every dash creates a level)
+ *
+ * With flattenMode (controls how parts after maxDepth are flattened):
+ * - flattenMode: 'camelcase' (default) → flattens to camelCase
+ *   - maxDepth: 2, "a-b-c-d" → ["a", "b", "cD"]
+ * - flattenMode: 'literal' → flattens to kebab-case string
+ *   - maxDepth: 2, "a-b-c-d" → ["a", "b", "c-d"]
+ *
+ * Multiple consecutive dashes behavior (configurable):
+ * - consecutiveDashes: 'exclude' → "button--primary" → null (excluded from theme)
+ * - consecutiveDashes: 'nest' → "button--primary" → ["button", "primary"] (-- as -)
+ * - consecutiveDashes: 'camelcase' → "button--primary" → ["buttonPrimary"] (camelCase)
+ * - consecutiveDashes: 'literal' → "button--primary" → ["button-", "primary"] (dash preserved)
+ *
+ * @param key - The variable key to parse
+ * @param config - Optional nesting configuration
+ * @param config.maxDepth - Maximum nesting depth in result structure (default: Infinity)
+ * @param config.consecutiveDashes - How to handle consecutive dashes (default: 'exclude')
+ * @param config.flattenMode - How to flatten remaining parts after maxDepth (default: 'camelcase')
+ * @returns Object with array of path parts (in camelCase), or null if excluded/flat
+ *
+ * @example
+ * parseNestedKey('primary') // null (flat key)
+ * parseNestedKey('red-500') // { parts: ['red', '500'] }
+ * parseNestedKey('tooltip-outline-50') // { parts: ['tooltip', 'outline', '50'] }
+ * parseNestedKey('blue-50', { maxDepth: 1 }) // { parts: ['blue', '50'] }
+ * parseNestedKey('tooltip-outline-50', { maxDepth: 2 }) // { parts: ['tooltip', 'outline', '50'] }
+ * parseNestedKey('a-b-c-d', { maxDepth: 2 }) // { parts: ['a', 'b', 'cD'] }
+ * parseNestedKey('a-b-c-d', { maxDepth: 2, flattenMode: 'literal' }) // { parts: ['a', 'b', 'c-d'] }
+ * parseNestedKey('button--primary', { consecutiveDashes: 'exclude' }) // null (excluded)
+ * parseNestedKey('button--primary', { consecutiveDashes: 'nest' }) // { parts: ['button', 'primary'] }
+ * parseNestedKey('button--primary', { consecutiveDashes: 'camelcase' }) // { parts: ['buttonPrimary'] }
+ * parseNestedKey('button--primary', { consecutiveDashes: 'literal' }) // { parts: ['button-', 'primary'] }
+ */
+// eslint-disable-next-line complexity
+export function parseNestedKey(
+  key: string,
+  config?: {
+    maxDepth?: number;
+    consecutiveDashes?: 'exclude' | 'nest' | 'camelcase' | 'literal';
+    flattenMode?: 'camelcase' | 'literal';
+  },
+): {
+  parts: Array<string>;
+} | null {
+  // No dash means flat key
+  if (!key.includes('-')) {
+    return null;
+  }
+
+  const maxDepth = config?.maxDepth ?? Infinity;
+  const consecutiveDashMode = config?.consecutiveDashes ?? 'exclude';
+
+  // Check for consecutive dashes (--) and handle based on mode
+  const hasConsecutiveDashes = key.includes('--');
+  if (hasConsecutiveDashes && consecutiveDashMode === 'exclude') {
+    // EXCLUDE mode: skip variables with consecutive dashes entirely
+    return null;
+  }
+
+  // Special case: maxDepth of 0 means flatten everything according to flattenMode
+  if (maxDepth === 0) {
+    const flattenMode = config?.flattenMode ?? 'camelcase';
+    const flattenedKey =
+      flattenMode === 'literal' ? key : kebabToCamelCase(key);
+    return { parts: [flattenedKey] };
+  }
+
+  // NEST mode: Replace consecutive dashes with single dash before splitting
+  let processedKey = key;
+  if (hasConsecutiveDashes && consecutiveDashMode === 'nest') {
+    processedKey = key.replace(/--+/g, '-');
+  }
+
+  // Split on dashes to get all parts
+  const parts = processedKey.split('-');
+  const normalizedParts: Array<string> = [];
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part === undefined) {
+      continue;
+    }
+
+    if (part === '') {
+      // Empty part from consecutive dashes (only in CAMELCASE or LITERAL modes)
+      if (consecutiveDashMode === 'camelcase') {
+        i = handleConsecutiveDashesAsCamelCase(parts, normalizedParts, i);
+      } else if (consecutiveDashMode === 'literal') {
+        // LITERAL mode: Append dash to previous part
+        if (normalizedParts.length > 0) {
+          const lastIndex = normalizedParts.length - 1;
+          normalizedParts[lastIndex] = (normalizedParts[lastIndex] ?? '') + '-';
+        }
+      }
+      // For NEST mode, we already handled consecutive dashes by replacing them
+    } else {
+      // Check if we need to flatten remaining parts
+      if (normalizedParts.length === maxDepth && i < parts.length - 1) {
+        const remaining = parts
+          .slice(i)
+          .filter((p) => p !== '')
+          .join('-');
+
+        // Apply flatten mode: 'camelcase' (default) or 'literal'
+        const flattenMode = config?.flattenMode ?? 'camelcase';
+        const flattenedKey =
+          flattenMode === 'literal' ? remaining : kebabToCamelCase(remaining);
+
+        normalizedParts.push(flattenedKey);
+        break;
+      }
+
+      normalizedParts.push(kebabToCamelCase(part));
+    }
+  }
+
+  return { parts: normalizedParts };
+}
+
+/**
+ * Parses a color key into nested path parts for multi-level nesting
+ *
+ * This function is a backward-compatible wrapper around parseNestedKey
+ * that maintains the original behavior (unlimited depth, literal dashes).
  *
  * @param key - The variable key to check
- * @returns Object with camelCase colorName and variant (string), or null if no variant
+ * @returns Object with array of path parts (in camelCase), or null if no nesting
+ * @deprecated Use parseNestedKey with explicit config instead
+ *
+ * @example
+ * parseColorScale('primary') // null (flat color)
+ * parseColorScale('red-500') // { parts: ['red', '500'] }
+ * parseColorScale('tooltip-outline-50') // { parts: ['tooltip', 'outline', '50'] }
+ * parseColorScale('tooltip--outline-50') // { parts: ['tooltip-', 'outline', '50'] }
  */
 export function parseColorScale(key: string): {
-  colorName: string;
-  variant: string;
+  parts: Array<string>;
 } | null {
-  // Match pattern: everything up to last dash followed by digits (and optional suffix)
-  // Examples:
-  // - "red-500" → ["red", "500"]
-  // - "tooltip-outline-50" → ["tooltip-outline", "50"]
-  // - "brand-500-hover" → ["brand", "500-hover"]
-  const match = key.match(COLOR_SCALE_REGEX);
-
-  if (match === null) {
-    return null;
-  }
-
-  const colorNameKebab = match[1];
-  const variant = match[2];
-
-  if (colorNameKebab === undefined || variant === undefined) {
-    return null;
-  }
-
-  // Convert kebab-case to camelCase for the color name
-  const colorName = kebabToCamelCase(colorNameKebab);
-
-  return { colorName, variant };
+  return parseNestedKey(key, {
+    maxDepth: Infinity,
+    consecutiveDashes: 'literal',
+  });
 }
 
 /**

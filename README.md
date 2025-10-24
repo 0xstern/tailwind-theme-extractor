@@ -1,6 +1,8 @@
 # Tailwind Theme Resolver
 
-Resolve Tailwind CSS v4 theme variables into TypeScript types and runtime objects.
+**TypeScript type generation and runtime resolution for Tailwind CSS v4 theme variables.**
+
+Transform your Tailwind v4 CSS variables into fully-typed TypeScript interfaces and runtime objects with automatic conflict detection, intelligent nesting, and comprehensive diagnostics.
 
 <p>
     <a href="https://github.com/0xstern/tailwind-resolver/actions"><img src="https://img.shields.io/github/actions/workflow/status/0xstern/tailwind-resolver/ci.yml?branch=main" alt="Build Status"></a>
@@ -9,29 +11,44 @@ Resolve Tailwind CSS v4 theme variables into TypeScript types and runtime object
     <a href="https://twitter.com/mrstern_"><img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/mrstern_.svg?style=social"></a>
 </p>
 
-## Installation
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Vite Plugin](#vite-plugin-%28build-time-generation%29)
+  - [Runtime API](#runtime-api-%28dynamic-resolution%29)
+  - [CLI](#cli)
+- [Configuration](#configuration)
+  - [Tailwind Defaults](#tailwind-defaults)
+  - [Nesting Configuration](#nesting-configuration)
+  - [Theme Overrides](#theme-overrides)
+  - [Report Generation](#report-generation)
+- [Advanced Features](#advanced-features)
+  - [CSS Conflict Detection](#css-conflict-detection)
+  - [Unresolved Variable Detection](#unresolved-variable-detection)
+  - [Dynamic Spacing Helper](#dynamic-spacing-helper)
+  - [Type Safety](#type-safety)
+- [Examples](#examples)
+- [Debugging](#debugging)
+- [Requirements](#requirements)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Quick Start
+
+**1. Install:**
 
 ```bash
-# Bun
-bun add -D tailwind-resolver
-
-# pnpm
-pnpm add -D tailwind-resolver
-
-# Yarn
-yarn add -D tailwind-resolver
-
-# npm
 npm install -D tailwind-resolver
 ```
 
-## Usage
-
-### Vite Plugin (Build-Time Generation)
-
-**1. Configure the plugin in `vite.config.ts`:**
+**2. Configure Vite plugin:**
 
 ```typescript
+// vite.config.ts
+
 import tailwindcss from '@tailwindcss/vite';
 import { tailwindResolver } from 'tailwind-resolver/vite';
 import { defineConfig } from 'vite';
@@ -40,203 +57,43 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     tailwindResolver({
-      // Required: Path to your CSS input file (relative to Vite project root)
-      input: 'src/styles.css',
-
-      // Optional: Output directory for generated files (relative to Vite project root)
-      // Default: 'src/generated/tailwindcss' if src/ exists, otherwise 'generated/tailwindcss'
-      outputDir: 'src/generated/tailwindcss',
-
-      // Optional: Resolve @import statements recursively
-      // Default: true
-      resolveImports: true,
-
-      // Optional: Control what gets generated in the runtime file
-      // - false: No runtime file (types only)
-      // - true: Generate variants and selectors (optimized for production, excludes debug data)
-      // - object: Granular control - set files/variables to true for debugging
-      // Default: true
-      generateRuntime: {
-        variants: true, // Theme variants (default, dark, etc.)
-        selectors: true, // CSS selectors for variants
-        files: false, // Processed file list (debug only)
-        variables: false, // Raw CSS variables (debug only)
-        reports: {
-          conflicts: true, // Generate CSS conflict reports (default: true)
-          unresolved: true, // Generate unresolved variable reports (default: true)
-        },
-      },
-
-      // Optional: Include Tailwind CSS defaults from node_modules
-      // - true: Include all defaults (default)
-      // - false: Exclude all defaults
-      // - object: Granular control over which categories to include
-      // Default: true
-      includeTailwindDefaults: true,
-      // Or granular control:
-      // includeTailwindDefaults: {
-      //   colors: true,
-      //   spacing: true,
-      //   shadows: false,
-      //   radius: false,
-      // },
-
-      // Optional: Enable debug logging for troubleshooting
-      // Default: false
-      debug: false,
+      input: 'src/styles.css', // Your Tailwind CSS file
     }),
   ],
 });
 ```
 
-This generates files in `src/generated/tailwindcss/`:
-
-- `types.ts` - TypeScript interfaces
-- `theme.ts` - Runtime theme objects (if `generateRuntime: true`)
-- `index.ts` - Re-exports (if `generateRuntime: true`)
-- `conflicts.md` - Human-readable conflict report (if CSS conflicts detected and reports enabled)
-- `conflicts.json` - Machine-readable conflict report (if CSS conflicts detected and reports enabled)
-- `unresolved.md` - Human-readable unresolved variable report (if unresolved variables detected and reports enabled)
-- `unresolved.json` - Machine-readable unresolved variable report (if unresolved variables detected and reports enabled)
-
-**2. Use the generated theme in your code:**
+**3. Use the generated theme:**
 
 ```typescript
-import { dark, defaultTheme, tailwind } from './generated/tailwindcss';
+import { tailwind } from './generated/tailwindcss';
 
-// Use the master tailwind object
-new Chart(ctx, {
-  data: {
-    datasets: [
-      {
-        backgroundColor: [
-          tailwind.variants.default.colors.primary[500],
-          tailwind.variants.dark.colors.background,
-        ],
-      },
-    ],
-  },
-});
-
-// Or use individual variant exports for convenience
-const primary = defaultTheme.colors.primary[500];
-const darkBg = dark.colors.background;
+// Fully typed with autocomplete
+const primaryColor = tailwind.variants.default.colors.primary[500];
+const darkBackground = tailwind.variants.dark.colors.background;
 ```
 
-### Runtime API (Dynamic Resolution)
+That's it! The plugin automatically generates TypeScript types and runtime objects from your Tailwind CSS variables.
 
-**1. Configure resolveTheme options:**
+## Core Concepts
 
-```typescript
-import { resolveTheme } from 'tailwind-resolver';
+### What It Does
 
-const result = await resolveTheme({
-  // Option 1: CSS file path (relative to cwd or absolute)
-  input: './src/styles.css',
+Tailwind Theme Resolver parses your Tailwind CSS v4 files and generates:
 
-  // Option 2: Raw CSS content (alternative to input)
-  css: '@theme { --color-primary: blue; }',
+- **TypeScript Types** - Full type safety with autocomplete for all theme properties
+- **Runtime Objects** - JavaScript objects mirroring your CSS variables for use in Canvas, Chart.js, etc.
+- **Diagnostic Reports** - Automatic detection of CSS conflicts and unresolved variables
+- **Theme Variants** - Support for dark mode, custom themes, and CSS selector-based variants
 
-  // Optional: Base path for @import resolution (required when using css option)
-  basePath: process.cwd(),
+### Theme Structure
 
-  // Optional: Resolve @import statements recursively
-  // Default: true
-  resolveImports: true,
-
-  // Optional: Include Tailwind CSS defaults from node_modules
-  // - true: Include all defaults (default)
-  // - false: Exclude all defaults
-  // - object: Granular control over which categories to include
-  // Default: true
-  includeTailwindDefaults: true,
-  // Or granular control:
-  // includeTailwindDefaults: {
-  //   colors: true,
-  //   spacing: true,
-  //   fonts: true,
-  //   shadows: false,
-  //   animations: false,
-  // },
-
-  // Optional: Enable debug logging
-  // Default: false
-  debug: false,
-});
-```
-
-**2. Use the resolved theme:**
-
-```typescript
-// With generated types for full type safety
-
-import type { Tailwind } from './generated/tailwindcss';
-
-const { variants, selectors, files, variables } = await resolveTheme<Tailwind>({
-  input: './styles.css',
-});
-
-// Fully typed with autocomplete - same structure as generated constant
-console.log(variants.default.colors.primary[500]);
-console.log(variants.dark.colors.background);
-console.log(selectors.dark); // '[data-theme="dark"]'
-console.log(files); // Array<string>
-console.log(variables); // Array<CSSVariable>
-```
-
-### CLI
-
-Generate types without a build tool:
-
-```bash
-# Bun
-bunx tailwind-resolver -i src/styles.css
-
-# pnpm
-pnpm exec tailwind-resolver -i src/styles.css
-
-# Yarn
-yarn tailwind-resolver -i src/styles.css
-
-# npm
-npx tailwind-resolver -i src/styles.css
-```
-
-**Options:**
-
-- `-i, --input <path>` - CSS input file (required)
-- `-o, --output <path>` - Output directory (default: auto-detected)
-- `-r, --runtime` - Generate runtime objects (default: true)
-- `--no-runtime` - Types only
-- `--include-defaults [categories]` - Include only specified Tailwind default categories (comma-separated)
-- `--exclude-defaults [categories]` - Include all except specified Tailwind default categories (comma-separated)
-- `--reports [categories]` - Generate only specified diagnostic reports (comma-separated: conflicts, unresolved)
-- `--exclude-reports [categories]` - Generate all except specified diagnostic reports (comma-separated)
-- `-d, --debug` - Enable debug mode (logging + include debug data in runtime)
-- `-h, --help` - Show help
-
-**Examples:**
-
-```bash
-# Include only colors and spacing from Tailwind defaults
-bunx tailwind-resolver -i src/styles.css --include-defaults colors,spacing
-
-# Exclude shadows and animations from Tailwind defaults
-bunx tailwind-resolver -i src/styles.css --exclude-defaults shadows,animations
-
-# Generate only conflict reports
-bunx tailwind-resolver -i src/styles.css --reports conflicts
-
-# Generate all reports except unresolved
-bunx tailwind-resolver -i src/styles.css --exclude-reports unresolved
-```
-
-## Theme Structure
+All Tailwind CSS v4 namespaces are supported:
 
 ```typescript
 {
   colors: {},           // --color-*
-  spacing: {},          // --spacing-* (callable: spacing(4) → 'calc(0.25rem * 4)')
+  spacing: {},          // --spacing-* (with dynamic calc helper)
   fonts: {},            // --font-*
   fontSize: {},         // --text-*
   fontWeight: {},       // --font-weight-*
@@ -259,467 +116,424 @@ bunx tailwind-resolver -i src/styles.css --exclude-reports unresolved
 }
 ```
 
-### Dynamic Spacing Helper
+### Generated Files
 
-The `spacing` property is special - it's both an object with static values AND a callable function for dynamic calculations:
+With default configuration, the plugin generates:
+
+```
+src/generated/tailwindcss/
+├── types.ts           # TypeScript interfaces
+├── theme.ts           # Runtime theme objects
+├── index.ts           # Convenient re-exports
+├── conflicts.md       # CSS conflict report (if conflicts detected)
+├── conflicts.json     # Machine-readable conflict data
+├── unresolved.md      # Unresolved variable report (if any detected)
+└── unresolved.json    # Machine-readable unresolved data
+```
+
+## Installation
+
+```bash
+# Bun
+bun add -D tailwind-resolver
+
+# pnpm
+pnpm add -D tailwind-resolver
+
+# Yarn
+yarn add -D tailwind-resolver
+
+# npm
+npm install -D tailwind-resolver
+```
+
+## Usage
+
+### Vite Plugin (Build-Time Generation)
+
+Recommended for most projects. Generates types once during build, with hot-reload during development.
+
+**Basic Configuration:**
 
 ```typescript
-import { defaultTheme, dark } from './generated/tailwindcss';
+import tailwindcss from '@tailwindcss/vite';
+import { tailwindResolver } from 'tailwind-resolver/vite';
+import { defineConfig } from 'vite';
 
-// Static spacing values (defined in your CSS)
-defaultTheme.spacing.xs;      // '0.75rem'
-defaultTheme.spacing.base;    // '0.25rem'
-
-// Dynamic spacing calculations (matches Tailwind's behavior)
-defaultTheme.spacing(4);      // 'calc(0.25rem * 4)' → 1rem
-defaultTheme.spacing(16);     // 'calc(0.25rem * 16)' → 4rem
-defaultTheme.spacing(-2);     // 'calc(0.25rem * -2)' → -0.5rem
-
-// Use in styles
-<div style={{
-  padding: defaultTheme.spacing(4),        // Same as Tailwind's p-4
-  margin: defaultTheme.spacing(-2),        // Same as Tailwind's -m-2
-  width: defaultTheme.spacing(64),         // Same as Tailwind's w-64
-  gap: defaultTheme.spacing(2),            // Same as Tailwind's gap-2
-}} />
-
-// Works with all variants
-dark.spacing(8);              // Uses dark theme's spacing base (or falls back to default)
+export default defineConfig({
+  plugins: [
+    tailwindcss(),
+    tailwindResolver({
+      input: 'src/styles.css',
+    }),
+  ],
+});
 ```
 
-**Why this exists:** Tailwind generates utilities like `p-4`, `m-8`, `w-16` using `calc(var(--spacing) * N)`. This helper replicates that behavior for runtime use.
-
-**Tailwind utilities that use spacing calculations:**
-
-- `inset-<n>`, `m-<n>`, `p-<n>`, `gap-<n>`
-- `w-<n>`, `h-<n>`, `min-w-<n>`, `max-w-<n>`, `min-h-<n>`, `max-h-<n>`
-- `indent-<n>`, `border-spacing-<n>`, `scroll-m-<n>`
-
-**Note:** If your theme doesn't define `--spacing-base`, the spacing helper won't be generated. Define spacing in your CSS to enable this feature.
-
-> **Other CSS variables:** Tailwind uses different CSS variables for different utilities:
->
-> - Layout properties like `columns` and `flex-basis` use `--container-*` values
-> - Transform properties like `translate-x` and `translate-y` use `--tw-translate-*` variables
-> - Animation properties use `--default-*` meta variables
->
-> For a complete list of which CSS variables Tailwind uses for each utility, refer to the [Tailwind CSS documentation](https://tailwindcss.com/docs).
-
-## Theme Variants
-
-```css
-@theme {
-  --color-background: #ffffff;
-}
-
-[data-theme='dark'] {
-  --color-background: #1f2937;
-}
-```
-
-**Usage:**
+**Full Configuration:**
 
 ```typescript
-import {
-  dark,
-  defaultTheme,
-  selectors,
-  tailwind,
-} from './generated/tailwindcss';
+tailwindResolver({
+  // Required: Path to CSS file (relative to Vite project root)
+  input: 'src/styles.css',
 
-// All values are fully typed
-console.log(tailwind.variants.default.colors.background); // '#ffffff'
-console.log(tailwind.variants.dark.colors.background); // '#1f2937'
-console.log(tailwind.selectors.dark); // "[data-theme='dark']"
+  // Optional: Output directory (default: auto-detected)
+  outputDir: 'src/generated/tailwindcss',
 
-// Or use individual exports
-console.log(defaultTheme.colors.background); // '#ffffff'
-console.log(dark.colors.background); // '#1f2937'
-console.log(selectors.dark); // "[data-theme='dark']"
+  // Optional: Resolve @import statements (default: true)
+  resolveImports: true,
+
+  // Optional: Runtime generation control (default: true)
+  generateRuntime: {
+    variants: true, // Include theme variants
+    selectors: true, // Include CSS selectors
+    files: false, // Exclude file list (production)
+    variables: false, // Exclude raw variables (production)
+    reports: {
+      conflicts: true, // Generate conflict reports
+      unresolved: true, // Generate unresolved variable reports
+    },
+  },
+
+  // Optional: Control Tailwind defaults (default: true)
+  includeDefaults: true,
+
+  // Optional: Nesting configuration
+  nesting: {
+    colors: { maxDepth: 2 },
+    default: { maxDepth: 3 },
+  },
+
+  // Optional: Theme overrides
+  overrides: {
+    '*': { 'fonts.sans': 'Inter, sans-serif' },
+    dark: { 'colors.background': '#000000' },
+  },
+
+  // Optional: Debug logging (default: false)
+  debug: false,
+});
 ```
 
-## Type Safety
+**Usage in Code:**
 
-The generated `types.ts` exports a `Tailwind` interface that provides full type safety for both the generated constant and the runtime API:
+```typescript
+import { dark, defaultTheme, tailwind } from './generated/tailwindcss';
+
+// Use the master tailwind object
+const primary = tailwind.variants.default.colors.primary[500];
+const darkBg = tailwind.variants.dark.colors.background;
+
+// Or use individual variant exports
+const primary2 = defaultTheme.colors.primary[500];
+const darkBg2 = dark.colors.background;
+```
+
+### Runtime API (Dynamic Resolution)
+
+For dynamic scenarios like CLI tools, server-side rendering, or runtime theme switching.
+
+**Type-Safe Usage (Recommended):**
 
 ```typescript
 import type { Tailwind } from './generated/tailwindcss';
 
-import { resolveTheme, tailwind } from './generated/tailwindcss';
+import { resolveTheme } from 'tailwind-resolver';
 
-// Generated constant - fully typed
-tailwind.variants.default.colors.primary[500]; // ✓ Type-safe
-tailwind.variants.dark.colors.background; // ✓ Type-safe
-tailwind.selectors.dark; // ✓ Type-safe
-
-// Runtime API - same structure, same types
 const result = await resolveTheme<Tailwind>({
-  input: './theme.css',
+  input: './src/styles.css',
 });
 
-result.variants.default.colors.primary[500]; // ✓ Type-safe
-result.variants.dark.colors.background; // ✓ Type-safe
-result.selectors.dark; // ✓ Type-safe
+// Fully typed with autocomplete
+result.variants.default.colors.primary[500];
+result.variants.dark.colors.background;
+result.selectors.dark; // '[data-theme="dark"]'
 ```
 
-Autocomplete works automatically when the output directory is in `tsconfig.json` includes.
+**Note:** Generate types using the [Vite plugin](#vite-plugin-build-time-generation) or [CLI](#cli) before using the runtime API for type safety.
 
-## Report Generation
-
-The resolver can generate diagnostic reports to help you understand and troubleshoot your theme configuration.
-
-### Controlling Report Generation
-
-Reports are enabled by default but can be controlled via configuration:
-
-**Vite Plugin:**
+**Basic Usage:**
 
 ```typescript
-tailwindResolver({
-  input: 'src/styles.css',
-  generateRuntime: {
-    reports: false, // Disable all reports
-  },
+import { resolveTheme } from 'tailwind-resolver';
+
+const result = await resolveTheme({
+  input: './src/styles.css',
 });
 
-// Or granular control
-tailwindResolver({
-  input: 'src/styles.css',
-  generateRuntime: {
-    reports: {
-      conflicts: true, // Enable conflict reports
-      unresolved: false, // Disable unresolved variable reports
-    },
+console.log(result.variants.default.colors.primary[500]);
+console.log(result.variants.dark.colors.background);
+```
+
+**Full Configuration:**
+
+```typescript
+const result = await resolveTheme({
+  // Option 1: CSS file path
+  input: './src/styles.css',
+
+  // Option 2: Raw CSS content
+  // css: '@theme { --color-primary: blue; }',
+
+  // Optional: Base path for @import resolution
+  basePath: process.cwd(),
+
+  // Optional: Resolve @import statements (default: true)
+  resolveImports: true,
+
+  // Optional: Control Tailwind defaults (default: true)
+  includeDefaults: true,
+
+  // Optional: Nesting configuration
+  nesting: {
+    colors: { maxDepth: 2 },
+    default: { maxDepth: 3 },
   },
+
+  // Optional: Theme overrides
+  overrides: {
+    default: { 'fonts.sans': 'Inter' },
+  },
+
+  // Optional: Debug logging (default: false)
+  debug: false,
 });
 ```
 
-**CLI:**
+### CLI
+
+Generate types without a build tool:
+
+**Basic Usage:**
 
 ```bash
-# Disable all reports
-bunx tailwind-resolver -i src/styles.css --no-reports
-
-# Disable only conflict reports
-bunx tailwind-resolver -i src/styles.css --no-conflict-reports
-
-# Disable only unresolved variable reports
-bunx tailwind-resolver -i src/styles.css --no-unresolved-reports
+bunx tailwind-resolver -i src/styles.css
 ```
 
-## CSS Conflict Detection
+**Common Options:**
 
-The resolver automatically detects when CSS rules override CSS variables and ensures the runtime theme object matches actual rendered styles.
+```bash
+# Specify output directory
+bunx tailwind-resolver -i src/styles.css -o src/generated
 
-### Problem
+# Types only (no runtime objects)
+bunx tailwind-resolver -i src/styles.css --no-runtime
 
-Real-world CSS files often contain both CSS variables AND direct CSS rules:
+# Include only specific Tailwind defaults
+bunx tailwind-resolver -i src/styles.css --include-defaults colors,spacing
 
-```css
-.theme-mono {
-  --radius-lg: 0.45em; /* CSS variable */
+# Exclude specific Tailwind defaults
+bunx tailwind-resolver -i src/styles.css --exclude-defaults shadows,animations
 
-  .rounded-lg {
-    border-radius: 0; /* CSS rule - overrides the variable! */
-  }
+# Generate only conflict reports
+bunx tailwind-resolver -i src/styles.css --reports conflicts
+
+# Debug mode
+bunx tailwind-resolver -i src/styles.css --debug
+```
+
+**All Options:**
+
+```
+  -i, --input <path>              CSS input file (required)
+  -o, --output <path>             Output directory (default: auto-detected)
+  -r, --runtime                   Generate runtime objects (default: true)
+  --no-runtime                    Types only
+  --include-defaults [categories] Include only specified Tailwind defaults (comma-separated)
+  --exclude-defaults [categories] Exclude specified Tailwind defaults (comma-separated)
+  --reports [categories]          Generate only specified reports (conflicts, unresolved)
+  --exclude-reports [categories]  Exclude specified reports (comma-separated)
+  -d, --debug                     Enable debug mode
+  -h, --help                      Show help
+```
+
+## Configuration
+
+### Tailwind Defaults
+
+Control which Tailwind CSS default theme values are included.
+
+**Include All Defaults (Default):**
+
+```typescript
+includeDefaults: true;
+```
+
+**Exclude All Defaults:**
+
+```typescript
+includeDefaults: false;
+```
+
+**Selective Inclusion:**
+
+```typescript
+includeDefaults: {
+  colors: true,       // Include default colors
+  spacing: true,      // Include default spacing
+  fonts: true,        // Include default fonts
+  fontSize: true,     // Include default font sizes
+  fontWeight: true,   // Include default font weights
+  tracking: false,    // Exclude tracking
+  leading: false,     // Exclude leading
+  shadows: false,     // Exclude shadows
+  animations: false,  // Exclude animations
+  // ... 21 categories total
 }
 ```
 
-Without detection, the runtime theme would incorrectly report `radius.lg: "0.45em"` when the actual rendered value is `"0"`.
+**Disable Specific Defaults via CSS:**
 
-### Solution
-
-The resolver:
-
-1. **Detects all conflicts** between CSS rules and variables
-2. **Applies high-confidence overrides** automatically for simple cases
-3. **Reports complex cases** in `conflicts.md` for manual review
-
-### Conflict Reports
-
-When conflicts are detected, two report files are generated:
-
-**`conflicts.md`** - Human-readable report with:
-
-- Summary of total/resolved/pending conflicts
-- Auto-resolved conflicts (applied to theme)
-- Conflicts requiring manual review
-- Context-specific recommendations
-
-**`conflicts.json`** - Machine-readable format for CI/CD integration
-
-### Terminal Output
-
-Non-intrusive single-line notification:
-
-```
-✓ Theme types generated successfully
-
-Generated files:
-  - src/generated/tailwindcss/types.ts
-  - src/generated/tailwindcss/theme.ts
-  - src/generated/tailwindcss/index.ts
-
-⚠  12 CSS conflicts detected (see src/generated/tailwindcss/conflicts.md)
-```
-
-### Confidence Levels
-
-**High Confidence** (auto-applied):
-
-- Static values (e.g., `border-radius: 0`)
-- No pseudo-classes or media queries
-- Simple selectors
-
-**Medium/Low Confidence** (manual review):
-
-- Dynamic values (e.g., `calc()`, `var()`)
-- Pseudo-classes (`:hover`, `:focus`)
-- Media query nesting
-- Complex selectors
-
-High-confidence overrides ensure your runtime theme matches actual rendered styles.
-
-## Unresolved Variable Detection
-
-The resolver automatically detects CSS variables with `var()` references that couldn't be resolved, helping identify variables requiring external injection or definition.
-
-### Problem
-
-Real-world CSS often references variables injected at runtime or provided externally:
+Use `initial` keyword in `@theme` blocks ([Tailwind v4 docs](https://tailwindcss.com/docs/colors#disabling-default-colors)):
 
 ```css
 @theme {
-  --font-sans: var(--font-inter); /* Injected by Next.js */
-  --color-accent: var(--tw-primary); /* Tailwind plugin variable */
-}
-```
-
-### Solution
-
-The resolver:
-
-1. **Detects unresolved `var()` references** after variable resolution
-2. **Categorizes by likely cause** (external, self-referential, unknown)
-3. **Generates detailed reports** in `unresolved.md` and `unresolved.json`
-
-### Unresolved Variable Reports
-
-When unresolved variables are detected, two report files are generated:
-
-**`unresolved.md`** - Human-readable report with:
-
-- Summary of total unresolved variables by cause
-- Detailed list grouped by cause with context (variable name, source, selector)
-- Actionable recommendations for each category
-- Fallback values if specified
-
-**`unresolved.json`** - Machine-readable format for CI/CD integration
-
-### Terminal Output
-
-```
-ℹ  8 unresolved variables detected (see src/generated/tailwindcss/unresolved.md)
-```
-
-### Variable Categories
-
-**Unknown** - Variables requiring review:
-
-- May need to be defined in your theme
-- Or verified to be loaded externally
-
-**External** - Variables from external sources:
-
-- Tailwind plugins (detected by `--tw-*` prefix)
-- Runtime injection (Next.js fonts, framework variables)
-- External stylesheets
-
-**Self-referential** - Variables intentionally left unresolved:
-
-- Variables like `--font-sans: var(--font-sans)`
-- Intentionally skipped to use Tailwind defaults
-
-## Disabling Default Theme Values with `initial`
-
-Remove unwanted Tailwind defaults by setting theme variables to `initial` in `@theme` blocks, matching the official Tailwind CSS v4 behavior ([docs](https://tailwindcss.com/docs/colors#disabling-default-colors)).
-
-```css
-@theme {
-  /* Remove specific theme properties */
+  /* Remove specific values */
   --color-lime-*: initial;
   --spacing-4: initial;
-  --radius-lg: initial;
 
   /* Remove entire categories */
   --color-*: initial;
   --spacing-*: initial;
 
-  /* Custom values are always preserved */
+  /* Custom values are preserved */
   --color-primary-500: #3b82f6;
 }
 ```
 
-### Key Features
-
-- **Works for all theme properties** - Colors, spacing, fonts, shadows, radius, etc.
-- **Supports wildcards** - Use `*` to match multiple values (`--color-lime-*`, `--color-*`)
-- **Preserves custom values** - Only removes Tailwind defaults, never your custom theme
-- **Highest priority** - Takes precedence over `includeTailwindDefaults` configuration
-- **Supports `@theme` and `@theme inline`** blocks
-
-### Relationship with `includeTailwindDefaults`
-
-Use both together for maximum control:
+**Combining Approaches:**
 
 ```typescript
-const result = await resolveTheme({
-  css: `
-    @theme {
-      --color-lime-*: initial;
-      --color-fuchsia-*: initial;
-      --spacing-4: initial;
-    }
-  `,
-  includeTailwindDefaults: {
-    colors: true, // Include all colors...
-    spacing: true, // Include all spacing...
-    shadows: false, // Exclude shadows
-  },
-});
+// Configuration: Include colors and spacing
+includeDefaults: {
+  colors: true,
+  spacing: true,
+  shadows: false,
+}
 
-// Result:
-// - Colors: All defaults EXCEPT lime and fuchsia (removed by initial)
-// - Spacing: All defaults EXCEPT spacing.4 (removed by initial)
-// - Shadows: Empty (excluded by config)
+// CSS: Remove specific colors
+@theme {
+  --color-lime-*: initial;    // Excludes lime from included colors
+  --color-fuchsia-*: initial; // Excludes fuchsia from included colors
+}
+
+// Result: All default colors EXCEPT lime and fuchsia
 ```
 
-| Configuration                               | Result                                       |
-| ------------------------------------------- | -------------------------------------------- |
-| `includeTailwindDefaults: true`             | All defaults included                        |
-| `includeTailwindDefaults: false`            | No defaults included                         |
-| `includeTailwindDefaults: { colors: true }` | Only color defaults included                 |
-| `initial` in CSS                            | Removes specific defaults (highest priority) |
+**Priority:** CSS `initial` declarations take precedence over `includeDefaults` configuration.
 
-### Use Cases
+### Nesting Configuration
 
-**1. Reduce bundle size** - Remove unused defaults:
+Control how CSS variable names are parsed into nested theme structures.
+
+**Default Behavior:**
+
+Without configuration, all dashes create nesting levels:
 
 ```css
-@theme {
-  --color-lime-*: initial;
-  --color-fuchsia-*: initial;
-  --color-pink-*: initial;
+--color-tooltip-outline-50: #fff;
+/* → colors.tooltip.outline[50] */
+```
+
+**Limit Nesting Depth:**
+
+```typescript
+nesting: {
+  colors: { maxDepth: 2 },
+  // --color-brand-primary-hover-500
+  // → colors.brand.primaryHover500 (2 levels, rest flattened to camelCase)
 }
 ```
 
-**2. Prevent conflicts** - Remove defaults that clash with your brand:
+**Flatten Mode:**
 
-```css
-@theme {
-  --color-blue-*: initial;
-  --color-primary-500: #1e40af; /* Custom brand blue */
-}
-```
-
-**3. Minimal theme** - Start from scratch:
-
-```css
-@theme {
-  --color-*: initial;
-
-  --color-foreground: #000;
-  --color-background: #fff;
-  --color-primary-500: #3b82f6;
-}
-```
-
-**4. Platform-specific themes**:
+Control how parts beyond `maxDepth` are flattened:
 
 ```typescript
-// Mobile - minimal palette
-const mobile = await resolveTheme({
-  css: '@theme { --color-*: initial; --color-primary-500: blue; }',
-  includeTailwindDefaults: { spacing: true },
-});
-
-// Desktop - full palette
-const desktop = await resolveTheme({
-  css: '@theme { --color-primary-500: blue; }',
-  includeTailwindDefaults: true,
-});
-```
-
-## Theme Overrides
-
-Apply custom theme value overrides programmatically to fix unresolved variables or conflicts without modifying CSS files.
-
-### When to Use Overrides
-
-- **Inject external variables**: Provide values for variables from Next.js, plugins, or external sources
-- **Fix variant-specific values**: Override theme properties for dark mode or custom themes
-- **Global customization**: Apply consistent values across all variants
-- **Quick prototyping**: Test theme changes without editing CSS
-
-### Configuration
-
-**Vite Plugin:**
-
-```typescript
-tailwindResolver({
-  input: 'src/styles.css',
-  overrides: {
-    // Override default theme
-    default: {
-      'fonts.sans': 'Inter, sans-serif',
-      'radius.lg': '0.5rem',
-    },
-
-    // Override dark variant
-    dark: {
-      'colors.background': '#000000',
-    },
-
-    // Apply to all variants (wildcard)
-    '*': {
-      'fonts.mono': 'JetBrains Mono, monospace',
-    },
-  },
-});
-```
-
-**Runtime API:**
-
-```typescript
-const result = await resolveTheme({
-  input: './styles.css',
-  overrides: {
-    default: {
-      'colors.primary.500': '#custom-blue',
-    },
-  },
-});
-```
-
-### Syntax Options
-
-**Flat Notation** (dot-separated paths):
-
-```typescript
-overrides: {
-  'default': {
-    'colors.primary.500': '#custom-blue',
-    'radius.lg': '0.5rem',
-    'fonts.sans': 'Inter, sans-serif'
+nesting: {
+  colors: {
+    maxDepth: 2,
+    flattenMode: 'camelcase', // Default: blueSkyLight50
+    // flattenMode: 'literal',  // Alternative: 'blue-sky-light-50'
   }
 }
 ```
 
-**Nested Notation**:
+**Consecutive Dashes Handling:**
+
+```typescript
+nesting: {
+  colors: {
+    consecutiveDashes: 'exclude',   // Default: skip variables with --
+    // consecutiveDashes: 'nest',     // Treat -- as single -
+    // consecutiveDashes: 'camelcase',// Convert to camelCase
+    // consecutiveDashes: 'literal',  // Preserve dash
+  }
+}
+```
+
+**Per-Namespace Configuration:**
+
+```typescript
+nesting: {
+  default: { maxDepth: 1 },         // Apply to all namespaces
+  colors: { maxDepth: 3 },          // Override for colors
+  shadows: { maxDepth: 2 },         // Override for shadows
+  radius: { maxDepth: 0 },          // Completely flat
+}
+```
+
+**Complete Example:**
+
+```typescript
+nesting: {
+  colors: {
+    maxDepth: 2,
+    flattenMode: 'literal',
+    consecutiveDashes: 'camelcase',
+  }
+}
+
+// CSS: --color-tooltip--outline-hover-50
+// Step 1: tooltipOutline (consecutive dashes → camelCase)
+// Step 2: maxDepth: 2 → colors.tooltipOutline.hover['50']
+```
+
+See [Nesting Configuration Details](#nesting-configuration-details) for comprehensive documentation.
+
+### Theme Overrides
+
+Apply programmatic overrides to theme values without modifying CSS files.
+
+**Use Cases:**
+
+- Inject external variables (Next.js fonts, plugin variables)
+- Fix variant-specific values
+- Global customization across all variants
+- Quick prototyping
+
+**Flat Notation:**
 
 ```typescript
 overrides: {
-  'default': {
+  default: {
+    'colors.primary.500': '#custom-blue',
+    'radius.lg': '0.5rem',
+  },
+  dark: {
+    'colors.background': '#000000',
+  },
+  '*': { // Wildcard - applies to all variants
+    'fonts.sans': 'Inter, sans-serif',
+  }
+}
+```
+
+**Nested Notation:**
+
+```typescript
+overrides: {
+  default: {
     colors: {
       primary: {
         500: '#custom-blue'
@@ -732,192 +546,242 @@ overrides: {
 }
 ```
 
-**Mix and Match**:
+**Detailed Control:**
 
 ```typescript
 overrides: {
-  'default': {
-    'colors.primary.500': '#custom-blue',
-    radius: { lg: '0.5rem' }
-  }
-}
-```
-
-### Selector Matching
-
-Overrides support multiple selector patterns:
-
-```typescript
-overrides: {
-  // Variant name (use camelCase for multi-word variants)
-  'dark': { 'colors.background': '#000' },
-  'themeInter': { 'fonts.sans': 'Inter, sans-serif' },  // .theme-inter → themeInter
-
-  // CSS selector (verbose, but works)
-  '[data-theme="dark"]': { 'colors.background': '#000' },
-
-  // Default theme
-  'default': { 'radius.lg': '0.5rem' },
-  'base': { 'radius.lg': '0.5rem' }, // Alias for 'default'
-
-  // All variants (wildcard)
-  '*': { 'fonts.sans': 'Inter, sans-serif' }
-}
-```
-
-**Important:** Variant names are automatically converted from kebab-case to camelCase:
-
-- CSS: `.theme-inter` → Override key: `'themeInter'`
-- CSS: `.theme-noto-sans` → Override key: `'themeNotoSans'`
-- CSS: `.dark` → Override key: `'dark'` (no conversion needed)
-
-Use the exact camelCase variant names from your generated types for reliable matching.
-
-### Detailed Control
-
-Use object notation for fine-grained control:
-
-```typescript
-overrides: {
-  'dark': {
+  dark: {
     'radius.lg': {
       value: '0',
       force: true,        // Apply even for low-confidence conflicts
-      resolveVars: false  // Skip variable resolution (post-resolution only)
+      resolveVars: false  // Skip variable resolution
     }
   }
 }
 ```
 
-### Common Use Cases
-
-**1. Injecting External Variables**
-
-Fix unresolved variables from Next.js, plugins, or external sources:
+**Selector Matching:**
 
 ```typescript
 overrides: {
-  'default': {
-    'fonts.sans': 'var(--font-inter)',  // Next.js font
-    'colors.primary': 'var(--tw-primary)' // Tailwind plugin
-  }
+  'dark': {},                        // Variant name (preferred)
+  '[data-theme="dark"]': {},         // CSS selector (verbose)
+  'default': {},                     // Default theme
+  'base': {},                        // Alias for 'default'
+  '*': {},                           // All variants
+  'themeInter': {},                  // .theme-inter → themeInter (camelCase)
 }
 ```
 
-**2. Variant-Specific Overrides**
+**Note:** Multi-word variant names are automatically converted to camelCase:
 
-Customize individual theme variants:
+- CSS: `.theme-noto-sans` → Override key: `'themeNotoSans'`
+
+See [Theme Overrides Details](#theme-overrides-details) for comprehensive documentation.
+
+### Report Generation
+
+Control diagnostic report generation.
+
+**Enable All Reports (Default):**
 
 ```typescript
-overrides: {
-  'dark': {
-    'colors.background': '#000000',
-    'colors.foreground': '#ffffff'
-  },
-  'compact': {
-    'radius.lg': '0',
-    'spacing.base': '0.125rem'
-  }
+generateRuntime: {
+  reports: true,
 }
 ```
 
-**3. Global Overrides**
-
-Apply consistent values across all variants:
+**Disable All Reports:**
 
 ```typescript
-overrides: {
-  '*': {
-    'fonts.sans': 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-    'fonts.mono': 'JetBrains Mono, Consolas, monospace'
-  }
+generateRuntime: {
+  reports: false,
 }
 ```
 
-**4. Prototyping Without CSS Changes**
-
-Quickly test theme variations:
+**Granular Control:**
 
 ```typescript
-overrides: {
-  'default': {
-    'colors.primary.500': '#ff6b6b',
-    'radius.lg': '1rem'
+generateRuntime: {
+  reports: {
+    conflicts: true,    // CSS conflict reports
+    unresolved: false,  // Unresolved variable reports
   }
 }
-```
-
-### How It Works
-
-The override system uses a two-phase approach:
-
-1. **Pre-resolution** (Variable Injection)
-   - Injects synthetic CSS variables before variable resolution
-   - Allows overrides to participate in `var()` resolution
-   - Applied to: `'default'`, `'base'`, `'*'` selectors
-
-2. **Post-resolution** (Theme Mutation)
-   - Directly mutates resolved theme objects after building
-   - Overrides final computed values
-   - Applied to: all selector types
-
-This hybrid approach ensures maximum flexibility and correct variable resolution.
-
-### Debug Mode
-
-Enable debug logging to see override activity:
-
-```typescript
-tailwindResolver({
-  input: 'src/styles.css',
-  debug: true,
-  overrides: {
-    default: { 'radius.lg': '0.5rem' },
-  },
-});
-```
-
-Output:
-
-```
-[Overrides] Injected variable: --radius-lg = 0.5rem
-[Overrides] Injected 1 variables for 'default'
-[Overrides] Applied to 'default': radius.lg = 0.5rem
-[Overrides] Summary for 'default': 1 applied, 0 skipped
-```
-
-## Debugging
-
-Enable debug mode to see warnings for failed imports:
-
-**Vite:**
-
-```typescript
-tailwindResolver({ input: 'src/styles.css', debug: true });
 ```
 
 **CLI:**
 
 ```bash
-bunx tailwind-resolver -i src/styles.css --debug
-# or: pnpm exec / yarn / npx
+# Disable all reports
+bunx tailwind-resolver -i src/styles.css --no-reports
+
+# Generate only conflict reports
+bunx tailwind-resolver -i src/styles.css --reports conflicts
+
+# Exclude unresolved variable reports
+bunx tailwind-resolver -i src/styles.css --exclude-reports unresolved
 ```
 
-**Runtime:**
+## Advanced Features
+
+### CSS Conflict Detection
+
+Automatically detects when CSS rules override CSS variables and ensures runtime theme matches actual rendered styles.
+
+**Problem:**
+
+```css
+.theme-mono {
+  --radius-lg: 0.45em; /* CSS variable */
+
+  .rounded-lg {
+    border-radius: 0; /* CSS rule - overrides the variable! */
+  }
+}
+```
+
+**Solution:**
+
+The resolver:
+
+1. Detects all conflicts between CSS rules and variables
+2. Applies high-confidence overrides automatically
+3. Reports complex cases for manual review
+
+**Confidence Levels:**
+
+- **High** (auto-applied): Static values, simple selectors
+- **Medium/Low** (manual review): Dynamic values, pseudo-classes, media queries, complex selectors
+
+**Generated Reports:**
+
+```
+src/generated/tailwindcss/
+├── conflicts.md    # Human-readable report with recommendations
+└── conflicts.json  # Machine-readable for CI/CD
+```
+
+**Terminal Output:**
+
+```
+✓ Theme types generated successfully
+
+Generated files:
+  - src/generated/tailwindcss/types.ts
+  - src/generated/tailwindcss/theme.ts
+  - src/generated/tailwindcss/index.ts
+
+⚠  12 CSS conflicts detected (see src/generated/tailwindcss/conflicts.md)
+```
+
+### Unresolved Variable Detection
+
+Detects CSS variables with `var()` references that couldn't be resolved.
+
+**Problem:**
+
+```css
+@theme {
+  --font-sans: var(--font-inter); /* Injected by Next.js */
+  --color-accent: var(--tw-primary); /* Tailwind plugin variable */
+}
+```
+
+**Solution:**
+
+The resolver categorizes unresolved variables:
+
+- **Unknown** - May need definition or verification
+- **External** - From plugins, frameworks, or external stylesheets
+- **Self-referential** - Intentionally left unresolved
+
+**Generated Reports:**
+
+```
+src/generated/tailwindcss/
+├── unresolved.md    # Human-readable with actionable recommendations
+└── unresolved.json  # Machine-readable for CI/CD
+```
+
+**Terminal Output:**
+
+```
+ℹ  8 unresolved variables detected (see src/generated/tailwindcss/unresolved.md)
+```
+
+### Dynamic Spacing Helper
+
+The `spacing` property is both an object AND a callable function for dynamic calculations.
+
+**Static Values:**
 
 ```typescript
-resolveTheme({ input: './theme.css', debug: true });
+defaultTheme.spacing.xs; // '0.75rem'
+defaultTheme.spacing.base; // '0.25rem'
 ```
 
-**Output:**
+**Dynamic Calculations:**
 
-```
-[Tailwind Theme Resolver] Failed to resolve import: ./components/theme.css
-  Resolved path: /Users/you/project/src/components/theme.css
-  Error: ENOENT: no such file or directory
+```typescript
+defaultTheme.spacing(4); // 'calc(0.25rem * 4)' → 1rem
+defaultTheme.spacing(16); // 'calc(0.25rem * 16)' → 4rem
+defaultTheme.spacing(-2); // 'calc(0.25rem * -2)' → -0.5rem
 ```
 
-Failed imports are silently skipped by design. Enable debug mode only when troubleshooting.
+**Usage:**
+
+```typescript
+<div style={{
+  padding: defaultTheme.spacing(4),   // Same as Tailwind's p-4
+  margin: defaultTheme.spacing(-2),   // Same as Tailwind's -m-2
+  width: defaultTheme.spacing(64),    // Same as Tailwind's w-64
+}} />
+```
+
+**Why:** Tailwind generates utilities like `p-4`, `m-8`, `w-16` using `calc(var(--spacing) * N)`. This helper replicates that behavior for runtime use.
+
+**Tailwind Utilities Using Spacing:**
+
+- Layout: `inset-<n>`, `m-<n>`, `p-<n>`, `gap-<n>`
+- Sizing: `w-<n>`, `h-<n>`, `min-w-<n>`, `max-w-<n>`
+- Typography: `indent-<n>`, `border-spacing-<n>`, `scroll-m-<n>`
+
+**Note:** Requires `--spacing-base` in your CSS theme.
+
+### Type Safety
+
+Full TypeScript type safety with the generated `Tailwind` interface.
+
+**Generated Constant:**
+
+```typescript
+import { tailwind } from './generated/tailwindcss';
+
+// Fully typed with autocomplete
+tailwind.variants.default.colors.primary[500]; // ✓
+tailwind.variants.dark.colors.background; // ✓
+tailwind.selectors.dark; // ✓
+```
+
+**Runtime API:**
+
+```typescript
+import type { Tailwind } from './generated/tailwindcss';
+
+import { resolveTheme } from 'tailwind-resolver';
+
+const result = await resolveTheme<Tailwind>({
+  input: './theme.css',
+});
+
+// Same structure, same types
+result.variants.default.colors.primary[500]; // ✓
+result.variants.dark.colors.background; // ✓
+result.selectors.dark; // ✓
+```
+
+**Autocomplete:** Works automatically when output directory is in `tsconfig.json` includes.
 
 ## Examples
 
@@ -930,7 +794,6 @@ new Chart(ctx, {
   data: {
     datasets: [
       {
-        // Fully typed colors with autocomplete
         backgroundColor: [
           tailwind.variants.default.colors.primary[500],
           tailwind.variants.dark.colors.secondary[500],
@@ -946,24 +809,546 @@ new Chart(ctx, {
 ```typescript
 import { defaultTheme } from './generated/tailwindcss';
 
-// All properties are type-safe
 ctx.fillStyle = defaultTheme.colors.background;
 ctx.font = `${defaultTheme.fontSize.xl.size} ${defaultTheme.fonts.display}`;
 ```
 
-### Dynamic Themes
+### Dynamic Theme Switching
 
 ```typescript
 import { tailwind } from './generated/tailwindcss';
 
-// Theme switching with full type safety
 const currentTheme = isDark
   ? tailwind.variants.dark
   : tailwind.variants.default;
+
 chartInstance.data.datasets[0].backgroundColor =
   currentTheme.colors.primary[500];
 chartInstance.update();
 ```
+
+### Theme Variants
+
+```css
+@theme {
+  --color-background: #ffffff;
+}
+
+[data-theme='dark'] {
+  --color-background: #1f2937;
+}
+```
+
+```typescript
+import { dark, defaultTheme, selectors } from './generated/tailwindcss';
+
+console.log(defaultTheme.colors.background); // '#ffffff'
+console.log(dark.colors.background); // '#1f2937'
+console.log(selectors.dark); // "[data-theme='dark']"
+```
+
+## Debugging
+
+Enable debug mode to see detailed logging.
+
+**Vite:**
+
+```typescript
+tailwindResolver({ input: 'src/styles.css', debug: true });
+```
+
+**CLI:**
+
+```bash
+bunx tailwind-resolver -i src/styles.css --debug
+```
+
+**Runtime API:**
+
+```typescript
+resolveTheme({ input: './theme.css', debug: true });
+```
+
+**Output:**
+
+```
+[Tailwind Theme Resolver] Failed to resolve import: ./components/theme.css
+  Resolved path: /Users/you/project/src/components/theme.css
+  Error: ENOENT: no such file or directory
+
+[Overrides] Injected variable: --radius-lg = 0.5rem
+[Overrides] Applied to 'default': radius.lg = 0.5rem
+```
+
+## Requirements
+
+- **Node.js** >= 18 or **Bun** >= 1.0
+- **TypeScript** >= 5.0 (for type generation)
+- **Vite** >= 5.0 (for Vite plugin only)
+
+## Contributing
+
+Issues and pull requests welcome on [GitHub](https://github.com/0xstern/tailwind-resolver).
+
+## License
+
+MIT
+
+---
+
+## Appendix
+
+### Nesting Configuration Details
+
+Complete documentation for nesting configuration options.
+
+#### Default Behavior
+
+Without configuration, every dash creates a nesting level:
+
+```css
+@theme {
+  --color-tooltip-outline-50: #fff;
+  /* → colors.tooltip.outline[50] */
+
+  --shadow-elevation-high-focus: 0 0 0;
+  /* → shadows.elevation.high.focus */
+}
+```
+
+#### maxDepth
+
+Limit nesting levels. After the limit, remaining parts are flattened.
+
+**Configuration:**
+
+```typescript
+nesting: {
+  colors: {
+    maxDepth: 2;
+  }
+}
+```
+
+**Results:**
+
+```css
+--color-tooltip-outline-50: #fff;
+/* Before: colors.tooltip.outline[50] */
+/* After:  colors.tooltip.outline['50'] (no change - only 3 parts) */
+
+--color-brand-primary-hover-500: #3b82f6;
+/* Before: colors.brand.primary.hover[500] */
+/* After:  colors.brand.primaryHover500 (2 levels, rest flattened) */
+```
+
+**Special Case - maxDepth: 0:**
+
+```typescript
+nesting: { default: { maxDepth: 0 } }
+
+// --color-brand-primary-dark: #000
+// → colors.brandPrimaryDark (completely flat)
+```
+
+#### consecutiveDashes
+
+Control how consecutive dashes (`--`) are processed:
+
+**Options:**
+
+- `'exclude'` (default, matches Tailwind v4) - Skip variables with `--`
+- `'nest'` - Treat `--` as single `-`
+- `'camelcase'` - Convert `--` to camelCase boundary
+- `'literal'` - Preserve `--` in keys
+
+**Configuration:**
+
+```typescript
+nesting: {
+  colors: {
+    consecutiveDashes: 'camelcase';
+  }
+}
+```
+
+**Results:**
+
+```css
+--color-button--primary: #fff;
+
+/* 'exclude' (default): Not included */
+/* 'nest': colors.button.primary */
+/* 'camelcase': colors.buttonPrimary */
+/* 'literal': colors['button-'].primary */
+```
+
+#### flattenMode
+
+Control how parts beyond `maxDepth` are flattened:
+
+**Options:**
+
+- `'camelcase'` (default) - Flatten to camelCase
+- `'literal'` - Flatten to kebab-case string key
+
+**Configuration:**
+
+```typescript
+nesting: {
+  colors: {
+    maxDepth: 2,
+    flattenMode: 'literal'
+  }
+}
+```
+
+**Results:**
+
+```css
+--color-blue-sky-light-50: #e0f2fe;
+
+/* flattenMode: 'camelcase' (default) */
+/* → colors.blue.skyLight50 */
+
+/* flattenMode: 'literal' */
+/* → colors.blue['sky-light-50'] */
+```
+
+**Note:** Only applies when `maxDepth` is reached.
+
+#### Combining Options
+
+```typescript
+nesting: {
+  colors: {
+    maxDepth: 2,
+    consecutiveDashes: 'camelcase',
+    flattenMode: 'literal',
+  }
+}
+```
+
+```css
+--color-tooltip--outline-hover-50: #fff;
+/* Step 1: tooltipOutline (consecutive dashes → camelCase) */
+/* Step 2: maxDepth: 2 → colors.tooltipOutline.hover['50'] */
+```
+
+#### Per-Namespace Configuration
+
+```typescript
+nesting: {
+  colors: { maxDepth: 3 },      // Deep nesting
+  shadows: { maxDepth: 2 },     // Moderate nesting
+  spacing: { maxDepth: 1 },     // Flat structure
+  radius: { consecutiveDashes: 'camelcase' },
+}
+```
+
+#### Global Default
+
+```typescript
+nesting: {
+  default: { maxDepth: 1 },     // Apply to all namespaces
+  colors: { maxDepth: 3 },      // Override for colors
+}
+```
+
+#### DEFAULT Key for Conflicts
+
+When both scalar and nested variables exist at the same path, the scalar moves to `DEFAULT`:
+
+```css
+@theme {
+  --color-card: blue;
+  --color-card-foreground: white;
+}
+```
+
+```typescript
+// Result:
+{
+  colors: {
+    card: {
+      DEFAULT: 'blue',
+      foreground: 'white'
+    }
+  }
+}
+```
+
+**Works in Any Order:**
+
+```css
+/* Nested first, then scalar */
+--color-card-foreground: white;
+--color-card: blue;
+/* Same result: { card: { DEFAULT: 'blue', foreground: 'white' } } */
+```
+
+**With Color Scales:**
+
+```css
+--color-blue-500: #3b82f6;
+--color-blue-600: #2563eb;
+--color-blue: #1d4ed8;
+```
+
+```typescript
+// Result:
+{
+  blue: {
+    DEFAULT: '#1d4ed8',
+    500: '#3b82f6',
+    600: '#2563eb'
+  }
+}
+```
+
+#### Use Cases
+
+**1. Consistent Flat Structure:**
+
+```typescript
+nesting: { default: { maxDepth: 0 } }
+
+// All variables flattened:
+// --color-brand-primary-500 → colors.brandPrimary500
+```
+
+**2. BEM-Style Naming:**
+
+```typescript
+nesting: {
+  default: {
+    maxDepth: 1,
+    consecutiveDashes: 'camelcase'
+  }
+}
+
+// --color-button--primary → colors.buttonPrimary
+// --color-input--error → colors.inputError
+```
+
+**3. Controlled Depth by Category:**
+
+```typescript
+nesting: {
+  colors: { maxDepth: 3 },      // Deep color scales
+  shadows: { maxDepth: 2 },     // Moderate shadow variants
+  radius: { maxDepth: 1 },      // Flat radius values
+}
+```
+
+#### CLI Flags
+
+```bash
+# Limit nesting depth globally
+bunx tailwind-resolver -i src/styles.css --nesting-max-depth 2
+
+# Control consecutive dashes
+bunx tailwind-resolver -i src/styles.css --nesting-consecutive-dashes camelcase
+
+# Control flatten mode
+bunx tailwind-resolver -i src/styles.css --nesting-flatten-mode literal
+
+# Combine options
+bunx tailwind-resolver -i src/styles.css \
+  --nesting-max-depth 2 \
+  --nesting-consecutive-dashes nest \
+  --nesting-flatten-mode literal
+```
+
+**Note:** CLI flags apply globally to all namespaces. For per-namespace control, use Vite plugin or Runtime API.
+
+### Theme Overrides Details
+
+Complete documentation for theme overrides.
+
+#### When to Use Overrides
+
+- **Inject external variables** - Provide values for Next.js fonts, Tailwind plugins, or external sources
+- **Fix variant-specific values** - Override dark mode or custom theme properties
+- **Global customization** - Apply consistent values across all variants
+- **Quick prototyping** - Test theme changes without editing CSS
+
+#### Syntax Options
+
+**Flat Notation (Dot-Separated Paths):**
+
+```typescript
+overrides: {
+  default: {
+    'colors.primary.500': '#custom-blue',
+    'radius.lg': '0.5rem',
+    'fonts.sans': 'Inter, sans-serif'
+  }
+}
+```
+
+**Nested Notation:**
+
+```typescript
+overrides: {
+  default: {
+    colors: {
+      primary: {
+        500: '#custom-blue'
+      }
+    },
+    radius: {
+      lg: '0.5rem'
+    }
+  }
+}
+```
+
+**Mix and Match:**
+
+```typescript
+overrides: {
+  default: {
+    'colors.primary.500': '#custom-blue',
+    radius: { lg: '0.5rem' }
+  }
+}
+```
+
+#### Selector Matching
+
+**Variant Names (Recommended):**
+
+```typescript
+overrides: {
+  'dark': { 'colors.background': '#000' },
+  'themeInter': { 'fonts.sans': 'Inter' },  // .theme-inter → themeInter
+}
+```
+
+**CSS Selectors (Verbose):**
+
+```typescript
+overrides: {
+  '[data-theme="dark"]': { 'colors.background': '#000' },
+}
+```
+
+**Special Keys:**
+
+```typescript
+overrides: {
+  'default': {},  // Default theme
+  'base': {},     // Alias for 'default'
+  '*': {},        // All variants (wildcard)
+}
+```
+
+**Important:** Variant names are automatically converted from kebab-case to camelCase:
+
+- CSS: `.theme-inter` → Override key: `'themeInter'`
+- CSS: `.theme-noto-sans` → Override key: `'themeNotoSans'`
+
+#### Detailed Control
+
+```typescript
+overrides: {
+  dark: {
+    'radius.lg': {
+      value: '0',
+      force: true,        // Apply even for low-confidence conflicts
+      resolveVars: false  // Skip variable resolution (post-resolution only)
+    }
+  }
+}
+```
+
+#### Common Use Cases
+
+**1. Injecting External Variables:**
+
+```typescript
+overrides: {
+  default: {
+    'fonts.sans': 'var(--font-inter)',      // Next.js font
+    'colors.primary': 'var(--tw-primary)'   // Tailwind plugin
+  }
+}
+```
+
+**2. Variant-Specific Overrides:**
+
+```typescript
+overrides: {
+  dark: {
+    'colors.background': '#000000',
+    'colors.foreground': '#ffffff'
+  },
+  compact: {
+    'radius.lg': '0',
+    'spacing.base': '0.125rem'
+  }
+}
+```
+
+**3. Global Overrides:**
+
+```typescript
+overrides: {
+  '*': {
+    'fonts.sans': 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+    'fonts.mono': 'JetBrains Mono, Consolas, monospace'
+  }
+}
+```
+
+**4. Prototyping:**
+
+```typescript
+overrides: {
+  default: {
+    'colors.primary.500': '#ff6b6b',
+    'radius.lg': '1rem'
+  }
+}
+```
+
+#### How It Works
+
+Two-phase approach:
+
+1. **Pre-resolution** (Variable Injection)
+   - Injects synthetic CSS variables before resolution
+   - Allows overrides to participate in `var()` resolution
+   - Applied to: `'default'`, `'base'`, `'*'` selectors
+
+2. **Post-resolution** (Theme Mutation)
+   - Directly mutates resolved theme objects
+   - Overrides final computed values
+   - Applied to: all selector types
+
+#### Debug Mode
+
+```typescript
+tailwindResolver({
+  input: 'src/styles.css',
+  debug: true,
+  overrides: {
+    default: { 'radius.lg': '0.5rem' },
+  },
+});
+```
+
+**Output:**
+
+```
+[Overrides] Injected variable: --radius-lg = 0.5rem
+[Overrides] Injected 1 variables for 'default'
+[Overrides] Applied to 'default': radius.lg = 0.5rem
+[Overrides] Summary for 'default': 1 applied, 0 skipped
+```
+
+---
 
 ## TypeScript Configuration
 
@@ -978,20 +1363,6 @@ Ensure the output directory is included in `tsconfig.json`:
 }
 ```
 
-## Requirements
-
-- Node.js >= 18 or Bun >= 1.0
-- TypeScript >= 5.0 (for type generation)
-- Vite >= 5.0 (for Vite plugin)
-
-## License
-
-MIT
-
-## Contributing
-
-Issues and pull requests welcome on [GitHub](https://github.com/0xstern/tailwind-resolver).
-
-## Support
+---
 
 If you find this helpful, follow me on X [@mrstern\_](https://x.com/mrstern_)

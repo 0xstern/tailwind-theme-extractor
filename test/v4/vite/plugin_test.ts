@@ -96,10 +96,10 @@ describe('tailwindResolver - Plugin configuration', () => {
     expect(plugin).toBeDefined();
   });
 
-  it('should accept optional includeTailwindDefaults option', () => {
+  it('should accept optional includeDefaults option', () => {
     const plugin = tailwindResolver({
       input: 'styles.css',
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     expect(plugin).toBeDefined();
@@ -125,7 +125,7 @@ describe('tailwindResolver - Plugin configuration', () => {
         files: false,
         variables: false,
       },
-      includeTailwindDefaults: true,
+      includeDefaults: true,
       debug: false,
     });
 
@@ -213,7 +213,7 @@ describe('tailwindResolver - buildStart hook', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir: join(tempDir, 'output'),
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -240,7 +240,7 @@ describe('tailwindResolver - buildStart hook', () => {
     const plugin = tailwindResolver({
       input: NON_EXISTENT_FILE,
       outputDir: join(tempDir, 'output'),
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -271,7 +271,7 @@ describe('tailwindResolver - buildStart hook', () => {
       input: mainFile,
       outputDir: join(tempDir, 'output'),
       resolveImports: true,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -309,7 +309,7 @@ describe('tailwindResolver - buildStart hook', () => {
       input: mainFile,
       outputDir: join(tempDir, 'output'),
       resolveImports: false,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -351,7 +351,7 @@ describe('tailwindResolver - handleHotUpdate hook', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir: join(tempDir, 'output'),
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -391,7 +391,7 @@ describe('tailwindResolver - handleHotUpdate hook', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir: join(tempDir, 'output'),
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -435,7 +435,7 @@ describe('tailwindResolver - handleHotUpdate hook', () => {
       input: mainFile,
       outputDir: join(tempDir, 'output'),
       resolveImports: true,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -483,7 +483,7 @@ describe('tailwindResolver - Runtime generation options', () => {
       input: inputFile,
       outputDir: join(tempDir, 'output'),
       generateRuntime: true,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -510,7 +510,7 @@ describe('tailwindResolver - Runtime generation options', () => {
       input: inputFile,
       outputDir: join(tempDir, 'output'),
       generateRuntime: false,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -542,7 +542,7 @@ describe('tailwindResolver - Runtime generation options', () => {
         files: true,
         variables: true,
       },
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -603,7 +603,7 @@ describe('tailwindResolver - Tailwind defaults inclusion', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir: join(tempDir, 'output'),
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -641,7 +641,7 @@ describe('tailwindResolver - Debug mode', () => {
       input: inputFile,
       outputDir: join(tempDir, 'output'),
       debug: true,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -666,7 +666,7 @@ describe('tailwindResolver - Debug mode', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir: join(tempDir, 'output'),
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -703,7 +703,7 @@ describe('tailwindResolver - Edge cases', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir: join(tempDir, 'output'),
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -732,7 +732,7 @@ describe('tailwindResolver - Edge cases', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir: join(tempDir, 'output'),
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -759,7 +759,7 @@ describe('tailwindResolver - Edge cases', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir: NESTED_OUTPUT_DIR,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -784,7 +784,7 @@ describe('tailwindResolver - Edge cases', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir: join(tempDir, 'output'),
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {
@@ -812,7 +812,7 @@ describe('tailwindResolver - Edge cases', () => {
     const plugin = tailwindResolver({
       input: inputFile,
       outputDir: join(tempDir, 'output'),
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     }) as PluginWithHooks;
 
     const mockConfig: ResolvedConfig = {

@@ -1,6 +1,8 @@
 # Test Organization
 
-This document describes the test structure and organization for the tailwind-resolver project.
+Test structure and organization for the tailwind-resolver project.
+
+---
 
 ## Directory Structure
 
@@ -54,15 +56,19 @@ test/
     └── index_test.ts        # Core API tests
 ```
 
+---
+
 ## Test Categories
 
-### Unit Tests (`test/v4/unit/`)
+### Unit Tests
 
-Unit tests verify individual functions and modules in isolation. They should:
+Unit tests verify individual functions and modules in isolation.
+
+**Requirements:**
 
 - Test a single function or class
 - Mock external dependencies
-- Execute quickly (< 100ms per test)
+- Execute quickly (&lt; 100ms per test)
 - Focus on edge cases and error handling
 
 **Location Pattern**: `test/v4/{module}/{file}_test.ts`
@@ -75,9 +81,11 @@ Example: `src/v4/core/parser/extractor.ts` → `test/v4/core/extractor_test.ts`
 bun run test:unit
 ```
 
-### Integration Tests (`test/v4/integration/`)
+### Integration Tests
 
-Integration tests verify feature workflows and how multiple modules work together. They should:
+Integration tests verify feature workflows and how multiple modules work together.
+
+**Requirements:**
 
 - Test complete feature workflows
 - Use real dependencies (minimal mocking)
@@ -94,9 +102,11 @@ Example: `color_scale_resolution_test.ts`, `conflict_detection_pipeline_test.ts`
 bun run test:integration
 ```
 
-### E2E Tests (`test/v4/e2e/`)
+### E2E Tests
 
-End-to-end tests verify complete user workflows from start to finish. They should:
+End-to-end tests verify complete user workflows from start to finish.
+
+**Requirements:**
 
 - Test entire application flows
 - Use no mocking
@@ -113,19 +123,19 @@ Example: `vite_plugin_workflow_test.ts`, `cli_workflow_test.ts`
 bun run test:e2e
 ```
 
+---
+
 ## Test Fixtures
 
-Shared test fixtures are located in `test/v4/fixtures/`. These include:
+Shared test fixtures are located in `test/v4/fixtures/`.
 
-- CSS theme files
-- Sample configurations
-- Expected output data
-
-Fixtures should be:
+**Fixture Requirements:**
 
 - Minimal but representative
 - Well-documented with comments
 - Reusable across multiple tests
+
+---
 
 ## Running Tests
 
@@ -148,12 +158,16 @@ bun run test:coverage
 bun test path/to/test.ts
 ```
 
+---
+
 ## Current Test Status
 
 - **Total Tests**: 703
 - **Test Files**: 33 files
 - **Execution Time**: ~500ms
 - **Pass Rate**: 100%
+
+---
 
 ## Writing Tests
 
@@ -185,24 +199,28 @@ describe('{Feature/Module Name}', () => {
 
 ### Best Practices
 
-1. **One assertion per test** (when possible)
-2. **Arrange-Act-Assert pattern**:
+**1. One assertion per test** (when possible)
 
-   ```typescript
-   // Arrange
-   const input = '...';
+**2. Arrange-Act-Assert pattern:**
 
-   // Act
-   const result = functionToTest(input);
+```typescript
+// Arrange
+const input = '...';
 
-   // Assert
-   expect(result).toBe(expected);
-   ```
+// Act
+const result = functionToTest(input);
 
-3. **Test behavior, not implementation**
-4. **Use descriptive test names** that explain what is being tested
-5. **Keep tests independent** - no shared state between tests
-6. **Clean up resources** - use try/finally or afterEach for cleanup
+// Assert
+expect(result).toBe(expected);
+```
+
+**3. Test behavior, not implementation**
+
+**4. Use descriptive test names** that explain what is being tested
+
+**5. Keep tests independent** - no shared state between tests
+
+**6. Clean up resources** - use try/finally or afterEach for cleanup
 
 ### Constants
 
@@ -229,11 +247,15 @@ test('rejects with error for invalid input', async () => {
 });
 ```
 
+---
+
 ## Test Coverage Goals
 
 - **Unit tests**: 80%+ line coverage
 - **Integration tests**: Cover all major feature workflows
 - **E2E tests**: Cover critical user paths (CLI, Vite plugin)
+
+---
 
 ## Adding New Tests
 
@@ -244,6 +266,8 @@ When adding new functionality:
 3. **Add E2E tests** for new user-facing workflows
 4. **Update this README** if adding new test categories or patterns
 
+---
+
 ## Continuous Integration
 
 All tests must pass before:
@@ -253,6 +277,8 @@ All tests must pass before:
 - Deploying to production
 
 The `prepublishOnly` script automatically runs linting and tests before publishing.
+
+---
 
 ## Troubleshooting
 
@@ -281,8 +307,10 @@ bun test path/to/test.ts
 bun test --grep "pattern to match"
 ```
 
-## Resources
+---
+
+## References
 
 - [Bun Test Documentation](https://bun.sh/docs/cli/test)
 - [Testing Best Practices](https://github.com/goldbergyoni/javascript-testing-best-practices)
-- Project Architecture: `ARCHITECTURE.md`
+- [ARCHITECTURE.md](../ARCHITECTURE.md) - Project architecture

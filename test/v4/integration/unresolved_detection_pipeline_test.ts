@@ -58,7 +58,7 @@ describe('Unresolved Variable Detection - Integration', () => {
       const testResult = await resolveTheme({
         input: testFile,
         resolveImports: false,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Should detect unresolved variables
@@ -136,7 +136,7 @@ describe('Unresolved Variable Detection - Integration', () => {
       const testResult = await resolveTheme({
         input: testFile,
         resolveImports: false,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Generate unresolved variable reports
@@ -208,7 +208,7 @@ describe('Unresolved Variable Detection - Integration', () => {
       const testResult = await resolveTheme({
         input: testFile,
         resolveImports: false,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       // Should either have empty array or undefined
@@ -247,7 +247,7 @@ describe('Unresolved Variable Detection - Integration', () => {
       const testResult = await resolveTheme({
         input: testFile,
         resolveImports: false,
-        includeTailwindDefaults: false,
+        includeDefaults: false,
       });
 
       if (

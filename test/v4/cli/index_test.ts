@@ -328,7 +328,7 @@ describe('CLI - Granular Tailwind Defaults', () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  it('should accept boolean true for includeTailwindDefaults', async () => {
+  it('should accept boolean true for includeDefaults', async () => {
     const inputFile = join(tempDir, 'input.css');
     const outputDir = join(tempDir, 'output');
 
@@ -352,7 +352,7 @@ describe('CLI - Granular Tailwind Defaults', () => {
     expect(existsSync(join(outputDir, 'types.ts'))).toBe(true);
   });
 
-  it('should exclude all Tailwind defaults when includeTailwindDefaults is false', async () => {
+  it('should exclude all Tailwind defaults when includeDefaults is false', async () => {
     const inputFile = join(tempDir, 'input.css');
     const outputDir = join(tempDir, 'output');
 
@@ -381,7 +381,7 @@ describe('CLI - Granular Tailwind Defaults', () => {
     expect(typesContent).not.toContain('zinc');
   });
 
-  it('should accept granular options object for includeTailwindDefaults', async () => {
+  it('should accept granular options object for includeDefaults', async () => {
     const inputFile = join(tempDir, 'input.css');
     const outputDir = join(tempDir, 'output');
 
@@ -476,7 +476,7 @@ describe('CLI - Granular Tailwind Defaults', () => {
     const defaultsResult = await resolveTheme({
       input: baseThemePath,
       resolveImports: false,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // Create a minimal user theme
@@ -486,7 +486,7 @@ describe('CLI - Granular Tailwind Defaults', () => {
     const userResult = await resolveTheme({
       input: userThemePath,
       resolveImports: false,
-      includeTailwindDefaults: false,
+      includeDefaults: false,
     });
 
     // Get the actual theme objects from variants.default
